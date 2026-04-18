@@ -36,6 +36,7 @@ Listed in the order events happened, not when the entry was written.
 | 16 | Sat 18:30 | Claude Design audit — six-phase closure | [2026-04-18-16-design-audit.md](2026-04-18-16-design-audit.md) |
 | 17 | Sat 19:50 | Spec + production-posture sweep | [2026-04-18-17-spec-prod-sweep.md](2026-04-18-17-spec-prod-sweep.md) |
 | 18 | Sat 21:20 | UAT fixes — inline edit, modal delete, image previews, flex chain | [2026-04-18-18-uat-fixes.md](2026-04-18-18-uat-fixes.md) |
+| 19 | Sat 22:10 | Scroll-history UX — day separators, start marker, jump-to-latest | [2026-04-18-19-scroll-ux.md](2026-04-18-19-scroll-ux.md) |
 
 ## The philosophy underneath
 
