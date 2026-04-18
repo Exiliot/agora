@@ -42,7 +42,7 @@ export const Input = ({
           padding: '8px 10px',
           background: '#fff',
           border: `1px solid ${error ? tokens.color.danger : tokens.color.rule}`,
-          borderTop: `1px solid ${error ? tokens.color.danger : '#bfb9a5'}`,
+          borderTop: `1px solid ${error ? tokens.color.danger : tokens.color.ruleStrong}`,
           borderRadius: tokens.radius.xs,
           color: tokens.color.ink0,
           outline: 'none',

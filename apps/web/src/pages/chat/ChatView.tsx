@@ -113,8 +113,10 @@ const ChatView = () => {
       </div>
       <aside
         style={{
-          width: 220,
-          background: '#fff',
+          width: 240,
+          minWidth: 240,
+          flexShrink: 0,
+          background: tokens.color.paper0,
           borderLeft: `1px solid ${tokens.color.rule}`,
           padding: 14,
           overflow: 'auto',

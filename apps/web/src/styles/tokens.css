@@ -1,34 +1,43 @@
 /* Design tokens ported from docs/design/Design System.html (:root CSS vars).
    Authored in Claude Design (Opus 4.7) and accepted as the system palette.
-   Do not invent new values here — see docs/design/README.md. */
+   Do not invent new values here — see docs/design/README.md.
+
+   Values realigned to the Claude Design reference palette (warm hex paper
+   tones + teal accent + amber mention) after the v1 audit found this file
+   was drifting cool. The audit also caught that the original tokens.css was
+   never loading at all because @import trailed @tailwind in base.css; that
+   has been fixed and this file is now the single source of truth. */
 
 :root {
   /* Paper / ink neutrals (warm) */
-  --paper-0: #fbf9f4;
-  --paper-1: #f6f3ec;
-  --paper-2: #ede9df;
-  --paper-3: #e2ddcf;
-  --rule: #d6d0be;
-  --ink-0: #1a1a17;
-  --ink-1: #3a3a34;
-  --ink-2: #6b6a60;
-  --ink-3: #6f6d62; /* darkened from #9a988c for WCAG AA on paper-1 */
+  --paper-0: #fffef7;
+  --paper-1: #fbf7ea;
+  --paper-2: #f3ecd3;
+  --paper-3: #e8dfbf;
+
+  --rule: #d8ceab;
+  --rule-strong: #bfb9a5;  /* used on pressed-inset top edges (inputs) */
+
+  --ink-0: #1e1d18;
+  --ink-1: #3c382c;
+  --ink-2: #726a55;
+  --ink-3: #6f6d62;  /* darkened from #a59b7d for WCAG AA on paper-1 */
 
   /* Single accent: oxidized teal */
-  --accent: oklch(0.52 0.07 190);
-  --accent-soft: oklch(0.92 0.03 190);
-  --accent-ink: oklch(0.34 0.06 190);
+  --accent: #2f6e6a;
+  --accent-ink: #224f4c;
+  --accent-soft: #e0ecea;
 
   /* Status (flat swatches) */
-  --online: oklch(0.62 0.14 145);
-  --afk: oklch(0.72 0.12 75);
-  --offline: #a8a49a;
-  --danger: oklch(0.52 0.16 27);
-  --danger-soft: oklch(0.93 0.04 27);
+  --online: #3f7a3a;
+  --afk: #b48a2a;
+  --offline: #a59b7d;
+  --danger: #a3341e;
+  --danger-soft: #f6e5e0;
 
   /* Mentions */
-  --mention-bg: oklch(0.93 0.05 85);
-  --mention-fg: oklch(0.36 0.08 55);
+  --mention-bg: #fbecb5;
+  --mention-fg: #8a6a10;
 
   /* Radii / elevation */
   --r-xs: 2px;
@@ -36,6 +45,14 @@
   --r-md: 4px;
   --shadow-1: 0 1px 0 rgba(0, 0, 0, 0.04);
   --shadow-2: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 0 rgba(255, 255, 255, 0.6) inset;
+
+  /* Chrome gradients — classic web-chat button / modal-title feel */
+  --chrome-up: #fdfaf1;
+  --chrome-down: #f1ebda;
+  --grad-chrome: linear-gradient(180deg, var(--chrome-up) 0%, var(--chrome-down) 100%);
+
+  /* Modal scrim (shared between every dialog wrapper) */
+  --scrim: rgba(30, 29, 24, 0.35);
 
   /* Type */
   --sans: 'Inter', ui-sans-serif, system-ui, sans-serif;

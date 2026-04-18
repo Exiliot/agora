@@ -76,7 +76,7 @@ export const Modal = ({ title, children, onClose, width = 420 }: ModalProps) => 
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '9px 12px',
-          background: 'linear-gradient(180deg, #f6f1df 0%, #ede7d1 100%)',
+          background: tokens.gradient.chrome,
           borderBottom: `1px solid ${tokens.color.rule}`,
           fontFamily: tokens.type.sans,
           fontSize: 12,

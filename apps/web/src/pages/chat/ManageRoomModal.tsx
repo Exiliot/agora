@@ -177,7 +177,7 @@ export const ManageRoomModal = ({ room, onClose }: ManageRoomModalProps) => {
       style={{
         position: 'fixed',
         inset: 0,
-        background: 'rgba(26,26,23,0.35)',
+        background: tokens.color.scrim,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

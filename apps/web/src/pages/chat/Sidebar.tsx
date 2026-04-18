@@ -45,7 +45,7 @@ const CreateRoomDialog = ({ onClose }: { onClose: () => void }) => {
       style={{
         position: 'fixed',
         inset: 0,
-        background: 'rgba(26,26,23,0.35)',
+        background: tokens.color.scrim,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -145,6 +145,8 @@ export const Sidebar = () => {
     <aside
       style={{
         width: 240,
+        minWidth: 240,
+        flexShrink: 0,
         background: tokens.color.paper1,
         borderRight: `1px solid ${tokens.color.rule}`,
         display: 'flex',

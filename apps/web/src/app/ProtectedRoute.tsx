@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useMe } from '../features/auth/useMe';
+import { tokens } from '../ds';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -18,9 +19,9 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontFamily: 'var(--mono)',
+          fontFamily: tokens.type.mono,
           fontSize: 12,
-          color: 'var(--ink-2)',
+          color: tokens.color.ink2,
         }}
       >
         loading…

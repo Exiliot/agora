@@ -1,8 +1,13 @@
+/* tokens.css MUST come before @tailwind — per CSS spec @import statements
+   only take effect when they precede other rules. The audit caught this
+   ordering bug as the root cause of roughly every "tokens not loading"
+   symptom (white body, borderless inputs, invisible button chrome, accent
+   underlines everywhere). Do not reorder. */
+@import './tokens.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import './tokens.css';
 
 @layer base {
   html,

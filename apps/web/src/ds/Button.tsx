@@ -27,7 +27,7 @@ const sizeStyles: Record<ButtonSize, CSSProperties> = {
 
 const variantStyles: Record<ButtonVariant, CSSProperties> = {
   default: {
-    background: 'linear-gradient(180deg, #fdfaf1 0%, #f1ebda 100%)',
+    background: tokens.gradient.chrome,
     border: `1px solid ${tokens.color.rule}`,
     color: tokens.color.ink0,
     boxShadow: '0 1px 0 rgba(255,255,255,.7) inset, 0 1px 0 rgba(0,0,0,.03)',
