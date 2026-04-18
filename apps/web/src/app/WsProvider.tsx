@@ -1,11 +1,15 @@
 import { createContext, useContext, useEffect, useMemo, type ReactNode } from 'react';
 import { useQueryClient, type InfiniteData } from '@tanstack/react-query';
 import { create } from 'zustand';
-import type { MessageView, PresenceState } from '@agora/shared';
+import type { MessageView, NotificationView, PresenceState } from '@agora/shared';
 import { createWsClient, type WsClient } from '../lib/wsClient';
 import { backfillAllConversations } from '../features/messages/backfill';
 import { useLastSeenStore } from '../features/messages/lastSeen';
 import type { MessagesPage } from '../features/messages/useMessages';
+import type {
+  NotificationsInfiniteData,
+  NotificationsPage,
+} from '../features/notifications/useNotifications';
 
 type MessagesInfiniteData = InfiniteData<MessagesPage, string | null>;
 
@@ -162,6 +166,69 @@ export const WsProvider = ({ enabled, children }: WsProviderProps) => {
       queryClient.invalidateQueries({ queryKey: ['invitations'] });
     });
 
+    const unsubNotificationCreated = client.on('notification.created', (event) => {
+      const payload = event.payload as NotificationView | undefined;
+      if (!payload) return;
+      queryClient.setQueryData<NotificationsInfiniteData>(['notifications'], (old) => {
+        if (!old) return old;
+        const [first, ...rest] = old.pages;
+        if (!first) return old;
+        // collapse: if a row with the same id or (kind, subjectId, unread) exists
+        // in page 0, update it in place; otherwise prepend.
+        const sameSubjectUnreadIdx = first.notifications.findIndex(
+          (n) =>
+            n.id === payload.id ||
+            (n.readAt === null &&
+              n.kind === payload.kind &&
+              n.subjectId === payload.subjectId),
+        );
+        const nextFirst: NotificationsPage =
+          sameSubjectUnreadIdx >= 0
+            ? {
+                notifications: first.notifications.map((n, idx) =>
+                  idx === sameSubjectUnreadIdx ? payload : n,
+                ),
+              }
+            : { notifications: [payload, ...first.notifications] };
+        return { ...old, pages: [nextFirst, ...rest] };
+      });
+      // Only bump the unread counter if this is actually a NEW unread row, not
+      // a collapse update of an existing one. The server's aggregate_count goes
+      // up but unread-count (distinct rows) stays the same. The cheapest
+      // reconciliation is to invalidate and let the scalar endpoint re-fetch.
+      queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] });
+    });
+
+    const unsubNotificationRead = client.on('notification.read', (event) => {
+      const payload = event.payload as { id: string } | undefined;
+      if (!payload) return;
+      const nowIso = new Date().toISOString();
+      queryClient.setQueryData<NotificationsInfiniteData>(['notifications'], (old) => {
+        if (!old) return old;
+        const pages = old.pages.map((p) => ({
+          notifications: p.notifications.map((n) =>
+            n.id === payload.id && n.readAt === null ? { ...n, readAt: nowIso } : n,
+          ),
+        }));
+        return { ...old, pages };
+      });
+      queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] });
+    });
+
+    const unsubNotificationReadAll = client.on('notification.read_all', () => {
+      const nowIso = new Date().toISOString();
+      queryClient.setQueryData<NotificationsInfiniteData>(['notifications'], (old) => {
+        if (!old) return old;
+        const pages = old.pages.map((p) => ({
+          notifications: p.notifications.map((n) =>
+            n.readAt ? n : { ...n, readAt: nowIso },
+          ),
+        }));
+        return { ...old, pages };
+      });
+      queryClient.setQueryData<{ count: number }>(['notifications', 'unread-count'], { count: 0 });
+    });
+
     const activityHandler = () => client.send({ type: 'heartbeat', payload: {} });
     window.addEventListener('pointermove', activityHandler);
     window.addEventListener('keydown', activityHandler);
@@ -180,6 +247,9 @@ export const WsProvider = ({ enabled, children }: WsProviderProps) => {
       unsubscribeFriendship();
       unsubscribeFriendRequest();
       unsubscribeInvitation();
+      unsubNotificationCreated();
+      unsubNotificationRead();
+      unsubNotificationReadAll();
       window.removeEventListener('pointermove', activityHandler);
       window.removeEventListener('keydown', activityHandler);
       window.removeEventListener('focus', activityHandler);
