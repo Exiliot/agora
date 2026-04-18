@@ -1,7 +1,29 @@
 import { useEffect, useRef } from 'react';
-import type { ConversationType, MessageView } from '@agora/shared';
-import { MessageRow, colorForName, tokens } from '../../ds';
+import type { AttachmentSummary, ConversationType, MessageView } from '@agora/shared';
+import { FileCard, MessageRow, colorForName, tokens } from '../../ds';
 import { useMessages } from '../../features/messages/useMessages';
+
+const humanSize = (bytes: number): string => {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
+
+const AttachmentPreview = ({ attachment }: { attachment: AttachmentSummary }) => {
+  const isImage = attachment.mimeType.startsWith('image/');
+  const href = `/api/attachments/${attachment.id}/download`;
+  const kind = attachment.mimeType.split('/')[1]?.slice(0, 4) ?? 'file';
+  return (
+    <FileCard
+      name={attachment.originalFilename}
+      size={humanSize(attachment.size)}
+      kind={kind}
+      image={isImage}
+      href={href}
+      {...(attachment.comment ? { comment: attachment.comment } : {})}
+    />
+  );
+};
 
 interface MessageListProps {
   conversationType: ConversationType;
@@ -81,9 +103,16 @@ export const MessageList = ({ conversationType, conversationId }: MessageListPro
             color={colorForName(msg.author?.username ?? '?')}
             deleted={Boolean(msg.deletedAt)}
           >
-            {msg.body}
+            {msg.body !== '(attachment)' || msg.attachments.length === 0 ? msg.body : ''}
             {msg.editedAt ? (
               <span style={{ color: tokens.color.ink3, fontSize: 11, marginLeft: 6 }}>(edited)</span>
+            ) : null}
+            {msg.attachments.length > 0 ? (
+              <div style={{ marginTop: 4, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {msg.attachments.map((a) => (
+                  <AttachmentPreview key={a.id} attachment={a} />
+                ))}
+              </div>
             ) : null}
           </MessageRow>
         ))
