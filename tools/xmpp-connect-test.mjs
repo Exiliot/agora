@@ -4,8 +4,13 @@
  * one of the Prosody servers (server-a / server-b) using their agora
  * credentials via the HTTP-auth bridge.
  *
+ * Prefers direct-TLS (port 5223 / 5323) so SASL PLAIN negotiates cleanly.
+ *
  * Usage:
  *   node tools/xmpp-connect-test.mjs <a|b> <username> <password>
+ *
+ * Requires NODE_TLS_REJECT_UNAUTHORIZED=0 because Prosody presents a
+ * self-signed cert in the demo compose network.
  */
 
 import { client, xml } from '@xmpp/client';
@@ -16,11 +21,11 @@ if (!server || !username || !password) {
   process.exit(2);
 }
 
-const port = server === 'b' ? 5223 : 5222;
+const port = server === 'b' ? 5323 : 5223;
 const domain = `server-${server}`;
 
 const xmpp = client({
-  service: `xmpp://localhost:${port}`,
+  service: `xmpps://localhost:${port}`,
   domain,
   username,
   password,

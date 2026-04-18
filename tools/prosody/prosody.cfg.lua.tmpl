@@ -41,6 +41,9 @@ allow_registration = false
 interfaces = { "*" }
 c2s_ports = { 5222 }
 s2s_ports = { 5269 }
+-- Direct-TLS c2s on 5223: skips STARTTLS negotiation, XMPP clients connect
+-- with TLS already established. Gives xmpp.js a predictable SASL context.
+c2s_direct_tls_ports = { 5223 }
 
 log = {
   { levels = { min = "debug" }, to = "console" };

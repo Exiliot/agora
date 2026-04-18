@@ -34,12 +34,32 @@ Then:
 - **Accounts**: register, sign-in/out, password-reset (mock email, reset URL logged to stdout), password change, delete account with cascade.
 - **Sessions**: server-side, DB-backed, individually revocable, sliding 14-day expiry.
 - **Rooms**: create/browse/search public, invite-only private, join/leave, owner + admins with promote/demote, ban with read-only history for the banned user, delete with cascade.
-- **Messages**: real-time over WebSockets, send/edit/delete, UTF-8 + multiline + emoji, reply threading, infinite-scroll history, unread counters.
+- **Messages**: real-time over WebSockets, send/edit/delete, UTF-8 + multiline + emoji, reply threading, infinite-scroll history, unread counters. Message list is virtualised (`@tanstack/react-virtual`) to hold 10k+ messages smoothly.
 - **DMs**: open from Contacts, friendship-gated, identical message feature set.
 - **Contacts**: friend requests (send/accept/reject/cancel), unfriend, user-to-user ban with history preserved read-only.
 - **Presence**: in-memory multi-tab state machine with online / AFK / offline states (AFK after 60s of no interaction across all tabs, offline when all tabs close).
 - **Attachments**: upload via `POST /api/attachments` (20 MB file / 3 MB image caps), content-addressed disk storage, ACL checked at download against current membership, orphan sweep every 15 min, cascade on room delete.
 - **Moderation**: room management modal with members, banned users, invitations, settings tabs.
+- **XMPP federation (stretch goal)**: optional two-server Prosody overlay with HTTP-auth bridge into agora's argon2id store, dialback s2s, and a 50-client load test. See below.
+
+## XMPP federation
+
+Optional Phase 2 overlay per [ADR-0005](docs/adrs/0005-xmpp-sidecar.md). Spins two Prosody 0.12 instances beside the main stack; both delegate authentication to agora via HTTP so a single set of credentials works for web chat and XMPP clients.
+
+```sh
+# base stack + XMPP overlay
+docker compose -f docker-compose.yml -f docker-compose.xmpp.yml up --build -d
+
+# verify cross-server delivery (ST-XMPP-1 + ST-XMPP-2)
+NODE_TLS_REJECT_UNAUTHORIZED=0 node tools/xmpp-federation-test.mjs
+
+# 50-client federation load test (ST-XMPP-3)
+NODE_TLS_REJECT_UNAUTHORIZED=0 node tools/xmpp-load-test.mjs 50
+```
+
+Observed on the reference setup: 50/50 messages delivered across the s2s link, p50 = 10 ms, p95 = 13 ms. The load-test harness enforces ≥ 95% delivery at p95 ≤ 5000 ms and exits non-zero on miss.
+
+`NODE_TLS_REJECT_UNAUTHORIZED=0` is present because Prosody uses a self-signed cert inside the compose network. Direct-TLS c2s on port 5223 (`xmpps://`), s2s via XEP-0220 dialback. The journal trail is in `docs/journal/2026-04-18-xmpp-*.md` if you want the debug story rather than the final setup.
 
 ## Stack
 

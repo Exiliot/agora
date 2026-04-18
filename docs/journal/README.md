@@ -27,6 +27,7 @@ The point isn't just a submission artefact. It's so that after the hackathon we 
 | 2026-04-18 | XMPP sidecar spike (initial, obsoleted by federation entry) | [2026-04-18-xmpp-spike.md](2026-04-18-xmpp-spike.md) |
 | 2026-04-18 | Afternoon — polish, virtualisation, audits, wave-1 fixes | [2026-04-18-afternoon.md](2026-04-18-afternoon.md) |
 | 2026-04-18 | XMPP federation on main (continuation) | [2026-04-18-xmpp-federation.md](2026-04-18-xmpp-federation.md) |
+| 2026-04-18 | XMPP federation working + load test PASS | [2026-04-18-xmpp-working.md](2026-04-18-xmpp-working.md) |
 
 ## The philosophy underneath
 

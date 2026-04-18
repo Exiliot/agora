@@ -7,6 +7,14 @@
 # compose network. Both authenticate users against agora's HTTP endpoint, so
 # any registered agora user can sign in as <username>@server-a or
 # <username>@server-b.
+#
+# Host port map:
+#   5222  → prosody-a c2s (STARTTLS)
+#   5223  → prosody-a c2s direct-TLS (xmpps://)
+#   5269  → prosody-a s2s
+#   5322  → prosody-b c2s (STARTTLS)
+#   5323  → prosody-b c2s direct-TLS (xmpps://)
+#   5369  → prosody-b s2s
 
 services:
   api:
@@ -26,6 +34,7 @@ services:
       PROSODY_AUTH_URL: "http://api:3000/internal/xmpp/auth"
     ports:
       - "5222:5222"
+      - "5223:5223"
       - "5269:5269"
     networks:
       default:
@@ -44,8 +53,9 @@ services:
       PROSODY_MUC_DOMAIN: "rooms.server-b"
       PROSODY_AUTH_URL: "http://api:3000/internal/xmpp/auth"
     ports:
-      - "5223:5222"
-      - "5270:5269"
+      - "5322:5222"
+      - "5323:5223"
+      - "5369:5269"
     networks:
       default:
         aliases:

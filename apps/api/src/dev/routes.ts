@@ -1,23 +1,36 @@
 /**
  * Dev-only helpers for load-testing and seeding. Gated behind
  * `ALLOW_DEV_SEED=1`. Never enable in production — it lets any authenticated
- * user create arbitrary history.
+ * user create arbitrary history, and any unauthenticated caller to pre-
+ * provision users in bulk.
  */
 
 import type { FastifyInstance } from 'fastify';
+import { sql } from 'drizzle-orm';
 import { uuidv7 } from 'uuidv7';
 import { z } from 'zod';
 import { config } from '../config.js';
 import { db } from '../db/client.js';
-import { messages } from '../db/schema.js';
+import { messages, users } from '../db/schema.js';
 import { addRouteModule } from '../routes/registry.js';
 import { requireAuth } from '../session/require-auth.js';
 import { canAccessDm, canAccessRoom } from '../messages/permissions.js';
+import { hashPassword } from '../auth/password.js';
 
 const seedBody = z.object({
   conversationType: z.enum(['room', 'dm']),
   conversationId: z.string().uuid(),
   count: z.number().int().min(1).max(20000),
+});
+
+const bulkRegisterBody = z.object({
+  prefix: z
+    .string()
+    .min(2)
+    .max(24)
+    .regex(/^[a-z][a-z0-9._-]*$/, 'prefix must match username rules'),
+  count: z.number().int().min(1).max(2000),
+  password: z.string().min(8).default('password123'),
 });
 
 addRouteModule({
@@ -27,6 +40,39 @@ addRouteModule({
       app.log.info('dev routes disabled (set ALLOW_DEV_SEED=1 to enable)');
       return;
     }
+
+    // Bulk-register is NOT behind requireAuth — load tests start with no
+    // accounts. It is gated behind the same ALLOW_DEV_SEED flag and is a
+    // deliberate dev-only escape hatch for rate-limited registration.
+    app.post('/api/dev/bulk-register', async (req, reply) => {
+      const parsed = bulkRegisterBody.safeParse(req.body);
+      if (!parsed.success) {
+        return reply.code(400).send({ error: 'validation', issues: parsed.error.issues });
+      }
+      const { prefix, count, password } = parsed.data;
+      const passwordHash = await hashPassword(password);
+      const now = new Date();
+
+      const values = Array.from({ length: count }, (_, i) => {
+        const username = `${prefix}${i}`;
+        return {
+          id: uuidv7(),
+          email: `${username}@load.test`,
+          username,
+          passwordHash,
+          createdAt: now,
+          updatedAt: now,
+        };
+      });
+
+      const inserted = await db
+        .insert(users)
+        .values(values)
+        .onConflictDoNothing()
+        .returning({ username: users.username });
+
+      return reply.send({ inserted: inserted.length, usernames: inserted.map((u) => u.username) });
+    });
 
     app.register(async (scoped) => {
       scoped.addHook('onRequest', requireAuth);
@@ -54,7 +100,6 @@ addRouteModule({
         for (let offset = 0; offset < count; offset += BATCH) {
           const slice = Math.min(BATCH, count - offset);
           const values = Array.from({ length: slice }, (_, i) => {
-            // Spread timestamps across the past so k-sorted ids grow forward.
             const createdAt = new Date(now - (count - (offset + i)) * 1000);
             const id = uuidv7();
             latestId = id;

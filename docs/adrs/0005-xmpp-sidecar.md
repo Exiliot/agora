@@ -1,6 +1,6 @@
 # ADR-0005 · XMPP federation as a sidecar, not a retrofit
 
-- **Status**: Accepted (for Phase 2), 2026-04-18; **In progress on the `phase2-xmpp` branch**
+- **Status**: Accepted + implemented on `main`, 2026-04-18
 - **Relates to**: ST-XMPP-1..4, AC-QUEUE-1, requirements file 99
 
 ## Context
@@ -55,6 +55,17 @@ A separate `tools/load-test-federation/` script using `@xmpp/client` in Node spa
 
 If the hackathon ends without Phase 2 being implemented, this ADR remains `Accepted` as the agreed strategy. A future Phase 2 opens a plan file (`docs/plans/phase2-xmpp.md`) that executes the topology above with no ADR revision needed.
 
-## Implementation progress on `phase2-xmpp` branch
+## Implementation on `main`
 
-Captured in `docs/journal/2026-04-18-xmpp-spike.md`. Summary: Prosody container + HTTP-auth hook into agora is a ~day of work; full two-server federation with load test is 2–3 days including debugging.
+Shipped in a single hackathon day. Trail of journal entries:
+
+1. `docs/journal/2026-04-18-xmpp-spike.md` – single-server HTTP-auth proof.
+2. `docs/journal/2026-04-18-xmpp-federation.md` – two-server compose overlay, dialback s2s, SASL wall documented.
+3. `docs/journal/2026-04-18-xmpp-working.md` – SASL unblocked (direct-TLS c2s + `mod_auth_http` GET contract), federation smoke green, 50-client load test PASS (50/50 delivered, p95 = 13 ms).
+
+Two concrete deltas vs. the Decision section above:
+
+- **c2s uses direct-TLS on port 5223** (`xmpps://`) instead of STARTTLS on 5222. Prosody 0.12 under self-signed certs didn't advertise `<starttls>` cleanly; direct-TLS is simpler and was the right cut for a demo-grade setup. Production would prefer STARTTLS with a real CA.
+- **s2s uses dialback (XEP-0220)** instead of mutual-CA x509. No pre-shared certs required; Prosody-A validates Prosody-B's origin via a DNS-anchored challenge. Appropriate for demo federation; production would layer real TLS on top of dialback or use mutual-CA.
+
+Neither change alters the ADR's conclusion; both are implementation details below the Decision surface.
