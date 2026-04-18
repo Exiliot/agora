@@ -3,6 +3,7 @@ import { reqIdSchema } from './envelope.js';
 import { presenceState, presenceEntry } from '../presence/index.js';
 import { userPublic } from '../users/index.js';
 import { messageView, sendMessagePayload, editMessagePayload, deleteMessagePayload, markReadPayload } from '../messages/index.js';
+import { clientFocusEvent } from '../notifications/index.js';
 
 // --- client → server events ---------------------------------------------------
 
@@ -64,6 +65,7 @@ export const clientToServerEvent = z.discriminatedUnion('type', [
   messageEditEvent,
   messageDeleteEvent,
   markReadEvent,
+  clientFocusEvent,
 ]);
 
 export type HelloEvent = z.infer<typeof helloEvent>;
