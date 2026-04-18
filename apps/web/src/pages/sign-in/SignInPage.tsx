@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Button, Check, Col, Input, Modal, Row } from '../../ds';
+import { Button, Check, Col, Input, Modal, Row, tokens } from '../../ds';
 import { useSignIn } from '../../features/auth/useSignIn';
 import { ApiError } from '../../lib/apiClient';
 
@@ -35,6 +35,8 @@ const SignInPage = () => {
     );
   };
 
+  const hasError = Boolean(error);
+
   return (
     <Modal title="Sign in" width={360}>
       <form onSubmit={handleSubmit}>
@@ -44,6 +46,7 @@ const SignInPage = () => {
             type="email"
             autoComplete="email"
             required
+            error={hasError}
             value={email}
             onChange={(event) => setEmail(event.target.value)}
           />
@@ -52,25 +55,44 @@ const SignInPage = () => {
             type="password"
             autoComplete="current-password"
             required
+            error={hasError}
             value={password}
             onChange={(event) => setPassword(event.target.value)}
           />
           <Check label="Keep me signed in" defaultChecked />
           {error ? (
-            <div role="alert" style={{ fontSize: 12, color: 'var(--danger)' }}>
+            <div
+              role="alert"
+              style={{
+                fontSize: 12,
+                color: tokens.color.danger,
+                background: tokens.color.dangerSoft,
+                borderLeft: `3px solid ${tokens.color.danger}`,
+                padding: '6px 10px',
+              }}
+            >
               {error}
             </div>
           ) : null}
           <Row gap={8} style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-            <Link to="/reset" style={{ fontSize: 12, color: 'var(--accent)' }}>
+            <Link
+              to="/reset"
+              style={{ fontSize: 12, color: tokens.color.accent, textDecoration: 'underline' }}
+            >
               Forgot password?
             </Link>
             <Button type="submit" variant="primary" disabled={signIn.isPending}>
               {signIn.isPending ? '…' : 'Sign in'}
             </Button>
           </Row>
-          <div style={{ fontSize: 12, color: 'var(--ink-2)' }}>
-            No account yet? <Link to="/register" style={{ color: 'var(--accent)' }}>Register</Link>
+          <div style={{ fontSize: 12, color: tokens.color.ink2 }}>
+            No account yet?{' '}
+            <Link
+              to="/register"
+              style={{ color: tokens.color.accent, textDecoration: 'underline' }}
+            >
+              Register
+            </Link>
           </div>
         </Col>
       </form>
