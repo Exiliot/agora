@@ -1,11 +1,12 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useMyRooms } from '../../features/rooms/useRooms';
 import { useRoom } from '../../features/rooms/useRoom';
-import { Badge, Meta, Presence, Row, tokens } from '../../ds';
+import { Badge, Button, Meta, Presence, Row, tokens } from '../../ds';
 import { MessageList } from './MessageList';
 import { Composer } from './Composer';
 import { Sidebar } from './Sidebar';
+import { ManageRoomModal } from './ManageRoomModal';
 
 const RoomHeader = ({ roomName, description, memberCount, visibility }: {
   roomName: string;
@@ -43,6 +44,7 @@ const ChatView = () => {
     [myRooms, roomName],
   );
   const { data: detail } = useRoom(room?.id ?? null);
+  const [manageOpen, setManageOpen] = useState(false);
 
   if (!roomName) {
     return (
@@ -140,7 +142,17 @@ const ChatView = () => {
             </div>
           ))}
         </div>
+        {detail && (detail.myRole === 'owner' || detail.myRole === 'admin') ? (
+          <div style={{ marginTop: 12 }}>
+            <Button size="sm" style={{ width: '100%' }} onClick={() => setManageOpen(true)}>
+              Manage room
+            </Button>
+          </div>
+        ) : null}
       </aside>
+      {manageOpen && detail ? (
+        <ManageRoomModal room={detail} onClose={() => setManageOpen(false)} />
+      ) : null}
     </div>
   );
 };
