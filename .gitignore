@@ -44,3 +44,6 @@ __pycache__/
 *.pyc
 .venv/
 .claude/worktrees/
+
+# Ad-hoc captures for design review — keep local, not a deliverable
+screenshots/

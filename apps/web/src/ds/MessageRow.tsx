@@ -41,7 +41,7 @@ export const MessageRow = ({
           fontFamily: tokens.type.mono,
           fontSize: 12,
           color: tokens.color.ink2,
-          padding: '2px 12px',
+          padding: '2px 16px',
           fontStyle: 'italic',
         }}
       >
@@ -57,7 +57,7 @@ export const MessageRow = ({
       style={{
         display: 'flex',
         gap: 10,
-        padding: '3px 12px',
+        padding: '2px 16px',
         fontFamily: tokens.type.mono,
         fontSize: 13,
         lineHeight: 1.5,

@@ -32,8 +32,19 @@ import {
 } from '../../features/rooms/useRoomAdmin';
 
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
-  <section style={{ marginTop: 28 }}>
-    <div style={{ fontFamily: tokens.type.serif, fontSize: 16, marginBottom: 6 }}>{title}</div>
+  <section style={{ marginTop: 24 }}>
+    <h2
+      style={{
+        margin: '0 0 6px',
+        fontFamily: tokens.type.sans,
+        fontSize: 13,
+        fontWeight: 600,
+        color: tokens.color.ink1,
+        letterSpacing: 0.2,
+      }}
+    >
+      {title}
+    </h2>
     {children}
   </section>
 );
@@ -273,9 +284,19 @@ const Invitations = () => {
 };
 
 const ContactsPage = () => (
-  <div style={{ flex: 1, padding: '24px 32px', overflow: 'auto' }}>
-    <div style={{ maxWidth: 760 }}>
-      <div style={{ fontFamily: tokens.type.serif, fontSize: 22 }}>Contacts</div>
+  <div style={{ flex: 1, padding: '20px 24px', overflow: 'auto' }}>
+    <div style={{ maxWidth: 720 }}>
+      <h1
+        style={{
+          margin: 0,
+          fontFamily: tokens.type.sans,
+          fontSize: 18,
+          fontWeight: 600,
+          color: tokens.color.ink0,
+        }}
+      >
+        Contacts
+      </h1>
       <div style={{ fontSize: 12, color: tokens.color.ink2, marginTop: 4 }}>
         Add people by username, accept incoming requests, manage bans. Personal messages are only
         allowed between friends.

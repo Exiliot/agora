@@ -43,7 +43,7 @@ export const RootLayout = () => {
         style={{
           display: 'flex',
           alignItems: 'center',
-          height: 56,
+          height: 44,
           padding: '0 16px',
           background: tokens.color.paper1,
           borderBottom: `1px solid ${tokens.color.rule}`,
@@ -89,12 +89,13 @@ export const RootLayout = () => {
         </nav>
         {user ? (
           <>
-            <NavTab as="span" style={{ cursor: 'default' }}>
+            <NavTab as="span" plain>
               {user.username}
             </NavTab>
             <NavTab
               as="button"
               danger
+              plain
               onClick={() => signOut.mutate(undefined, { onSuccess: () => go('/sign-in') })}
             >
               Sign out

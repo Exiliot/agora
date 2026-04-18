@@ -19,10 +19,20 @@ const PublicRoomsPage = () => {
   };
 
   return (
-    <div style={{ flex: 1, padding: '24px 32px', overflow: 'auto' }}>
+    <div style={{ flex: 1, padding: '20px 24px', overflow: 'auto' }}>
       <div style={{ maxWidth: 720 }}>
         <Row gap={12} style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ fontFamily: tokens.type.serif, fontSize: 22 }}>Public rooms</div>
+          <h1
+            style={{
+              margin: 0,
+              fontFamily: tokens.type.sans,
+              fontSize: 18,
+              fontWeight: 600,
+              color: tokens.color.ink0,
+            }}
+          >
+            Public rooms
+          </h1>
           <Input
             placeholder="Search rooms…"
             value={search}

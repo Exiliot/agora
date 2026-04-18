@@ -47,10 +47,12 @@ const DmView = () => {
             background: tokens.color.paper1,
           }}
         >
-          <div style={{ fontFamily: tokens.type.sans, fontSize: 14, fontWeight: 600 }}>
+          <div style={{ fontFamily: tokens.type.mono, fontSize: 14, fontWeight: 600 }}>
             @ {dm.otherUser.username}
           </div>
-          <div style={{ fontSize: 11, color: tokens.color.ink2 }}>direct message</div>
+          <div style={{ fontFamily: tokens.type.sans, fontSize: 11, color: tokens.color.ink2 }}>
+            direct message
+          </div>
         </div>
         <MessageList conversationType="dm" conversationId={dm.id} />
         <Composer conversationType="dm" conversationId={dm.id} />

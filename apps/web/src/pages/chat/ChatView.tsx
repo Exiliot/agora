@@ -27,17 +27,17 @@ const RoomHeader = ({ roomName, description, memberCount, visibility }: {
       background: tokens.color.paper1,
     }}
   >
-    <div style={{ fontFamily: tokens.type.sans, fontSize: 14, fontWeight: 600 }}># {roomName}</div>
+    <div style={{ fontFamily: tokens.type.mono, fontSize: 14, fontWeight: 600 }}># {roomName}</div>
     {description ? (
       <div style={{ fontFamily: tokens.type.sans, fontSize: 12, color: tokens.color.ink2 }}>
         {description}
       </div>
     ) : null}
-    <Row gap={6} style={{ marginTop: 6 }}>
+    <Row gap={12} style={{ marginTop: 6, alignItems: 'center' }}>
       <Badge tone={visibility === 'private' ? 'private' : 'neutral'}>{visibility}</Badge>
-      <Badge>
+      <span style={{ fontFamily: tokens.type.mono, fontSize: 12, color: tokens.color.ink2 }}>
         {memberCount} {memberCount === 1 ? 'member' : 'members'}
-      </Badge>
+      </span>
     </Row>
   </div>
 );

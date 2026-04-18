@@ -46,7 +46,7 @@ export const Composer = ({ conversationType, conversationId }: ComposerProps) =>
       style={{
         borderTop: `1px solid ${tokens.color.rule}`,
         background: tokens.color.paper1,
-        padding: 12,
+        padding: '8px 12px',
       }}
     >
       <div
@@ -89,7 +89,7 @@ export const Composer = ({ conversationType, conversationId }: ComposerProps) =>
         >
           <span
             id={hintId}
-            style={{ fontFamily: tokens.type.mono, fontSize: 11, color: tokens.color.ink3 }}
+            style={{ fontFamily: tokens.type.mono, fontSize: 12, color: tokens.color.ink2 }}
           >
             ⏎ send · ⇧⏎ newline
           </span>

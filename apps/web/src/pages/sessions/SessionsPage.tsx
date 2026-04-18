@@ -8,9 +8,19 @@ const SessionsPage = () => {
   const revoke = useRevokeSession();
 
   return (
-    <div style={{ flex: 1, padding: '24px 32px', overflow: 'auto' }}>
-      <div style={{ maxWidth: 900 }}>
-        <div style={{ fontFamily: tokens.type.serif, fontSize: 22 }}>Active sessions</div>
+    <div style={{ flex: 1, padding: '20px 24px', overflow: 'auto' }}>
+      <div style={{ maxWidth: 720 }}>
+        <h1
+          style={{
+            margin: 0,
+            fontFamily: tokens.type.sans,
+            fontSize: 18,
+            fontWeight: 600,
+            color: tokens.color.ink0,
+          }}
+        >
+          Active sessions
+        </h1>
         <div style={{ fontSize: 12, color: tokens.color.ink2, marginTop: 4 }}>
           Signing out here ends that browser's session only. The current session is highlighted.
         </div>
