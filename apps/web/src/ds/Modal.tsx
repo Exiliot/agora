@@ -10,6 +10,8 @@ interface ModalProps {
 
 export const Modal = ({ title, children, onClose, width = 420 }: ModalProps) => (
   <div
+    role="dialog"
+    aria-label={title}
     style={{
       width,
       background: '#fff',
@@ -34,7 +36,7 @@ export const Modal = ({ title, children, onClose, width = 420 }: ModalProps) => 
         letterSpacing: 0.1,
       }}
     >
-      <span>{title}</span>
+      <h2 style={{ margin: 0, fontSize: 12, fontWeight: 600 }}>{title}</h2>
       <button
         type="button"
         onClick={onClose}
@@ -54,3 +56,4 @@ export const Modal = ({ title, children, onClose, width = 420 }: ModalProps) => 
     <div style={{ padding: 16 }}>{children}</div>
   </div>
 );
+

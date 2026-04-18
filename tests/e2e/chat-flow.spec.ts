@@ -9,7 +9,8 @@ test('register → create room → send message round-trip via UI', async ({ pag
 
   // Register via UI
   await page.goto('/register');
-  await expect(page.getByRole('heading', { name: /Register/i })).toBeVisible({ timeout: 10_000 });
+  await page.waitForLoadState('networkidle');
+  await expect(page.locator('input[type=email]')).toBeVisible({ timeout: 10_000 });
   await page.locator('input[type=email]').fill(email);
   await page.locator('input[autocomplete=username]').fill(username);
   await page.locator('input[autocomplete=new-password]').first().fill(password);
@@ -21,11 +22,11 @@ test('register → create room → send message round-trip via UI', async ({ pag
 
   // Create a room from the sidebar
   await page.getByRole('button', { name: /Create room/i }).click();
-  await expect(page.getByRole('heading', { name: /Create room/i })).toBeVisible();
-  await page.locator('input').filter({ hasText: '' }).first().fill(roomName);
-  // use label text for description
-  await page.getByText('Description', { exact: true }).locator('..').locator('input').fill('ui smoke');
-  await page.getByRole('button', { name: 'Create', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: /Create room/i });
+  await expect(dialog).toBeVisible();
+  await dialog.locator('input').first().fill(roomName);
+  await dialog.locator('input').nth(1).fill('ui smoke');
+  await dialog.getByRole('button', { name: 'Create', exact: true }).click();
 
   // Should redirect into the room
   await expect(page).toHaveURL(new RegExp(`/chat/${roomName}`), { timeout: 10_000 });

@@ -43,3 +43,4 @@ blob-report/
 __pycache__/
 *.pyc
 .venv/
+.claude/worktrees/

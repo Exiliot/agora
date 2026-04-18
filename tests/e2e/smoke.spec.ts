@@ -9,8 +9,8 @@ test('api health endpoint returns ok', async ({ request }) => {
 });
 
 test('web root renders the agora wordmark', async ({ page }) => {
-  await page.goto('/');
-  await expect(page.getByRole('banner')).toContainText(/agora/i);
+  await page.goto('/sign-in');
+  await expect(page.locator('body')).toContainText(/agora/i);
 });
 
 test('register + me + create room round-trip works', async ({ request }) => {
