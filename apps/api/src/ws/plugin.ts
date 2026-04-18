@@ -12,6 +12,7 @@ import {
 import { dispatchWsEvent } from './dispatcher.js';
 import { connectionLifecycle } from './lifecycle.js';
 import { canSubscribeToTopic } from './topic-acl.js';
+import { userFocusRegistry } from './user-focus.js';
 import { userTopic } from '../bus/topics.js';
 
 export interface AuthedUser {
@@ -104,6 +105,14 @@ export const registerWsPlugin = (app: FastifyInstance): void => {
         void dispatchWsEvent({ conn }, e);
         return;
       }
+      if (e.type === 'client.focus') {
+        if (e.payload.subjectType === null || e.payload.subjectId === null) {
+          userFocusRegistry.clear(conn.userId);
+        } else {
+          userFocusRegistry.set(conn.userId, e.payload.subjectType, e.payload.subjectId);
+        }
+        return;
+      }
       if (e.type === 'subscribe') {
         const topic = e.payload.topic;
         const reqId = e.reqId;
@@ -134,6 +143,9 @@ export const registerWsPlugin = (app: FastifyInstance): void => {
       connectionLifecycle.emit('close', conn);
       unsubscribeAll(conn);
       connections.remove(conn);
+      if (connections.forUser(user.id).length === 0) {
+        userFocusRegistry.clear(user.id);
+      }
       app.log.debug({ connId: conn.id, userId: user.id }, 'ws disconnected');
     });
   });
