@@ -52,6 +52,60 @@ const formatTime = (iso: string): string => {
   return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
 };
 
+const localDateKey = (iso: string): string => {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d
+    .getDate()
+    .toString()
+    .padStart(2, '0')}`;
+};
+
+const formatDateLabel = (iso: string): string => {
+  const d = new Date(iso);
+  const now = new Date();
+  const sameDay =
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate();
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  const sameYesterday =
+    d.getFullYear() === yesterday.getFullYear() &&
+    d.getMonth() === yesterday.getMonth() &&
+    d.getDate() === yesterday.getDate();
+
+  if (sameDay) return 'Today';
+  if (sameYesterday) return 'Yesterday';
+  // Mon 14 Apr 2026 · keeps it mono-friendly and unambiguous
+  return d.toLocaleDateString(undefined, {
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+};
+
+const DaySeparator = ({ iso }: { iso: string }) => (
+  <div
+    role="separator"
+    aria-label={formatDateLabel(iso)}
+    style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: 10,
+      padding: '14px 16px 6px',
+      fontFamily: tokens.type.mono,
+      fontSize: 11,
+      color: tokens.color.ink2,
+      letterSpacing: 0.2,
+    }}
+  >
+    <span style={{ flex: 1, height: 1, background: tokens.color.rule }} aria-hidden="true" />
+    <span style={{ flexShrink: 0 }}>{formatDateLabel(iso)}</span>
+    <span style={{ flex: 1, height: 1, background: tokens.color.rule }} aria-hidden="true" />
+  </div>
+);
+
 const MessageActions = ({
   visible,
   canEdit,
@@ -313,6 +367,8 @@ export const MessageList = ({ conversationType, conversationId, myRoomRole }: Me
   const [editingId, setEditingId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<MessageView | null>(null);
 
+  const [isAtBottom, setIsAtBottom] = useState(true);
+
   const startEdit = (id: string) => {
     setEditingId(id);
     setHoveredId(null);
@@ -380,6 +436,17 @@ export const MessageList = ({ conversationType, conversationId, myRoomRole }: Me
     if (latestId) useLastSeenStore.getState().note(conversationType, conversationId, latestId);
   }, [latestId, conversationType, conversationId]);
 
+  // isAtBottom toggles the jump-to-latest pill. Wired via React's onScroll
+  // (bound on the scroller element below) rather than a useEffect listener —
+  // the effect bound against a ref-captured scroller wasn't firing cleanly
+  // under HMR / remount churn.
+  const handleScroll = () => {
+    const scroller = scrollRef.current;
+    if (!scroller) return;
+    const distanceFromBottom = scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight;
+    setIsAtBottom(distanceFromBottom < 48);
+  };
+
   // Auto-load older messages when the top sentinel scrolls into view.
   // Scroll position is preserved by remembering the current scrollHeight and
   // restoring scrollTop + (newHeight - oldHeight) once the fetch resolves.
@@ -428,12 +495,22 @@ export const MessageList = ({ conversationType, conversationId, myRoomRole }: Me
 
   return (
     <div
+      style={{
+        flex: 1,
+        position: 'relative',
+        minHeight: 0,
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+    <div
       ref={scrollRef}
       data-testid="message-scroller"
       role="log"
       aria-live="polite"
       aria-relevant="additions text"
       aria-label="Message history"
+      onScroll={handleScroll}
       style={{
         flex: 1,
         overflowY: 'auto',
@@ -444,26 +521,72 @@ export const MessageList = ({ conversationType, conversationId, myRoomRole }: Me
       {hasNextPage ? (
         <div
           style={{
-            padding: '6px 0',
-            textAlign: 'center',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            padding: '10px 0',
             fontFamily: tokens.type.mono,
-            fontSize: 11,
-            color: tokens.color.ink3,
+            fontSize: 12,
+            color: tokens.color.ink2,
           }}
         >
-          {isFetchingNextPage ? 'loading older…' : 'scroll up for older messages'}
+          {isFetchingNextPage ? (
+            <>
+              <span
+                aria-hidden="true"
+                style={{
+                  display: 'inline-block',
+                  width: 10,
+                  height: 10,
+                  border: `1.5px solid ${tokens.color.ink3}`,
+                  borderTopColor: 'transparent',
+                  borderRadius: '50%',
+                  animation: 'agora-spin 700ms linear infinite',
+                }}
+              />
+              <span>loading older messages…</span>
+            </>
+          ) : (
+            <span style={{ color: tokens.color.ink3 }}>↑ scroll up for older messages</span>
+          )}
         </div>
       ) : messages.length > 0 ? (
         <div
+          role="status"
           style={{
-            padding: '6px 0',
-            textAlign: 'center',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 4,
+            padding: '18px 16px 10px',
             fontFamily: tokens.type.mono,
-            fontSize: 11,
-            color: tokens.color.ink3,
+            fontSize: 12,
+            color: tokens.color.ink2,
           }}
         >
-          — beginning of conversation —
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              width: '100%',
+              maxWidth: 420,
+            }}
+          >
+            <span
+              style={{ flex: 1, height: 1, background: tokens.color.rule }}
+              aria-hidden="true"
+            />
+            <span>start of conversation</span>
+            <span
+              style={{ flex: 1, height: 1, background: tokens.color.rule }}
+              aria-hidden="true"
+            />
+          </div>
+          <div style={{ fontSize: 11, color: tokens.color.ink3 }}>
+            first message {formatDateLabel(messages[0]?.createdAt ?? new Date().toISOString())}
+          </div>
         </div>
       ) : null}
 
@@ -489,6 +612,13 @@ export const MessageList = ({ conversationType, conversationId, myRoomRole }: Me
           {virtualItems.map((vi) => {
             const msg = messages[vi.index];
             if (!msg) return null;
+            const prev = vi.index > 0 ? messages[vi.index - 1] : null;
+            // Boundary rule: show the date separator on the first visible
+            // row AND on every day change. Messages are rendered oldest-
+            // first, so the separator goes above a message whose date
+            // differs from the one before it.
+            const showDay =
+              !prev || localDateKey(prev.createdAt) !== localDateKey(msg.createdAt);
             const isMine = Boolean(me && msg.author?.id === me.id);
             return (
               <div
@@ -503,6 +633,7 @@ export const MessageList = ({ conversationType, conversationId, myRoomRole }: Me
                   transform: `translateY(${vi.start}px)`,
                 }}
               >
+                {showDay ? <DaySeparator iso={msg.createdAt} /> : null}
                 <MessageItem
                   msg={msg}
                   isMine={isMine}
@@ -528,6 +659,38 @@ export const MessageList = ({ conversationType, conversationId, myRoomRole }: Me
           onConfirm={performDelete}
         />
       ) : null}
+    </div>
+    {!isAtBottom && messages.length > 0 ? (
+      <button
+        type="button"
+        onClick={() => {
+          const scroller = scrollRef.current;
+          if (!scroller) return;
+          scroller.scrollTo({ top: scroller.scrollHeight, behavior: 'smooth' });
+        }}
+        aria-label="Jump to latest message"
+        style={{
+          position: 'absolute',
+          right: 16,
+          bottom: 16,
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 6,
+          padding: '6px 12px',
+          fontFamily: tokens.type.mono,
+          fontSize: 12,
+          background: tokens.color.accent,
+          color: '#fff',
+          border: `1px solid ${tokens.color.accentInk}`,
+          borderRadius: tokens.radius.xs,
+          boxShadow: '0 2px 6px rgba(0,0,0,0.15), 0 1px 0 rgba(255,255,255,.12) inset',
+          cursor: 'pointer',
+          zIndex: 5,
+        }}
+      >
+        ↓ jump to latest
+      </button>
+    ) : null}
     </div>
   );
 };

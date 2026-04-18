@@ -51,6 +51,14 @@
     background: var(--paper-2);
     color: var(--ink-0);
   }
+
+  /* Shared spin keyframe used by the message-list top loader and any
+     future lightweight progress indicator. Speed tuned to feel calm at
+     rest rather than racing — classic web-chat vibe. */
+  @keyframes agora-spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
 }
 
 @layer utilities {
