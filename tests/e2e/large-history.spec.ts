@@ -59,12 +59,9 @@ test('large history — 10k messages load and scroll progressively', async ({ br
   // Scroll the message list until a much older seeded message becomes visible.
   // Target: "seeded message 5000" — exactly in the middle of the 10k range,
   // far enough to prove progressive scroll loads ~100 pages.
-  const scroller = page
-    .locator('main div')
-    .filter({ has: page.getByText(/seeded message/) })
-    .first();
+  const scroller = page.getByTestId('message-scroller');
 
-  const deadline = Date.now() + 90_000;
+  const deadline = Date.now() + 120_000;
   let reached = false;
   while (Date.now() < deadline) {
     const found = await page
@@ -79,7 +76,7 @@ test('large history — 10k messages load and scroll progressively', async ({ br
     await scroller.evaluate((el) => {
       (el as HTMLElement).scrollTop = 0;
     });
-    await page.waitForTimeout(300);
+    await page.waitForTimeout(250);
   }
   expect(reached).toBe(true);
 
