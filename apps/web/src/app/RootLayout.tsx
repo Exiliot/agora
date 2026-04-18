@@ -1,9 +1,11 @@
+import { useRef, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Badge, Logo, NavTab, ToastHost, tokens } from '../ds';
+import { Badge, Bell, Logo, NavTab, NotificationMenu, ToastHost, tokens } from '../ds';
 import { useMe } from '../features/auth/useMe';
 import { useSignOut } from '../features/auth/useSignOut';
 import { useIncomingRequests } from '../features/friends/useFriends';
 import { useMyInvitations } from '../features/rooms/useRoomAdmin';
+import { useUnreadCount } from '../features/notifications/useUnreadCount';
 
 const NotificationsBadge = () => {
   const { data: requests = [] } = useIncomingRequests();
@@ -22,6 +24,9 @@ export const RootLayout = () => {
   const navigate = useNavigate();
   const { data: user } = useMe();
   const signOut = useSignOut();
+  const [notifOpen, setNotifOpen] = useState(false);
+  const bellRef = useRef<HTMLButtonElement | null>(null);
+  const { data: unread } = useUnreadCount();
 
   const go = (path: string) => navigate(path);
 
@@ -95,6 +100,11 @@ export const RootLayout = () => {
         </nav>
         {user ? (
           <>
+            <Bell
+              ref={bellRef}
+              unreadCount={unread?.count ?? 0}
+              onClick={() => setNotifOpen((v) => !v)}
+            />
             <NavTab as="span" plain>
               {user.username}
             </NavTab>
@@ -109,6 +119,12 @@ export const RootLayout = () => {
           </>
         ) : null}
       </header>
+      {notifOpen ? (
+        <NotificationMenu
+          anchorRect={bellRef.current?.getBoundingClientRect() ?? null}
+          onClose={() => setNotifOpen(false)}
+        />
+      ) : null}
 
       <main id="main" style={{ flex: 1, display: 'flex', minHeight: 0 }}>
         <Outlet />
