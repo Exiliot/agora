@@ -104,7 +104,11 @@ const ChatView = () => {
           memberCount={room.memberCount}
           visibility={room.visibility}
         />
-        <MessageList conversationType="room" conversationId={room.id} />
+        <MessageList
+          conversationType="room"
+          conversationId={room.id}
+          myRoomRole={detail?.myRole ?? null}
+        />
         <Composer conversationType="room" conversationId={room.id} />
       </div>
       <aside

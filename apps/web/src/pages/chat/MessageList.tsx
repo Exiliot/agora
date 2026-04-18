@@ -1,7 +1,9 @@
-import { useEffect, useRef } from 'react';
-import type { AttachmentSummary, ConversationType, MessageView } from '@agora/shared';
+import { useEffect, useRef, useState } from 'react';
+import type { AttachmentSummary, ConversationType, MessageView, RoomRole } from '@agora/shared';
 import { FileCard, MessageRow, colorForName, tokens } from '../../ds';
 import { useMessages } from '../../features/messages/useMessages';
+import { useMe } from '../../features/auth/useMe';
+import { useWs } from '../../app/WsProvider';
 
 const humanSize = (bytes: number): string => {
   if (bytes < 1024) return `${bytes} B`;
@@ -28,6 +30,8 @@ const AttachmentPreview = ({ attachment }: { attachment: AttachmentSummary }) =>
 interface MessageListProps {
   conversationType: ConversationType;
   conversationId: string;
+  /** My role in the room — used to determine if I can delete others' messages. */
+  myRoomRole?: RoomRole | null;
 }
 
 const formatTime = (iso: string): string => {
@@ -35,14 +39,87 @@ const formatTime = (iso: string): string => {
   return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
 };
 
-export const MessageList = ({ conversationType, conversationId }: MessageListProps) => {
+const MessageActions = ({
+  msg,
+  canEdit,
+  canDelete,
+}: {
+  msg: MessageView;
+  canEdit: boolean;
+  canDelete: boolean;
+}) => {
+  const ws = useWs();
+  if (!canEdit && !canDelete) return null;
+  const handleEdit = async () => {
+    const next = window.prompt('Edit message', msg.body);
+    if (next === null) return;
+    const trimmed = next.trim();
+    if (!trimmed || trimmed === msg.body) return;
+    await ws?.request('message.edit', { id: msg.id, body: trimmed });
+  };
+  const handleDelete = async () => {
+    if (!window.confirm('Delete this message?')) return;
+    await ws?.request('message.delete', { id: msg.id });
+  };
+  return (
+    <span
+      className="msg-actions"
+      style={{
+        marginLeft: 8,
+        fontFamily: tokens.type.mono,
+        fontSize: 11,
+        color: tokens.color.ink3,
+        display: 'inline-flex',
+        gap: 6,
+      }}
+    >
+      {canEdit ? (
+        <button
+          type="button"
+          onClick={handleEdit}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            color: tokens.color.ink2,
+            fontFamily: 'inherit',
+            fontSize: 'inherit',
+            padding: 0,
+          }}
+        >
+          edit
+        </button>
+      ) : null}
+      {canDelete ? (
+        <button
+          type="button"
+          onClick={handleDelete}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            color: tokens.color.danger,
+            fontFamily: 'inherit',
+            fontSize: 'inherit',
+            padding: 0,
+          }}
+        >
+          delete
+        </button>
+      ) : null}
+    </span>
+  );
+};
+
+export const MessageList = ({ conversationType, conversationId, myRoomRole }: MessageListProps) => {
   const { data, isLoading, fetchNextPage, hasNextPage } = useMessages(
     conversationType,
     conversationId,
   );
+  const { data: me } = useMe();
   const ref = useRef<HTMLDivElement>(null);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
 
-  // Scroll to bottom on initial load.
   useEffect(() => {
     if (data && ref.current) ref.current.scrollTop = ref.current.scrollHeight;
   }, [data, conversationId]);
@@ -55,11 +132,12 @@ export const MessageList = ({ conversationType, conversationId }: MessageListPro
     );
   }
 
-  // Pages are in reverse chronological order per page; flatten and reverse for display.
   const messages: MessageView[] = (data?.pages ?? [])
     .flatMap((page) => page.messages)
     .slice()
     .reverse();
+
+  const canModerate = myRoomRole === 'owner' || myRoomRole === 'admin';
 
   return (
     <div
@@ -95,27 +173,44 @@ export const MessageList = ({ conversationType, conversationId }: MessageListPro
           no messages yet — say hello
         </div>
       ) : (
-        messages.map((msg) => (
-          <MessageRow
-            key={msg.id}
-            time={formatTime(msg.createdAt)}
-            user={msg.author?.username ?? 'deleted-user'}
-            color={colorForName(msg.author?.username ?? '?')}
-            deleted={Boolean(msg.deletedAt)}
-          >
-            {msg.body !== '(attachment)' || msg.attachments.length === 0 ? msg.body : ''}
-            {msg.editedAt ? (
-              <span style={{ color: tokens.color.ink3, fontSize: 11, marginLeft: 6 }}>(edited)</span>
-            ) : null}
-            {msg.attachments.length > 0 ? (
-              <div style={{ marginTop: 4, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {msg.attachments.map((a) => (
-                  <AttachmentPreview key={a.id} attachment={a} />
-                ))}
-              </div>
-            ) : null}
-          </MessageRow>
-        ))
+        messages.map((msg) => {
+          const isMine = Boolean(me && msg.author?.id === me.id);
+          const deleted = Boolean(msg.deletedAt);
+          const canEdit = isMine && !deleted;
+          const canDelete = !deleted && (isMine || canModerate);
+          const showActions = hoveredId === msg.id;
+          return (
+            <div
+              key={msg.id}
+              onMouseEnter={() => setHoveredId(msg.id)}
+              onMouseLeave={() => setHoveredId((prev) => (prev === msg.id ? null : prev))}
+            >
+              <MessageRow
+                time={formatTime(msg.createdAt)}
+                user={msg.author?.username ?? 'deleted-user'}
+                color={colorForName(msg.author?.username ?? '?')}
+                deleted={deleted}
+              >
+                {msg.body !== '(attachment)' || msg.attachments.length === 0 ? msg.body : ''}
+                {msg.editedAt ? (
+                  <span style={{ color: tokens.color.ink3, fontSize: 11, marginLeft: 6 }}>
+                    (edited)
+                  </span>
+                ) : null}
+                {showActions ? (
+                  <MessageActions msg={msg} canEdit={canEdit} canDelete={canDelete} />
+                ) : null}
+                {msg.attachments.length > 0 ? (
+                  <div style={{ marginTop: 4, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                    {msg.attachments.map((a) => (
+                      <AttachmentPreview key={a.id} attachment={a} />
+                    ))}
+                  </div>
+                ) : null}
+              </MessageRow>
+            </div>
+          );
+        })
       )}
     </div>
   );

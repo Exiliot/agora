@@ -1,7 +1,21 @@
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Logo, NavTab, tokens } from '../ds';
+import { Badge, Logo, NavTab, tokens } from '../ds';
 import { useMe } from '../features/auth/useMe';
 import { useSignOut } from '../features/auth/useSignOut';
+import { useIncomingRequests } from '../features/friends/useFriends';
+import { useMyInvitations } from '../features/rooms/useRoomAdmin';
+
+const NotificationsBadge = () => {
+  const { data: requests = [] } = useIncomingRequests();
+  const { data: invitations = [] } = useMyInvitations();
+  const total = requests.length + invitations.length;
+  if (total === 0) return null;
+  return (
+    <Badge tone="mention" style={{ marginLeft: 6 }}>
+      {total}
+    </Badge>
+  );
+};
 
 export const RootLayout = () => {
   const location = useLocation();
@@ -42,7 +56,10 @@ export const RootLayout = () => {
           <NavTab active={active('/public')}>Public rooms</NavTab>
         </NavLink>
         <NavLink to="/contacts" style={{ textDecoration: 'none' }}>
-          <NavTab active={active('/contacts')}>Contacts</NavTab>
+          <NavTab active={active('/contacts')}>
+            Contacts
+            <NotificationsBadge />
+          </NavTab>
         </NavLink>
         <NavLink to="/sessions" style={{ textDecoration: 'none' }}>
           <NavTab active={active('/sessions')}>Sessions</NavTab>
@@ -50,9 +67,7 @@ export const RootLayout = () => {
         <div style={{ flex: 1 }} />
         {user ? (
           <>
-            <NavTab onClick={() => go('/profile')} style={{ cursor: 'pointer' }}>
-              {user.username} ▾
-            </NavTab>
+            <NavTab style={{ cursor: 'default' }}>{user.username}</NavTab>
             <NavTab
               danger
               style={{ cursor: 'pointer' }}
