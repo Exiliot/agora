@@ -31,5 +31,12 @@
   "volta": {
     "node": "24.13.0",
     "pnpm": "10.7.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@biomejs/biome",
+      "argon2",
+      "esbuild"
+    ]
   }
 }
