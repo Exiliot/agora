@@ -5,7 +5,7 @@
  */
 
 import { createHash, randomBytes } from 'node:crypto';
-import { and, eq, lt } from 'drizzle-orm';
+import { and, eq, lt, ne } from 'drizzle-orm';
 import { uuidv7 } from 'uuidv7';
 import { db } from '../db/client.js';
 import { sessions } from '../db/schema.js';
@@ -113,7 +113,7 @@ export const deleteSessionsForUserExcept = async (
   keepId: string | null,
 ): Promise<number> => {
   const where = keepId
-    ? and(eq(sessions.userId, userId), lt(sessions.id, keepId))
+    ? and(eq(sessions.userId, userId), ne(sessions.id, keepId))
     : eq(sessions.userId, userId);
   const rows = await db.delete(sessions).where(where).returning({ id: sessions.id });
   return rows.length;

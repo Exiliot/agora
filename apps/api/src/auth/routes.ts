@@ -5,7 +5,7 @@
  */
 
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-import { and, eq, ne, sql } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { uuidv7 } from 'uuidv7';
 import {
   passwordChangeRequest,
@@ -16,11 +16,15 @@ import {
   type UserSelf,
 } from '@agora/shared';
 import { db } from '../db/client.js';
-import { sessions, users } from '../db/schema.js';
+import { users } from '../db/schema.js';
 import { addRouteModule } from '../routes/registry.js';
 import { clearSessionCookie, setSessionCookie } from '../session/cookie.js';
 import { requireAuth } from '../session/require-auth.js';
-import { createSession, deleteSession } from '../session/store.js';
+import {
+  createSession,
+  deleteSession,
+  deleteSessionsForUserExcept,
+} from '../session/store.js';
 import { hashPassword, verifyPassword } from './password.js';
 import { consumeResetToken, issueResetToken } from './password-reset.js';
 
@@ -57,16 +61,6 @@ const issueSessionCookie = async (
     ip: ipOf(req),
   });
   setSessionCookie(reply, created.token);
-};
-
-const deleteAllSessionsForUserExcept = async (
-  userId: string,
-  keepSessionId: string | null,
-): Promise<void> => {
-  const where = keepSessionId
-    ? and(eq(sessions.userId, userId), ne(sessions.id, keepSessionId))
-    : eq(sessions.userId, userId);
-  await db.delete(sessions).where(where);
 };
 
 addRouteModule({
@@ -222,7 +216,7 @@ addRouteModule({
         .set({ passwordHash, updatedAt: new Date() })
         .where(eq(users.id, consumed.userId));
 
-      await deleteAllSessionsForUserExcept(consumed.userId, null);
+      await deleteSessionsForUserExcept(consumed.userId, null);
       return reply.code(204).send();
     });
 
@@ -258,7 +252,7 @@ addRouteModule({
         .set({ passwordHash, updatedAt: new Date() })
         .where(eq(users.id, user.id));
 
-      await deleteAllSessionsForUserExcept(user.id, session.id);
+      await deleteSessionsForUserExcept(user.id, session.id);
       return reply.code(204).send();
     });
 
