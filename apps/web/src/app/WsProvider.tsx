@@ -1,8 +1,10 @@
 import { createContext, useContext, useEffect, useMemo, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { create } from 'zustand';
-import type { PresenceState } from '@agora/shared';
+import type { MessageView, PresenceState } from '@agora/shared';
 import { createWsClient, type WsClient } from '../lib/wsClient';
+import { backfillAllConversations } from '../features/messages/backfill';
+import { useLastSeenStore } from '../features/messages/lastSeen';
 
 interface PresenceStore {
   states: Map<string, PresenceState>;
@@ -49,9 +51,18 @@ export const WsProvider = ({ enabled, children }: WsProviderProps) => {
     if (!enabled) return;
     client.connect();
 
-    const unsubscribeNewMessage = client.on('message.new', () => {
+    const unsubscribeNewMessage = client.on('message.new', (event) => {
+      const payload = event.payload as MessageView | undefined;
+      if (payload) {
+        useLastSeenStore
+          .getState()
+          .note(payload.conversationType, payload.conversationId, payload.id);
+      }
       queryClient.invalidateQueries({ queryKey: ['messages'] });
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
+    });
+    const unsubscribeReopen = client.on('ws.reopen', () => {
+      void backfillAllConversations(queryClient);
     });
     const unsubscribeUpdated = client.on('message.updated', () => {
       queryClient.invalidateQueries({ queryKey: ['messages'] });
@@ -98,6 +109,7 @@ export const WsProvider = ({ enabled, children }: WsProviderProps) => {
 
     return () => {
       unsubscribeNewMessage();
+      unsubscribeReopen();
       unsubscribeUpdated();
       unsubscribeDeleted();
       unsubscribeUnread();

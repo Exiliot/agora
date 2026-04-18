@@ -39,6 +39,7 @@ const HEARTBEAT_THROTTLE_MS = 5_000;
 export const createWsClient = (): WsClient => {
   let socket: WebSocket | null = null;
   let state: WsClient['state'] = 'idle';
+  let hasConnectedBefore = false;
   const handlers = new Map<string, Set<EventHandler>>();
   const pending = new Map<string, PendingRequest>();
   let backoffMs = 1_000;
@@ -91,6 +92,9 @@ export const createWsClient = (): WsClient => {
           payload: { tabId: generateTabId(), openConversationIds },
         }),
       );
+      // Synthesise a local event so subscribers can backfill on reconnect.
+      dispatch({ type: hasConnectedBefore ? 'ws.reopen' : 'ws.open' });
+      hasConnectedBefore = true;
     };
 
     ws.onmessage = (message) => {
