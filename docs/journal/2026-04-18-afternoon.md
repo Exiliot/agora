@@ -1,0 +1,86 @@
+# 2026-04-18 · Afternoon — polish, virtualisation, audits, wave-1 fixes
+
+Follow-on to `2026-04-18-build.md`. By the time this entry was written the core product was demoable end-to-end; the work captured here is the "make it industrial-grade" pass.
+
+## Order of operations
+
+1. **Polish round before touching stretch goals.** Hover-actions for message edit/delete, a notifications counter next to the Contacts tab, invitations UI inside Contacts, and `docs/demo-script.md` as a ready-to-read walk-through for reviewers. All of this landed on `main` with the six core e2e tests already green.
+2. **XMPP spike on a side branch** (`phase2-xmpp`) to answer the user's specific question: *how invasive is federation on what we've already built?* Single Prosody container, HTTP-auth delegating to agora, `@xmpp/client` connectivity test. Journal entry captured the findings + the effort estimate.
+3. **Merged the side branch back into main** once the user settled on "no branches, commit to implementing ADR-0005 thoroughly". The branch pattern stopped pulling its weight: everything on main, everything one git log.
+4. **Virtualisation was wrong to skip.** User pushed back (correctly) that a chat claiming industrial scale without a virtualised message list is fiction. `@tanstack/react-virtual` wired into `MessageList`, scroll-preservation preserved on prepend, intersection-observer auto-load of older pages still hooks. E2E test updated: use `{ exact: true }` on `getByText` so "seeded message 5000" can't accidentally match via "seeded message 50000" — the earlier 1.2s pass was a substring-collision false positive, now it's a real ~12s scroll through ~100 pages.
+5. **Four parallel audit agents** dispatched in background: security, performance, a11y, code quality. Reports went to `docs/audits/*.md`.
+6. **Wave-1 triage** while the agents were still returning: fixed everything critical-severity plus most highs before anything else, because those land in any submission review first.
+7. **Continued XMPP on main** through the two-server Prosody overlay with dialback and self-signed certs. Hit a wall: Prosody 0.12 doesn't advertise `<starttls>` in initial stream features despite loaded cert, `@xmpp/client` won't do SASL PLAIN without TLS. Agora's auth bridge endpoint proven via curl end-to-end; the gap is on the Prosody side.
+
+## What shipped
+
+### Polish
+- `MessageList` hover actions — "edit" and "delete" on the author's own messages, delete also available to room owner/admin.
+- `Badge` next to the Contacts nav tab showing pending friend requests + room invitations.
+- Invitations section on `/contacts` with accept/reject inline.
+- `docs/demo-script.md` — 5-minute reviewer walkthrough.
+
+### Virtualisation
+- `@tanstack/react-virtual` in `MessageList.tsx` with `estimateSize: 40`, `overscan: 12`, and `measureElement` for variable message heights.
+- Scroll position preserved on prepend: read `scrollHeight + scrollTop` before fetch, restore `scrollTop + delta` in the next `requestAnimationFrame`.
+- `data-testid="message-scroller"` added so the e2e test can grip the virtualised container reliably.
+
+### XMPP federation
+- `docker-compose.xmpp.yml` overlay — `prosody-a` + `prosody-b` with compose network aliases `server-a` / `server-b`, dialback s2s, self-signed c2s certs.
+- `tools/prosody/Dockerfile` — Debian 12 + Prosody 0.12 + `openssl` for cert generation + `mod_auth_http` community module.
+- `tools/prosody/entrypoint.sh` — templated config rendering per-instance, plus self-signed cert issuance at first boot.
+- `apps/api/src/xmpp/routes.ts` — `POST /internal/xmpp/auth` (form-urlencoded + JSON), `GET /internal/xmpp/users/:username`. Gated behind `ENABLE_XMPP_BRIDGE=1`.
+- `tools/xmpp-connect-test.mjs` — parametrised connectivity harness.
+- **Auth bridge proven via curl**: 200 for valid creds, 401 for invalid, both body shapes work. agora side is complete.
+- **Prosody-side gap documented**: SASL PLAIN over un-negotiated TLS is rejected by `@xmpp/client`. Five concrete fixes to try, in `docs/journal/2026-04-18-xmpp-federation.md`.
+
+### Wave-1 audit fixes
+
+Security — highest-first:
+
+| Severity | Issue | Fix |
+|---|---|---|
+| Critical | WS `subscribe` accepted any topic — any auth'd user could read any room / DM / user topic | `ws/topic-acl.ts` — membership + ban check per topic kind |
+| High | `sessions.token_hash` had no index — every auth'd request seq-scanned | migration `0001_add_sessions_token_hash_idx.sql` |
+| High | Reset tokens logged at `info` level — log access = account takeover | dropped to `debug` + stderr-only outside production |
+| High | `verifyPassword(hash, plain)` — args reversed in XMPP bridge | swapped, argon2id accepts them in the correct order now |
+| High | Dev seed endpoint's perm check used `canAccessRoom` (returns `PermissionResult`, always truthy) | now uses `.ok`; DM branch uses `canAccessDm` (was wrongly passing DM conv id to `canSendDm` which expects `otherUserId`) |
+| High | No rate limiting on register / sign-in / reset | `@fastify/rate-limit` registered, 10/min per IP on auth routes |
+| High | WS upgrade accepted any `Origin` — CSWSH risk | same-origin check at upgrade, close 4403 on mismatch |
+| High | Default `SESSION_SECRET` committed in `docker-compose.yml` | compose no longer sets it; api generates a random 48-byte secret at boot with a warning log |
+
+Performance:
+
+| Severity | Issue | Fix |
+|---|---|---|
+| High | Per-recipient `incrementUnread` serial inside transaction — 1000 round-trips in a 1000-member room | `incrementUnreadForMany` — single `INSERT ... ON CONFLICT DO UPDATE` |
+| High | `bus.publish` JSON.stringify per subscriber — wastes CPU in large rooms | stringify once in publish when `subs > 1`, pass `serialised` through to handlers; `conn.sendRaw` skips re-serialisation |
+
+A11y:
+
+| Severity | Issue | Fix |
+|---|---|---|
+| Critical | No `:focus-visible` styles anywhere; `outline: none` on inputs had no replacement | global `:focus-visible` rule + `.sr-only` utility in `base.css` |
+| Critical | `Modal` was a `role="dialog"` without `aria-modal`, focus trap, focus return, or Escape handler | `aria-modal`, `aria-labelledby`, Tab wrap, Escape to close, focus restored on unmount |
+| Critical | `MessageList` had no live region — screen readers missed every incoming message | `role="log"` + `aria-live="polite"` + `aria-label="Message history"` |
+| High | `--ink-3` at `#9a988c` failed AA on `paper-1` | darkened to `#6f6d62` |
+| High | `RoomListItem` / `ContactListItem` were `<div onClick>` — keyboard-unreachable | promoted to `<button type="button">` with `aria-label` |
+
+## Remaining debt (wave 2 planned)
+
+Tracked explicitly in `docs/audits/*.md`:
+
+- `helmet` / CSP on the api's HTTP surface.
+- Inconsistent error-response shapes (`error` vs `code` vs `message`) across route modules — one shared error helper would unify them.
+- WS handlers currently cast `evt.payload as …` instead of revalidating with the `@agora/shared` zod schemas on the receiving side. Cheap to fix, materially safer.
+- DB-backed integration tests for bans, invitations, unread counters, and presence subscribers — current `tests/integration/*.spec.ts` mock the Drizzle chain.
+- Registration enumerates which field collided (`email_taken` vs `username_taken`). Minor info-disclosure.
+- XMPP SASL handshake — five fixes to attempt, tracked in the federation journal.
+- 50-client federation load test — blocked on SASL resolving.
+
+## Takeaways
+
+- **Run audits early, triage immediately.** Having four agents walk the repo in parallel caught issues the author-level review missed (hook-order bug in MessageList, reversed argon2 args, missing DB index, WS topic ACL gap). The cost was one parallel agent-hour; the value was preventing a sharp reviewer from finding them first.
+- **"Industrial-grade" has a floor.** The user was right to push back on skipping virtualisation. If the spec says 10k+ messages and the audit agent flags missing virtualisation, deferring it is the wrong call regardless of how busy the schedule feels — the fix is 200 lines and an afternoon.
+- **Auth bridges are cheap; protocol interop is not.** The agora-side XMPP work was one endpoint (~40 lines). Getting a real XMPP client to complete a SASL handshake against a self-signed Prosody inside a docker-compose network is its own puzzle. That asymmetry is worth remembering for future "add a protocol" scoping.
+- **Subagent date anchoring is fragile.** Two of the four audit reports landed with header date `2026-04-17`. The agents' environment showed the prior day's date, and the backfilled dates in those reports reflected that rather than the actual run time. Lesson: tell dispatch agents the explicit date when the answer matters for the artefact.
