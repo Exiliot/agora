@@ -4,6 +4,7 @@ import { FileCard, MessageRow, colorForName, tokens } from '../../ds';
 import { useMessages } from '../../features/messages/useMessages';
 import { useMe } from '../../features/auth/useMe';
 import { useWs } from '../../app/WsProvider';
+import { useLastSeenStore } from '../../features/messages/lastSeen';
 
 const humanSize = (bytes: number): string => {
   if (bytes < 1024) return `${bytes} B`;
@@ -136,6 +137,11 @@ export const MessageList = ({ conversationType, conversationId, myRoomRole }: Me
     .flatMap((page) => page.messages)
     .slice()
     .reverse();
+
+  const latestId = messages.length > 0 ? messages[messages.length - 1]?.id : undefined;
+  useEffect(() => {
+    if (latestId) useLastSeenStore.getState().note(conversationType, conversationId, latestId);
+  }, [latestId, conversationType, conversationId]);
 
   const canModerate = myRoomRole === 'owner' || myRoomRole === 'admin';
 
