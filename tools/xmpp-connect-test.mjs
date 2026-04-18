@@ -1,23 +1,27 @@
 #!/usr/bin/env node
 /**
  * Minimal connectivity test: proves a registered agora user can sign in to
- * Prosody using their agora credentials, via the HTTP-auth bridge.
+ * one of the Prosody servers (server-a / server-b) using their agora
+ * credentials via the HTTP-auth bridge.
  *
  * Usage:
- *   node tools/xmpp-connect-test.mjs <username> <password>
+ *   node tools/xmpp-connect-test.mjs <a|b> <username> <password>
  */
 
 import { client, xml } from '@xmpp/client';
 
-const [, , username, password] = process.argv;
-if (!username || !password) {
-  console.error('usage: node tools/xmpp-connect-test.mjs <username> <password>');
+const [, , server, username, password] = process.argv;
+if (!server || !username || !password) {
+  console.error('usage: node tools/xmpp-connect-test.mjs <a|b> <username> <password>');
   process.exit(2);
 }
 
+const port = server === 'b' ? 5223 : 5222;
+const domain = `server-${server}`;
+
 const xmpp = client({
-  service: 'xmpp://localhost:5222',
-  domain: 'agora.test',
+  service: `xmpp://localhost:${port}`,
+  domain,
   username,
   password,
 });

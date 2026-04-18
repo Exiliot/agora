@@ -1,21 +1,31 @@
-# Prosody with the `auth_http_async` community module baked in so we can
-# delegate credential validation back to the agora api at runtime.
+# Build Prosody on Debian so we can control the Lua module path precisely.
+# Image is configured at runtime by entrypoint.sh using PROSODY_DOMAIN.
 
-FROM prosody/prosody:0.12
+FROM debian:bookworm-slim
 
-USER root
+ENV DEBIAN_FRONTEND=noninteractive
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      curl lua-sec lua-socket \
+      prosody \
+      ca-certificates \
+      curl \
+      lua-sec \
+      lua-socket \
+      lua-expat \
+      lua-filesystem \
   && rm -rf /var/lib/apt/lists/*
 
-# Pull the community auth_http_async module (HG mirror on GitHub).
+# Community module: mod_auth_http — synchronous HTTP POST for credential check.
 RUN mkdir -p /usr/lib/prosody/modules-community \
-  && curl -sSL -o /usr/lib/prosody/modules-community/mod_auth_http_async.lua \
-      https://raw.githubusercontent.com/bjc/prosody-modules/main/mod_auth_http_async/mod_auth_http_async.lua \
-      || echo 'community module fetch failed — will need manual install'
+  && curl -fsSL -o /usr/lib/prosody/modules-community/mod_auth_http.lua \
+      "https://hg.prosody.im/prosody-modules/raw-file/tip/mod_auth_http/mod_auth_http.lua"
 
-COPY prosody.cfg.lua /etc/prosody/prosody.cfg.lua
+COPY prosody.cfg.lua.tmpl /etc/prosody/prosody.cfg.lua.tmpl
+COPY entrypoint.sh /usr/local/bin/prosody-entry
+RUN chmod +x /usr/local/bin/prosody-entry \
+  && mkdir -p /var/lib/prosody /var/log/prosody /var/run/prosody \
+  && chown -R prosody:prosody /var/lib/prosody /var/log/prosody /var/run/prosody /etc/prosody
 
 USER prosody
-EXPOSE 5222 5269 5280
-CMD ["prosody"]
+EXPOSE 5222 5269
+ENTRYPOINT ["/usr/local/bin/prosody-entry"]
