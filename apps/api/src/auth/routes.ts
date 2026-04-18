@@ -19,6 +19,7 @@ import { config } from '../config.js';
 import { db } from '../db/client.js';
 import { users } from '../db/schema.js';
 import { addRouteModule } from '../routes/registry.js';
+import { publishNotification } from '../notifications/publisher.js';
 import { clearSessionCookie, setSessionCookie } from '../session/cookie.js';
 import { requireAuth } from '../session/require-auth.js';
 import {
@@ -226,7 +227,17 @@ addRouteModule({
         .set({ passwordHash, updatedAt: new Date() })
         .where(eq(users.id, consumed.userId));
 
-      await deleteSessionsForUserExcept(consumed.userId, null);
+      const revokedCount = await deleteSessionsForUserExcept(consumed.userId, null);
+      if (revokedCount > 0) {
+        await publishNotification({
+          userId: consumed.userId,
+          kind: 'session.revoked_elsewhere',
+          subjectType: null,
+          subjectId: null,
+          actorId: null,
+          payload: { revokedCount, reason: 'password_reset' },
+        });
+      }
       return reply.code(204).send();
     });
 
@@ -262,7 +273,17 @@ addRouteModule({
         .set({ passwordHash, updatedAt: new Date() })
         .where(eq(users.id, user.id));
 
-      await deleteSessionsForUserExcept(user.id, session.id);
+      const revokedCount = await deleteSessionsForUserExcept(user.id, session.id);
+      if (revokedCount > 0) {
+        await publishNotification({
+          userId: user.id,
+          kind: 'session.revoked_elsewhere',
+          subjectType: null,
+          subjectId: null,
+          actorId: null,
+          payload: { revokedCount, reason: 'password_change' },
+        });
+      }
       return reply.code(204).send();
     });
 
