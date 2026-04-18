@@ -157,14 +157,6 @@ export const MessageList = ({ conversationType, conversationId, myRoomRole }: Me
     return () => observer.disconnect();
   }, [hasNextPage, fetchNextPage, isFetchingNextPage]);
 
-  if (isLoading) {
-    return (
-      <div style={{ padding: 16, color: tokens.color.ink3, fontFamily: tokens.type.mono, fontSize: 12 }}>
-        loading…
-      </div>
-    );
-  }
-
   const messages: MessageView[] = (data?.pages ?? [])
     .flatMap((page) => page.messages)
     .slice()
@@ -174,6 +166,14 @@ export const MessageList = ({ conversationType, conversationId, myRoomRole }: Me
   useEffect(() => {
     if (latestId) useLastSeenStore.getState().note(conversationType, conversationId, latestId);
   }, [latestId, conversationType, conversationId]);
+
+  if (isLoading) {
+    return (
+      <div style={{ padding: 16, color: tokens.color.ink3, fontFamily: tokens.type.mono, fontSize: 12 }}>
+        loading…
+      </div>
+    );
+  }
 
   const canModerate = myRoomRole === 'owner' || myRoomRole === 'admin';
 

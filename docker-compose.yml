@@ -30,6 +30,7 @@ services:
       DATABASE_URL: "postgres://app:app@db:5432/app"
       SESSION_SECRET: "dev-only-session-secret-change-me-in-production-xxxxxxxxx"
       STORAGE_ROOT: "/data/attachments"
+      ALLOW_DEV_SEED: "1"
     ports:
       - "3000:3000"
     volumes:

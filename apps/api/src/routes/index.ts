@@ -22,3 +22,4 @@ import '../attachments/routes.js';
 import '../attachments/sweeper.js';
 import '../attachments/bus-handlers.js';
 import '../ws/auto-subscribe.js';
+import '../dev/routes.js';

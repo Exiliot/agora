@@ -7,6 +7,7 @@ test('register → create room → send message round-trip via UI', async ({ pag
   const password = 'password123';
   const roomName = `uiroom${unique}`;
 
+
   // Register via UI
   await page.goto('/register');
   await page.waitForLoadState('networkidle');
