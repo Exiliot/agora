@@ -1,0 +1,17 @@
+# Copy this to terraform.tfvars and fill in. terraform.tfvars is .gitignored.
+#
+# tenancy_ocid:    OCI console -> profile menu (top right) -> Tenancy: <name>.
+#                  Copy the OCID from that page. Looks like ocid1.tenancy.oc1..aaaa...
+#
+# compartment_ocid: For a demo, just reuse the tenancy OCID (root compartment).
+#                   Otherwise: Identity & Security -> Compartments -> copy OCID.
+#
+# region:          Your OCI home region, e.g. uk-london-1, eu-frankfurt-1,
+#                  eu-amsterdam-1. These three usually have ARM capacity.
+#
+# ssh_public_key:  Contents of ~/.ssh/id_ed25519.pub (or id_rsa.pub). One line.
+
+tenancy_ocid     = "ocid1.tenancy.oc1..REPLACE_ME"
+compartment_ocid = "ocid1.tenancy.oc1..REPLACE_ME" # same as above for root
+region           = "uk-london-1"
+ssh_public_key   = "ssh-ed25519 AAAA... your-key-here"

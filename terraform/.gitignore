@@ -1,0 +1,12 @@
+# Local state + plan artefacts – never commit.
+# .terraform.lock.hcl IS committed on purpose (provider version pinning).
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+
+# User inputs contain OCIDs and the SSH key – keep local.
+terraform.tfvars
+*.auto.tfvars
