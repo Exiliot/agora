@@ -23,3 +23,4 @@ import '../attachments/sweeper.js';
 import '../attachments/bus-handlers.js';
 import '../ws/auto-subscribe.js';
 import '../dev/routes.js';
+import '../xmpp/routes.js';

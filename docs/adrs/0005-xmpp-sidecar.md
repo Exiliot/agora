@@ -1,6 +1,6 @@
 # ADR-0005 · XMPP federation as a sidecar, not a retrofit
 
-- **Status**: Accepted (for Phase 2), 2026-04-18
+- **Status**: Accepted (for Phase 2), 2026-04-18; **In progress on the `phase2-xmpp` branch**
 - **Relates to**: ST-XMPP-1..4, AC-QUEUE-1, requirements file 99
 
 ## Context
@@ -44,7 +44,7 @@ A separate `tools/load-test-federation/` script using `@xmpp/client` in Node spa
 **Negative**:
 
 - Two sources of truth during Phase 2: agora's DB and Prosody's runtime state (rosters, MUC membership). We accept eventual-consistency for federation — the agora DB is authoritative, Prosody mirrors a subset.
-- Test CA + s2s certificates are annoying to set up the first time. Mitigation: commit a working set of certs under `tools/pki/` with a regeneration script.
+- Test CA + s2s certificates are annoying to set up the first time. Mitigation: commit a working set of certs under `tools/pki/`, with a regeneration script.
 
 **Tradeoffs not taken**:
 
@@ -54,3 +54,7 @@ A separate `tools/load-test-federation/` script using `@xmpp/client` in Node spa
 ## Upgrade path
 
 If the hackathon ends without Phase 2 being implemented, this ADR remains `Accepted` as the agreed strategy. A future Phase 2 opens a plan file (`docs/plans/phase2-xmpp.md`) that executes the topology above with no ADR revision needed.
+
+## Implementation progress on `phase2-xmpp` branch
+
+Captured in `docs/journal/2026-04-18-xmpp-spike.md`. Summary: Prosody container + HTTP-auth hook into agora is a ~day of work; full two-server federation with load test is 2–3 days including debugging.

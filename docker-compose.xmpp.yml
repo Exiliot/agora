@@ -1,0 +1,22 @@
+# Phase 2 XMPP bridge overlay.
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.xmpp.yml up --build
+# Enables ENABLE_XMPP_BRIDGE on the api and starts a Prosody sidecar that
+# delegates credential validation back to the api.
+
+services:
+  api:
+    environment:
+      ENABLE_XMPP_BRIDGE: "1"
+
+  prosody:
+    build:
+      context: ./tools/prosody
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_started
+    ports:
+      - "5222:5222"  # c2s
+      - "5269:5269"  # s2s (no-op until federation added)
+      - "5280:5280"  # http management

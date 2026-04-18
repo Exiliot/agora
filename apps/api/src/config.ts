@@ -14,6 +14,7 @@ const schema = z.object({
   PRESENCE_AFK_THRESHOLD_MS: z.coerce.number().int().positive().default(60_000),
   PRESENCE_TAB_GRACE_MS: z.coerce.number().int().positive().default(30_000),
   ALLOW_DEV_SEED: z.enum(['0', '1']).default('0'),
+  ENABLE_XMPP_BRIDGE: z.enum(['0', '1']).default('0'),
 });
 
 export const config = schema.parse(process.env);
