@@ -1,6 +1,6 @@
 # Security audit – agora
 
-Date: 2026-04-17
+Date: 2026-04-18
 Scope: `apps/api`, `apps/web`, `docker-compose.yml`, `apps/web/nginx.conf`.
 Mode: read-only, static review. No tests or containers were run.
 

@@ -1,6 +1,6 @@
 # Accessibility audit – agora web client
 
-Date: 2026-04-17. Scope: `apps/web/src/**` (React 19 + react-router). Target: WCAG 2.1 AA, keyboard-navigable, screen-reader-usable. Read-only audit; no code changed.
+Date: 2026-04-18. Scope: `apps/web/src/**` (React 19 + react-router). Target: WCAG 2.1 AA, keyboard-navigable, screen-reader-usable. Read-only audit; no code changed.
 
 ## Executive summary
 
