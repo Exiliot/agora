@@ -8,14 +8,13 @@ import { registerWsPlugin } from './ws/plugin.js';
 import { registerAllRouteModules } from './routes/index.js';
 import { sessionPlugin } from './session/plugin.js';
 
+const loggerOptions =
+  config.NODE_ENV === 'development'
+    ? { level: 'debug', transport: { target: 'pino-pretty', options: { colorize: true } } }
+    : { level: 'info' };
+
 const app = Fastify({
-  logger: {
-    level: config.NODE_ENV === 'production' ? 'info' : 'debug',
-    transport:
-      config.NODE_ENV === 'development'
-        ? { target: 'pino-pretty', options: { colorize: true } }
-        : undefined,
-  },
+  logger: loggerOptions,
   disableRequestLogging: config.NODE_ENV === 'production',
 });
 
