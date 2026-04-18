@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { useMyRooms } from '../../features/rooms/useRooms';
 import { useRoom } from '../../features/rooms/useRoom';
 import { Badge, Button, ContactListItem, Meta, Row, tokens } from '../../ds';
@@ -67,7 +67,19 @@ const ChatView = () => {
             fontSize: 13,
           }}
         >
-          pick a room from the sidebar or <a href="/public" style={{ marginLeft: 4, color: tokens.color.accent }}>browse public rooms</a>.
+          pick a room from the sidebar or{' '}
+          <Link
+            to="/public"
+            style={{
+              marginLeft: 4,
+              color: tokens.color.accent,
+              textDecoration: 'underline',
+              textUnderlineOffset: 2,
+            }}
+          >
+            browse public rooms
+          </Link>
+          .
         </div>
       </div>
     );

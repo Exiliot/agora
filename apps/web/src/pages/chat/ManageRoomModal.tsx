@@ -67,6 +67,46 @@ const MembersTab = ({ room }: { room: ManageRoomModalProps['room'] }) => {
   );
 };
 
+const AdminsTab = ({ room }: { room: ManageRoomModalProps['room'] }) => {
+  const demote = useDemoteAdmin(room.id);
+  const amOwner = room.myRole === 'owner';
+  const ownerRow: typeof room.members[number] = room.members.find((m) => m.role === 'owner') ?? {
+    user: room.owner,
+    role: 'owner' as RoomRole,
+    joinedAt: room.createdAt,
+  };
+  const admins = room.members.filter((m) => m.role === 'admin');
+  return (
+    <Table
+      cols={['Username', 'Role', 'Actions']}
+      rows={[
+        [
+          <span key="u" style={{ fontFamily: tokens.type.mono, fontSize: 13 }}>
+            {ownerRow.user.username}
+          </span>,
+          <Badge key="r" tone="accent">
+            owner
+          </Badge>,
+          <Meta key="a">locked</Meta>,
+        ],
+        ...admins.map((m) => [
+          <span key="u" style={{ fontFamily: tokens.type.mono, fontSize: 13 }}>
+            {m.user.username}
+          </span>,
+          <Badge key="r">admin</Badge>,
+          amOwner ? (
+            <Button key="a" size="sm" onClick={() => demote.mutate(m.user.id)}>
+              Remove admin
+            </Button>
+          ) : (
+            <Meta key="a">—</Meta>
+          ),
+        ]),
+      ]}
+    />
+  );
+};
+
 const BannedTab = ({ roomId }: { roomId: string }) => {
   const { data = [] } = useRoomBans(roomId);
   const unban = useUnbanFromRoom(roomId);
@@ -170,7 +210,7 @@ const SettingsTab = ({
 };
 
 export const ManageRoomModal = ({ room, onClose }: ManageRoomModalProps) => {
-  const tabs = ['Members', 'Banned', 'Invite', 'Settings'];
+  const tabs = ['Members', 'Admins', 'Banned', 'Invite', 'Settings'];
   const [active, setActive] = useState(0);
 
   return (
@@ -179,9 +219,10 @@ export const ManageRoomModal = ({ room, onClose }: ManageRoomModalProps) => {
           <Col gap={12}>
             <TabBar items={tabs} active={active} onSelect={setActive} />
             {active === 0 ? <MembersTab room={room} /> : null}
-            {active === 1 ? <BannedTab roomId={room.id} /> : null}
-            {active === 2 ? <InviteTab roomId={room.id} /> : null}
-            {active === 3 ? <SettingsTab room={room} onDeleted={onClose} /> : null}
+            {active === 1 ? <AdminsTab room={room} /> : null}
+            {active === 2 ? <BannedTab roomId={room.id} /> : null}
+            {active === 3 ? <InviteTab roomId={room.id} /> : null}
+            {active === 4 ? <SettingsTab room={room} onDeleted={onClose} /> : null}
           </Col>
       </Modal>
     </ModalScrim>
