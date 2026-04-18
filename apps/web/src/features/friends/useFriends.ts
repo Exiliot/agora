@@ -118,9 +118,26 @@ interface UserBanRow {
 
 export const useMyBans = () =>
   useQuery<UserBanRow[]>({
-    queryKey: ['user-bans'],
+    queryKey: ['user-bans', 'outgoing'],
     queryFn: async () => {
-      const body = await api.get<{ bans: UserBanRow[] }>('/user-bans');
+      const body = await api.get<{ bans: UserBanRow[] }>('/user-bans?direction=outgoing');
+      return body.bans;
+    },
+  });
+
+export interface IncomingBanRow {
+  banner: { id: string; username: string };
+  reason: string | null;
+  createdAt: string;
+}
+
+/** Bans placed against the current user. Used by DmView to freeze the
+ *  composer when the counterparty has banned the caller. */
+export const useIncomingBans = () =>
+  useQuery<IncomingBanRow[]>({
+    queryKey: ['user-bans', 'incoming'],
+    queryFn: async () => {
+      const body = await api.get<{ bans: IncomingBanRow[] }>('/user-bans?direction=incoming');
       return body.bans;
     },
   });

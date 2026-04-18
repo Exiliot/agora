@@ -453,10 +453,42 @@ addRouteModule({
         },
       );
 
-      // --- list my outgoing bans ------------------------------------------
+      // --- list user-bans involving the caller ----------------------------
+      // ?direction=outgoing (default): bans I placed against others.
+      // ?direction=incoming: bans others placed against me — needed by the
+      //   client to render read-only banners on DMs the counterparty
+      //   froze.
       scoped.get('/api/user-bans', async (req, reply) => {
         if (!isAuthed(req)) return;
         const callerId = req.user.id;
+        const { direction = 'outgoing' } = req.query as { direction?: string };
+        if (direction !== 'incoming' && direction !== 'outgoing') {
+          return reply
+            .code(400)
+            .send({ error: 'validation', message: 'direction must be incoming or outgoing' });
+        }
+
+        if (direction === 'incoming') {
+          const banner = alias(users, 'banner');
+          const rows = await db
+            .select({
+              bannerId: userBans.bannerId,
+              bannerUsername: banner.username,
+              reason: userBans.reason,
+              createdAt: userBans.createdAt,
+            })
+            .from(userBans)
+            .innerJoin(banner, eq(banner.id, userBans.bannerId))
+            .where(eq(userBans.targetId, callerId))
+            .orderBy(desc(userBans.createdAt));
+
+          const mapped = rows.map((r) => ({
+            banner: { id: r.bannerId, username: r.bannerUsername },
+            reason: r.reason,
+            createdAt: r.createdAt.toISOString(),
+          }));
+          return reply.send({ bans: mapped });
+        }
 
         const target = alias(users, 'target');
 

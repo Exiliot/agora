@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Badge, Logo, NavTab, tokens } from '../ds';
+import { Badge, Logo, NavTab, ToastHost, tokens } from '../ds';
 import { useMe } from '../features/auth/useMe';
 import { useSignOut } from '../features/auth/useSignOut';
 import { useIncomingRequests } from '../features/friends/useFriends';
@@ -28,6 +28,7 @@ export const RootLayout = () => {
   const active = (prefix: string) => location.pathname.startsWith(prefix);
 
   return (
+    <ToastHost>
     <div
       style={{
         minHeight: '100vh',
@@ -108,5 +109,6 @@ export const RootLayout = () => {
         <Outlet />
       </main>
     </div>
+    </ToastHost>
   );
 };

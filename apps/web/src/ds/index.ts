@@ -8,6 +8,7 @@ export * from './Avatar';
 export * from './Presence';
 export * from './Logo';
 export * from './Toast';
+export * from './ToastHost';
 export * from './Modal';
 export * from './NavTab';
 export * from './TabBar';

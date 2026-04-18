@@ -39,13 +39,15 @@ test('friend request → accept → dm message round-trip via UI', async ({ brow
   await expect(pageA.getByText(bob.username).first()).toBeVisible({ timeout: 10_000 });
   await pageA.getByRole('button', { name: 'Add friend' }).first().click();
 
-  // Bob navigates to contacts and accepts
+  // Bob navigates to contacts and accepts — new tabbed layout starts on
+  // "Friends", so switch to the "Requests" tab first.
   await pageB.goto('/contacts');
   await pageB.waitForLoadState('networkidle');
+  await pageB.getByRole('button', { name: /Requests/ }).click();
   await expect(pageB.getByText(alice.username).first()).toBeVisible({ timeout: 10_000 });
   await pageB.getByRole('button', { name: 'Accept' }).first().click();
 
-  // Alice refreshes contacts to see Bob in friends list, opens DM
+  // Alice refreshes contacts to see Bob in friends list (default tab), opens DM
   await pageA.goto('/contacts');
   await pageA.waitForLoadState('networkidle');
   await expect(pageA.getByRole('button', { name: 'Message' }).first()).toBeVisible({

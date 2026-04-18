@@ -8,6 +8,7 @@ import {
   Meta,
   PageShell,
   Row,
+  TabBar,
   Table,
   tokens,
 } from '../../ds';
@@ -284,38 +285,50 @@ const Invitations = () => {
   );
 };
 
-const ContactsPage = () => (
-  <PageShell
-    title="Contacts"
-    subtitle="Add people by username, accept incoming requests, manage bans. Personal messages are only allowed between friends."
-  >
-    <div>
+const ContactsPage = () => {
+  const { data: incoming = [] } = useIncomingRequests();
+  const { data: invitations = [] } = useMyInvitations();
+  const [active, setActive] = useState(0);
 
+  const requestsLabel =
+    incoming.length > 0 ? `Requests (${incoming.length})` : 'Requests';
+  const invitationsLabel =
+    invitations.length > 0 ? `Invitations (${invitations.length})` : 'Invitations';
+
+  return (
+    <PageShell
+      title="Contacts"
+      subtitle="Add people by username, accept incoming requests, manage bans. Personal messages are only allowed between friends."
+    >
       <Section title="Add a friend">
         <UserSearch />
       </Section>
 
-      <Section title="Incoming requests">
-        <IncomingRequests />
-      </Section>
+      <div style={{ marginTop: 20 }}>
+        <TabBar
+          items={['Friends', requestsLabel, invitationsLabel, 'Blocked']}
+          active={active}
+          onSelect={setActive}
+        />
+      </div>
 
-      <Section title="Outgoing requests">
-        <OutgoingRequests />
-      </Section>
-
-      <Section title="Room invitations">
-        <Invitations />
-      </Section>
-
-      <Section title="Friends">
-        <FriendList />
-      </Section>
-
-      <Section title="Blocked users">
-        <MyBans />
-      </Section>
-    </div>
-  </PageShell>
-);
+      <div style={{ marginTop: 16 }}>
+        {active === 0 ? <FriendList /> : null}
+        {active === 1 ? (
+          <Col gap={16}>
+            <Section title="Incoming requests">
+              <IncomingRequests />
+            </Section>
+            <Section title="Outgoing requests">
+              <OutgoingRequests />
+            </Section>
+          </Col>
+        ) : null}
+        {active === 2 ? <Invitations /> : null}
+        {active === 3 ? <MyBans /> : null}
+      </div>
+    </PageShell>
+  );
+};
 
 export default ContactsPage;

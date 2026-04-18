@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { AttachmentSummary, ConversationType, MessageView, RoomRole } from '@agora/shared';
-import { Button, FileCard, MessageRow, colorForName, tokens } from '../../ds';
+import { Button, FileCard, MessageRow, colorForName, tokens, useToast } from '../../ds';
 import { useMessages } from '../../features/messages/useMessages';
 import { useMe } from '../../features/auth/useMe';
 import { useWs } from '../../app/WsProvider';
@@ -51,17 +51,34 @@ const MessageActions = ({
   canDelete: boolean;
 }) => {
   const ws = useWs();
+  const toast = useToast();
   if (!canEdit && !canDelete) return null;
   const handleEdit = async () => {
     const next = window.prompt('Edit message', msg.body);
     if (next === null) return;
     const trimmed = next.trim();
     if (!trimmed || trimmed === msg.body) return;
-    await ws?.request('message.edit', { id: msg.id, body: trimmed });
+    try {
+      await ws?.request('message.edit', { id: msg.id, body: trimmed });
+    } catch (err) {
+      toast.push({
+        tone: 'error',
+        title: 'Edit failed',
+        body: err instanceof Error ? err.message : 'could not edit message',
+      });
+    }
   };
   const handleDelete = async () => {
     if (!window.confirm('Delete this message?')) return;
-    await ws?.request('message.delete', { id: msg.id });
+    try {
+      await ws?.request('message.delete', { id: msg.id });
+    } catch (err) {
+      toast.push({
+        tone: 'error',
+        title: 'Delete failed',
+        body: err instanceof Error ? err.message : 'could not delete message',
+      });
+    }
   };
   return (
     <span
