@@ -12,7 +12,7 @@ export { registerAllRouteModules } from './registry.js';
 // Feature imports — one per feature module. Uncomment / add as features land.
 import '../auth/routes.js';
 import '../sessions/routes.js';
-// import '../rooms/routes.js';
+import '../rooms/routes.js';
 // import '../messages/routes.js';
 // import '../friends/routes.js';
 // import '../attachments/routes.js';
