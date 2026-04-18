@@ -1,0 +1,94 @@
+My read of the task
+
+  A classic web chat à la mid-2000s IRC/rocket.chat: rooms, DMs, presence, friends, file sharing, moderation. Hard, load-bearing constraints:
+
+  ┌──────────┬─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │   Area   │                                                     Non-obvious demand                                                      │
+  ├──────────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Realtime │ WebSockets + server-side in-memory queue (Denis repeated this twice). Message delivery <3s, presence <2s.                   │
+  ├──────────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Sessions │ Server-side, DB-backed, per-browser, individually revocable. JWT explicitly discouraged. Persistent across browser restart. │
+  ├──────────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Presence │ Per-user, aggregated across tabs. AFK after 1min idle on all tabs. Offline only when all tabs close.                        │
+  ├──────────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Scale    │ 300 concurrent users, rooms up to 1000, 10k+ message history per room, infinite scroll.                                     │
+  ├──────────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Files    │ Local FS (mounted volume), 20MB file / 3MB image caps, ACL tied to current room membership – lose access → lose files.      │
+  ├──────────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Bans     │ Two levels: user-to-user (personal DMs freeze, history remains read-only) and room-level (treated as ban, history hidden).  │
+  ├──────────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Delivery │ Public GitHub, main branch, git clone && docker compose up. ~50% of past submissions failed this – don't be a statistic.    │
+  ├──────────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Optional │ Jabber/XMPP federation with two-server docker-compose + load test. Save for the end.                                        │
+  └──────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+  Proposed tech stack
+
+  My primary recommendation, followed by an alternative and what I'd rule out.
+
+  Primary: Node 24 + TypeScript + Fastify + Postgres + React/Vite (pnpm monorepo)
+
+  ┌─────────────┬──────────────────────────────────────────────────────────────────────────────────────────┬───────────────────────────────────────────────────────────────────────────────────────────┐
+  │    Layer    │                                          Choice                                          │                                            Why                                            │
+  ├─────────────┼──────────────────────────────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Monorepo    │ pnpm workspaces, 2 apps (api, web), 1 shared package                                     │ Single docker compose up target; shared types between client and server                   │
+  ├─────────────┼──────────────────────────────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Backend     │ Fastify 5 + @fastify/websocket + @fastify/cookie + @fastify/multipart                    │ Best Node WS ergonomics; schema-first validation; plugin model suits agent-driven dev     │
+  ├─────────────┼──────────────────────────────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────┤
+  │ DB          │ Postgres 16 + Drizzle ORM + drizzle-kit migrations                                       │ Type-safe schema + migrations are one command; easier for the agent to iterate than raw   │
+  │             │                                                                                          │ SQL                                                                                       │
+  ├─────────────┼──────────────────────────────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Sessions    │ @fastify/session with Drizzle-backed store, argon2id for passwords                       │ Matches Denis's recommendation; session revocation is a single DELETE                     │
+  ├─────────────┼──────────────────────────────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Realtime    │ Custom in-process pub/sub (EventEmitter or mitt) + WS fan-out; no Redis                  │ 300 users on a single node doesn't need Redis; stays within the delivery contract         │
+  ├─────────────┼──────────────────────────────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Presence    │ In-memory Map keyed by user_id → per-tab heartbeat set, TTL eviction                     │ Denis said "don't put this in DB". One setInterval does the AFK/offline transitions.      │
+  ├─────────────┼──────────────────────────────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────┤
+  │ File        │ Local disk volume mounted in Compose (./storage:/data), served via authenticated         │ Spec mandates local FS; access control enforced at the route, not via URL obfuscation     │
+  │ storage     │ download endpoint                                                                        │                                                                                           │
+  ├─────────────┼──────────────────────────────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Frontend    │ Vite + React 19 + TypeScript + TanStack Query + Zustand + shadcn/ui + Tailwind           │ shadcn components are copy-paste which the agent can iterate on without fighting a        │
+  │             │                                                                                          │ closed-source lib                                                                         │
+  ├─────────────┼──────────────────────────────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────┤
+  │ WS client   │ Native WebSocket + thin reconnect wrapper                                                │ No library overhead                                                                       │
+  ├─────────────┼──────────────────────────────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Testing     │ Vitest (unit/integration), Playwright (e2e), @fastify/testing for route tests            │ Already have Chromium cached; Playwright MCP is installed                                 │
+  ├─────────────┼──────────────────────────────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Tooling     │ Biome (single-tool lint+format, faster than ESLint+Prettier), tsx, drizzle-kit           │ Biome is already globally installed via Volta                                             │
+  └─────────────┴──────────────────────────────────────────────────────────────────────────────────────────┴───────────────────────────────────────────────────────────────────────────────────────────┘
+
+  Alternative to consider: NestJS + Postgres if you prefer more structure. Tradeoff: more boilerplate, more patterns for the agent to keep consistent, but very uniform shape – every feature looks the
+  same. I'd take Fastify for speed.
+
+  What I'd rule out: Next.js (overkill for a pure SPA chat, App Router complicates WS), SQLite (single-file fine for dev, but Denis said Postgres is preferred), Redis (unnecessary for this scale and adds
+  compose complexity), Socket.io (spec says WebSockets; Socket.io's fallbacks add weight), JWT-only auth (already covered).
+
+  Repo name ideas
+
+  The event's internal name is internal codename – here are a few playing on that or on the "classic web gathering place" vibe. All feel natural for public GitHub.
+
+  ┌────────────┬───────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │    Name    │                                               Angle                                               │
+  ├────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ agora      │ Greek public assembly/marketplace – the archetypal gathering place; very classical, short, strong │
+  ├────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ palaver    │ Old word for a long extended conversation / meeting – playful and uncommon                        │
+  ├────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ rookery    │ Colony of rooks – nods to the herding theme with a touch of whimsy                                │
+  ├────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ clocktower │ Where townsfolk gather; feels like "classic web" without being literal                            │
+  ├────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ harbinger  │ Messenger/herald – double meaning for a chat/messaging app                                        │
+  ├────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ parley     │ From naval/diplomatic usage – a discussion between parties                                        │
+  ├────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ commons    │ Shared public space – minimalist, modern-sounding                                                 │
+  ├────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ rook.chat  │ If you want something with .chat energy                                                           │
+  ├────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ herdsman   │ Literal nod to "internal codename"                                                                   │
+  ├────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ campfire   │ Classic gathering spot, Basecamp vibe                                                             │
+  └────────────┴───────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+  My lean: agora (short, memorable, works well on a black terminal or a colourful logo, easy to pronounce globally, zero trademark issues for an open-source repo).

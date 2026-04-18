@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>agora · design system</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Serif:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* ---- Paper / ink neutrals (warm) ---- */
+    --paper-0:#fbf9f4;   /* app bg highlight  */
+    --paper-1:#f6f3ec;   /* app bg            */
+    --paper-2:#ede9df;   /* panel / hover     */
+    --paper-3:#e2ddcf;   /* dividers emphasis */
+    --rule:  #d6d0be;    /* 1px hairline      */
+    --ink-0: #1a1a17;    /* primary text      */
+    --ink-1: #3a3a34;    /* secondary text    */
+    --ink-2: #6b6a60;    /* muted / meta      */
+    --ink-3: #9a988c;    /* placeholder       */
+
+    /* ---- Single accent: oxidized teal ---- */
+    --accent:      oklch(0.52 0.07 190);  /* links, focus, brand */
+    --accent-soft: oklch(0.92 0.03 190);  /* hover tint, selected row */
+    --accent-ink:  oklch(0.34 0.06 190);  /* visited link, pressed */
+
+    /* ---- Status (flat swatches) ---- */
+    --online:  oklch(0.62 0.14 145);
+    --afk:     oklch(0.72 0.12 75);
+    --offline: #a8a49a;
+    --danger:  oklch(0.52 0.16 27);
+    --danger-soft: oklch(0.93 0.04 27);
+
+    /* ---- Mentions / system chrome ---- */
+    --mention-bg: oklch(0.93 0.05 85);
+    --mention-fg: oklch(0.36 0.08 55);
+
+    /* ---- Radii / elevation ---- */
+    --r-xs:2px; --r-sm:3px; --r-md:4px;
+    --shadow-1:0 1px 0 rgba(0,0,0,.04);
+    --shadow-2:0 1px 2px rgba(0,0,0,.06), 0 1px 0 rgba(255,255,255,.6) inset;
+
+    /* ---- Type ---- */
+    --sans:"Inter", ui-sans-serif, system-ui, sans-serif;
+    --mono:"IBM Plex Mono", ui-monospace, Menlo, monospace;
+    --serif:"IBM Plex Serif", Georgia, serif;
+  }
+  html,body{margin:0;background:#f0eee9;color:var(--ink-0);font-family:var(--sans)}
+  *{box-sizing:border-box}
+  /* kill default scroll on the canvas host */
+  body{overflow:hidden}
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="ds/primitives.jsx"></script>
+<script type="text/babel" src="ds/components.jsx"></script>
+<script type="text/babel" src="ds/app.jsx"></script>
+</head>
+<body>
+<div id="root"></div>
+</body>
+</html>
