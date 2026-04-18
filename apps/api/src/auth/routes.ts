@@ -190,7 +190,12 @@ addRouteModule({
       if (row && !row.deletedAt) {
         const issued = await issueResetToken(row.id);
         const link = `${RESET_LINK_BASE}?token=${issued.token}`;
-        req.log.info(`[AUTH] reset link: ${link}`);
+        // Reset tokens grant account takeover; never log at info in production.
+        // Demo environment only — emit to stderr at debug level and flag the
+        // intent so log aggregators can redact.
+        req.log.debug({ auth: 'reset_link_issued' }, link);
+        // eslint-disable-next-line no-console
+        if (process.env.NODE_ENV !== 'production') console.error('[AUTH reset link]', link);
       }
 
       return reply.code(204).send();

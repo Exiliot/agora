@@ -12,7 +12,7 @@ import { db } from '../db/client.js';
 import { messages } from '../db/schema.js';
 import { addRouteModule } from '../routes/registry.js';
 import { requireAuth } from '../session/require-auth.js';
-import { canAccessRoom, canSendDm } from '../messages/permissions.js';
+import { canAccessDm, canAccessRoom } from '../messages/permissions.js';
 
 const seedBody = z.object({
   conversationType: z.enum(['room', 'dm']),
@@ -42,8 +42,8 @@ addRouteModule({
         // Permission check — caller must actually belong to the conversation.
         const allowed =
           conversationType === 'room'
-            ? await canAccessRoom(req.user.id, conversationId)
-            : (await canSendDm(req.user.id, conversationId)).ok;
+            ? (await canAccessRoom(req.user.id, conversationId)).ok
+            : (await canAccessDm(req.user.id, conversationId)).ok;
         if (!allowed) return reply.code(403).send({ error: 'forbidden' });
 
         const now = Date.now();

@@ -46,7 +46,7 @@ addRouteModule({
       const row = rows[0];
       if (!row || row.deletedAt) return reply.code(401).send({ error: 'invalid' });
 
-      const ok = await verifyPassword(row.passwordHash, parsed.data.password).catch(() => false);
+      const ok = await verifyPassword(parsed.data.password, row.passwordHash).catch(() => false);
       if (!ok) return reply.code(401).send({ error: 'invalid' });
 
       return reply.send({ ok: true, userId: row.id });

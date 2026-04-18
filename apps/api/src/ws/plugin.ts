@@ -11,6 +11,7 @@ import {
 } from './connection-manager.js';
 import { dispatchWsEvent } from './dispatcher.js';
 import { connectionLifecycle } from './lifecycle.js';
+import { canSubscribeToTopic } from './topic-acl.js';
 import { userTopic } from '../bus/topics.js';
 
 export interface AuthedUser {
@@ -83,8 +84,19 @@ export const registerWsPlugin = (app: FastifyInstance): void => {
         return;
       }
       if (e.type === 'subscribe') {
-        subscribeConnection(conn, e.payload.topic);
-        conn.send({ type: 'ack', payload: { reqId: e.reqId } });
+        const topic = e.payload.topic;
+        const reqId = e.reqId;
+        void (async () => {
+          if (!(await canSubscribeToTopic(conn.userId, topic))) {
+            conn.send({
+              type: 'err',
+              payload: { reqId, code: 'forbidden', message: 'cannot subscribe' },
+            });
+            return;
+          }
+          subscribeConnection(conn, topic);
+          conn.send({ type: 'ack', payload: { reqId } });
+        })();
         return;
       }
       if (e.type === 'unsubscribe') {

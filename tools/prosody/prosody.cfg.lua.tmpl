@@ -1,0 +1,59 @@
+-- Prosody config template for the agora Phase 2 federation demo.
+-- @@DOMAIN@@, @@MUC_DOMAIN@@, @@AUTH_URL@@ substituted by entrypoint.sh.
+
+admins = { }
+
+plugin_paths = { "/usr/lib/prosody/modules-community" }
+
+modules_enabled = {
+  "roster";
+  "saslauth";
+  "dialback";       -- XEP-0220: server-to-server auth via DNS, no certs
+  "disco";
+  "private";
+  "vcard";
+  "version";
+  "uptime";
+  "time";
+  "ping";
+  "admin_adhoc";
+  "auth_http";      -- community module: POSTs credentials to agora
+  "muc";
+}
+
+modules_disabled = { }
+
+-- HTTP auth plugin: POST JSON {"user":..., "pass":...} to the URL,
+-- expect HTTP 200 on success, any non-2xx on failure.
+http_auth_url = "@@AUTH_URL@@"
+
+-- s2s: dialback-only, no TLS for the demo network (cleartext on a compose
+-- network; in production use s2s_require_encryption=true + proper CA).
+s2s_require_encryption = false
+s2s_secure_auth = false
+c2s_require_encryption = false
+
+authentication = "http"
+
+allow_registration = false
+
+interfaces = { "*" }
+c2s_ports = { 5222 }
+s2s_ports = { 5269 }
+
+log = {
+  { levels = { min = "info" }, to = "console" };
+}
+
+pidfile = "/var/run/prosody/prosody.pid"
+data_path = "/var/lib/prosody"
+
+-- This server's domain (set per-instance).
+VirtualHost "@@DOMAIN@@"
+  authentication = "http"
+  -- Compose network alias resolves peers (server-b, etc.) by short name.
+
+-- MUC component for this server.
+Component "@@MUC_DOMAIN@@" "muc"
+  -- Allow users from any domain to join rooms (federation demo).
+  restrict_room_creation = false

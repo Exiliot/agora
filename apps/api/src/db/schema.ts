@@ -71,6 +71,9 @@ export const sessions = pgTable(
   (t) => ({
     userIdIdx: index('sessions_user_id_idx').on(t.userId),
     expiresAtIdx: index('sessions_expires_at_idx').on(t.expiresAt),
+    // Unique index on token_hash — every auth'd request resolves the session
+    // via this lookup. Without it Postgres does a seq scan per request.
+    tokenHashKey: uniqueIndex('sessions_token_hash_key').on(t.tokenHash),
   }),
 );
 
