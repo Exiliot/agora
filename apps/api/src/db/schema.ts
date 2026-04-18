@@ -342,6 +342,32 @@ export const conversationUnreads = pgTable(
   }),
 );
 
+// ---- notifications ---------------------------------------------------------
+
+export const notifications = pgTable(
+  'notifications',
+  {
+    id: uuid('id').primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    kind: text('kind').notNull(),
+    subjectType: text('subject_type'),
+    subjectId: uuid('subject_id'),
+    actorUserId: uuid('actor_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    payloadJson: text('payload_json').notNull().default('{}'),
+    aggregateCount: integer('aggregate_count').notNull().default(1),
+    readAt: timestamp('read_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    feedIdx: index('notifications_feed_idx').on(t.userId, t.readAt, t.createdAt),
+  }),
+);
+
 // ---- relations (optional but useful for joins) ----------------------------
 
 export const usersRelations = relations(users, ({ many }) => ({

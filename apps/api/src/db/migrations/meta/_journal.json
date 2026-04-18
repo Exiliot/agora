@@ -15,6 +15,13 @@
       "when": 1776518266334,
       "tag": "0001_add_sessions_token_hash_idx",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1776551716110,
+      "tag": "0002_notifications",
+      "breakpoints": true
     }
   ]
 }
