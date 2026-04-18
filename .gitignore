@@ -1,0 +1,45 @@
+# macOS / editor cruft
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+*.tmproj
+
+# Node
+node_modules/
+.pnpm-store/
+.npm/
+.yarn/
+
+# Build output
+dist/
+build/
+.next/
+.turbo/
+coverage/
+.vite/
+*.tsbuildinfo
+
+# Logs
+*.log
+logs/
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# Runtime data (chat uploads)
+storage/*
+!storage/.gitkeep
+
+# Playwright
+playwright-report/
+test-results/
+blob-report/
+
+# Python (if any future tooling)
+__pycache__/
+*.pyc
+.venv/
