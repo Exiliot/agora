@@ -18,5 +18,6 @@ import '../messages/ws-handlers.js';
 import '../presence/ws-handlers.js';
 import '../presence/sweeper.js';
 import '../friends/routes.js';
-// import '../attachments/routes.js';
-// import '../notifications/routes.js';
+import '../attachments/routes.js';
+import '../attachments/sweeper.js';
+import '../attachments/bus-handlers.js';
