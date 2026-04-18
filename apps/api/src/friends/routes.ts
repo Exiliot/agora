@@ -22,6 +22,7 @@ import type { FastifyInstance } from 'fastify';
 import { uuidv7 } from 'uuidv7';
 import { db } from '../db/client.js';
 import { friendRequests, friendships, userBans, users } from '../db/schema.js';
+import { publishNotification } from '../notifications/publisher.js';
 import { addRouteModule } from '../routes/registry.js';
 import { isAuthed, requireAuth } from '../session/require-auth.js';
 import { areFriends, eitherSideBanned, isUniqueViolation, pairKey } from './db-helpers.js';
@@ -152,6 +153,15 @@ addRouteModule({
             note: inserted.note,
           });
 
+          await publishNotification({
+            userId: target.id,
+            kind: 'friend.request',
+            subjectType: 'user',
+            subjectId: senderId,
+            actorId: senderId,
+            payload: { senderUsername: req.user.username, note: inserted.note },
+          });
+
           return reply.code(201).send({
             id: inserted.id,
             senderId: inserted.senderId,
@@ -272,6 +282,15 @@ addRouteModule({
 
           publishFriendshipCreated(request.senderId, request.recipientId);
           publishFriendshipCreated(request.recipientId, request.senderId);
+
+          await publishNotification({
+            userId: request.senderId,
+            kind: 'friend.accepted',
+            subjectType: 'user',
+            subjectId: request.recipientId,
+            actorId: request.recipientId,
+            payload: { accepterUsername: req.user.username },
+          });
 
           return reply.code(200).send({
             userIds: [request.senderId, request.recipientId],
@@ -426,6 +445,15 @@ addRouteModule({
 
         publishUserBanCreated(callerId, callerId, targetId);
         publishUserBanCreated(targetId, callerId, targetId);
+
+        await publishNotification({
+          userId: targetId,
+          kind: 'user.ban',
+          subjectType: 'user',
+          subjectId: callerId,
+          actorId: callerId,
+          payload: { bannerUsername: req.user.username, reason: reason ?? null },
+        });
 
         return reply.code(201).send({ bannerId: callerId, targetId });
       });
