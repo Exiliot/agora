@@ -1,10 +1,13 @@
 import { createContext, useContext, useEffect, useMemo, type ReactNode } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, type InfiniteData } from '@tanstack/react-query';
 import { create } from 'zustand';
 import type { MessageView, PresenceState } from '@agora/shared';
 import { createWsClient, type WsClient } from '../lib/wsClient';
 import { backfillAllConversations } from '../features/messages/backfill';
 import { useLastSeenStore } from '../features/messages/lastSeen';
+import type { MessagesPage } from '../features/messages/useMessages';
+
+type MessagesInfiniteData = InfiniteData<MessagesPage, string | null>;
 
 interface PresenceStore {
   states: Map<string, PresenceState>;
@@ -57,12 +60,25 @@ export const WsProvider = ({ enabled, children }: WsProviderProps) => {
         useLastSeenStore
           .getState()
           .note(payload.conversationType, payload.conversationId, payload.id);
-        // Invalidate only the affected conversation's history, not every
-        // cached messages query. Wide invalidation was amplifying a single
-        // received message into 5-10 refetches per active conversation.
-        queryClient.invalidateQueries({
-          queryKey: ['messages', payload.conversationType, payload.conversationId],
-        });
+        // Prepend into page 0 directly. Invalidating an infinite query here
+        // was unreliable: each page refetches with its original `before`
+        // cursor, and in a long history the first page's cursor moves while
+        // later pages stay pinned – the new message could be missed or
+        // dropped in the cursor realignment. setQueryData is deterministic,
+        // idempotent (dedup by id), and avoids a pointless server round-trip.
+        queryClient.setQueryData<MessagesInfiniteData>(
+          ['messages', payload.conversationType, payload.conversationId],
+          (old) => {
+            if (!old || old.pages.length === 0) return old;
+            const [first, ...rest] = old.pages;
+            if (!first) return old;
+            if (first.messages.some((m) => m.id === payload.id)) return old;
+            return {
+              ...old,
+              pages: [{ ...first, messages: [payload, ...first.messages] }, ...rest],
+            };
+          },
+        );
       }
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
     });
@@ -72,18 +88,47 @@ export const WsProvider = ({ enabled, children }: WsProviderProps) => {
     const unsubscribeUpdated = client.on('message.updated', (event) => {
       const payload = event.payload as MessageView | undefined;
       if (!payload) return;
-      queryClient.invalidateQueries({
-        queryKey: ['messages', payload.conversationType, payload.conversationId],
-      });
+      queryClient.setQueryData<MessagesInfiniteData>(
+        ['messages', payload.conversationType, payload.conversationId],
+        (old) => {
+          if (!old) return old;
+          let touched = false;
+          const pages = old.pages.map((page) => {
+            const idx = page.messages.findIndex((m) => m.id === payload.id);
+            if (idx < 0) return page;
+            touched = true;
+            const next = page.messages.slice();
+            next[idx] = payload;
+            return { ...page, messages: next };
+          });
+          return touched ? { ...old, pages } : old;
+        },
+      );
     });
     const unsubscribeDeleted = client.on('message.deleted', (event) => {
       const payload = event.payload as
-        | { conversationType: 'room' | 'dm'; conversationId: string }
+        | { id: string; conversationType: 'room' | 'dm'; conversationId: string }
         | undefined;
       if (!payload) return;
-      queryClient.invalidateQueries({
-        queryKey: ['messages', payload.conversationType, payload.conversationId],
-      });
+      const deletedAt = new Date().toISOString();
+      queryClient.setQueryData<MessagesInfiniteData>(
+        ['messages', payload.conversationType, payload.conversationId],
+        (old) => {
+          if (!old) return old;
+          let touched = false;
+          const pages = old.pages.map((page) => {
+            const idx = page.messages.findIndex((m) => m.id === payload.id);
+            if (idx < 0) return page;
+            touched = true;
+            const existing = page.messages[idx];
+            if (!existing) return page;
+            const next = page.messages.slice();
+            next[idx] = { ...existing, body: '', deletedAt };
+            return { ...page, messages: next };
+          });
+          return touched ? { ...old, pages } : old;
+        },
+      );
     });
     const unsubscribeUnread = client.on('unread.updated', () => {
       queryClient.invalidateQueries({ queryKey: ['conversations'] });

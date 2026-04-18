@@ -2,7 +2,7 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import type { ConversationType, MessageView } from '@agora/shared';
 import { api } from '../../lib/apiClient';
 
-interface MessagesPage {
+export interface MessagesPage {
   messages: MessageView[];
   hasMore: boolean;
 }

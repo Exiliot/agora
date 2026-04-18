@@ -43,7 +43,7 @@ const AttachmentPreview = ({ attachment }: { attachment: AttachmentSummary }) =>
 interface MessageListProps {
   conversationType: ConversationType;
   conversationId: string;
-  /** My role in the room — used to determine if I can delete others' messages. */
+  /** My role in the room – used to determine if I can delete others' messages. */
   myRoomRole?: RoomRole | null;
 }
 
@@ -276,7 +276,7 @@ const MessageItem = ({
         ) : (
           <>
             {/* Body text gets its own span so its textContent is exactly
-                the message body — uncluttered by the always-mounted
+                the message body – uncluttered by the always-mounted
                 MessageActions text (kept opacity-gated for no-flicker
                 hover). Preserves test/screen-reader text-matching. */}
             <span data-testid="message-body">
@@ -429,6 +429,40 @@ export const MessageList = ({ conversationType, conversationId, myRoomRole }: Me
     didInitialScroll.current[conversationId] = true;
   }, [data, conversationId, messages.length, virtualizer]);
 
+  // Mirror isAtBottom into a ref so the follow-latest effect can read the
+  // value at the moment the message count changes without depending on it
+  // (which would re-run the effect on every scroll tick).
+  const wasAtBottomRef = useRef(true);
+  useEffect(() => {
+    wasAtBottomRef.current = isAtBottom;
+  }, [isAtBottom]);
+
+  // Follow the latest message when the user is already at the bottom. New
+  // messages arrive via `setQueryData` from the WS layer; the virtualiser
+  // re-renders but doesn't scroll on its own, so a read-only user would see
+  // the new row grow the scroll area just below the fold. One rAF gives the
+  // virtualiser a chance to measure the new row before we align it.
+  const prevCountRef = useRef<number | null>(null);
+  useEffect(() => {
+    const prev = prevCountRef.current;
+    prevCountRef.current = messages.length;
+    if (prev === null) return;
+    if (messages.length <= prev) return;
+    if (!wasAtBottomRef.current) return;
+    const raf = requestAnimationFrame(() => {
+      if (!scrollRef.current) return;
+      virtualizer.scrollToIndex(messages.length - 1, { align: 'end' });
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [messages.length, virtualizer]);
+
+  // Reset follow state when the conversation switches so a fresh history
+  // load doesn't look like live growth.
+  useEffect(() => {
+    prevCountRef.current = null;
+    wasAtBottomRef.current = true;
+  }, [conversationId]);
+
   // Record the latest visible id into the watermark store so WS reconnects
   // can backfill from it.
   const latestId = messages[messages.length - 1]?.id;
@@ -437,7 +471,7 @@ export const MessageList = ({ conversationType, conversationId, myRoomRole }: Me
   }, [latestId, conversationType, conversationId]);
 
   // isAtBottom toggles the jump-to-latest pill. Wired via React's onScroll
-  // (bound on the scroller element below) rather than a useEffect listener —
+  // (bound on the scroller element below) rather than a useEffect listener –
   // the effect bound against a ref-captured scroller wasn't firing cleanly
   // under HMR / remount churn.
   const handleScroll = () => {
@@ -599,7 +633,7 @@ export const MessageList = ({ conversationType, conversationId, myRoomRole }: Me
             fontSize: 12,
           }}
         >
-          no messages yet — say hello
+          no messages yet – say hello
         </div>
       ) : (
         <div

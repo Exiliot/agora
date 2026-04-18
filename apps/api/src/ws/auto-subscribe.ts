@@ -12,10 +12,15 @@ import { subscribeConnection } from './connection-manager.js';
 import { dmTopic, roomTopic } from '../bus/topics.js';
 
 connectionLifecycle.on('hello', (conn) => {
-  // Skip the DB roundtrip if this connection already holds subscriptions —
-  // auto-subscribe is idempotent, but the two queries are not free and the
-  // client may re-send `hello` on WS reconnect churn.
-  if (conn.subscriptions.size > 0) return;
+  // Skip the DB roundtrip only if this connection already has room/DM
+  // subscriptions. The ws plugin pre-subscribes every conn to its userTopic
+  // at socket open, so a naive `subscriptions.size > 0` check would always
+  // match and we'd never subscribe to any rooms – no `message.new` fan-out
+  // would ever reach the user on their first hello.
+  const hasConversationSub = Array.from(conn.subscriptions.keys()).some(
+    (topic) => topic.startsWith('room:') || topic.startsWith('dm:'),
+  );
+  if (hasConversationSub) return;
 
   void (async () => {
     const [rooms, dms] = await Promise.all([
