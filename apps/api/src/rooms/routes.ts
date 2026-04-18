@@ -450,6 +450,49 @@ addRouteModule({
         }
       });
 
+      // --- list my pending invitations -----------------------------------
+      scoped.get('/api/invitations', async (req, reply) => {
+        if (!isAuthed(req)) return;
+        const userId = req.user.id;
+
+        const inviter = alias(users, 'inviter');
+        const rows = await db
+          .select({
+            id: roomInvitations.id,
+            createdAt: roomInvitations.createdAt,
+            roomId: rooms.id,
+            roomName: rooms.name,
+            roomDescription: rooms.description,
+            roomVisibility: rooms.visibility,
+            memberCount: sql<number>`(SELECT COUNT(*)::int FROM ${roomMembers} WHERE ${roomMembers.roomId} = ${rooms.id})`,
+            inviterId: inviter.id,
+            inviterUsername: inviter.username,
+          })
+          .from(roomInvitations)
+          .innerJoin(rooms, eq(rooms.id, roomInvitations.roomId))
+          .leftJoin(inviter, eq(inviter.id, roomInvitations.inviterId))
+          .where(eq(roomInvitations.targetId, userId))
+          .orderBy(desc(roomInvitations.createdAt));
+
+        const invitations = rows.map((r) => ({
+          id: r.id,
+          createdAt: r.createdAt.toISOString(),
+          room: {
+            id: r.roomId,
+            name: r.roomName,
+            description: r.roomDescription,
+            visibility: r.roomVisibility,
+            memberCount: r.memberCount,
+          },
+          inviter:
+            r.inviterId && r.inviterUsername
+              ? { id: r.inviterId, username: r.inviterUsername }
+              : null,
+        }));
+
+        return reply.send({ invitations });
+      });
+
       // --- accept invitation ---------------------------------------------
       scoped.post<{ Params: { id: string } }>('/api/invitations/:id/accept', async (req, reply) => {
         if (!isAuthed(req)) return;

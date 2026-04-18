@@ -74,6 +74,13 @@ registerWsHandler('message.send', async (ctx, event) => {
           return canSendDm(userId, loaded.otherUserId);
         })();
   if (!permission.ok) {
+    // eslint-disable-next-line no-console
+    console.error('[message.send denied]', {
+      userId,
+      conversationType: payload.conversationType,
+      conversationId: payload.conversationId,
+      code: permission.code,
+    });
     sendErr(ctx, reqId, permission.code, 'not allowed');
     return;
   }

@@ -69,8 +69,10 @@ export const createWsClient = (): WsClient => {
           const result = (event.payload as { result?: unknown } | undefined)?.result;
           p.resolve(result);
         } else if (event.type === 'err') {
-          const err = event.payload as { message?: string } | undefined;
-          p.reject(new Error(err?.message ?? 'ws error'));
+          const err = event.payload as { message?: string; code?: string } | undefined;
+          const base = err?.message ?? 'ws error';
+          const withCode = err?.code ? `${base} (${err.code})` : base;
+          p.reject(new Error(withCode));
         }
         return;
       }
