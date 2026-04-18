@@ -4,7 +4,8 @@ import cookie from '@fastify/cookie';
 import { config } from './config.js';
 import { pingDb, pool } from './db/client.js';
 import { runMigrations } from './db/migrate.js';
-import { registerEchoWs } from './ws/echo.js';
+import { registerWsPlugin } from './ws/plugin.js';
+import { registerAllRouteModules } from './routes/index.js';
 
 const app = Fastify({
   logger: {
@@ -30,7 +31,8 @@ app.get('/health', async () => {
   return { status: 'ok', db: dbOk, ts: Date.now() };
 });
 
-registerEchoWs(app);
+registerWsPlugin(app);
+await registerAllRouteModules(app);
 
 const shutdown = async (signal: string): Promise<void> => {
   app.log.info({ signal }, 'shutting down');
