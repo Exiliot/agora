@@ -102,7 +102,13 @@ export const FileCard = ({ name, size, kind = 'file', comment, image, href }: Fi
         >
           {name}
         </div>
-        <div style={{ fontSize: 11, color: tokens.color.ink2 }}>
+        <div
+          style={{
+            fontFamily: tokens.type.mono,
+            fontSize: 11,
+            color: tokens.color.ink2,
+          }}
+        >
           {size}
           {comment ? ` — ${comment}` : ''}
         </div>

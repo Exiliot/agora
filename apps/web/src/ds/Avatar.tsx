@@ -1,6 +1,25 @@
 import { tokens } from './tokens';
 
-const palette = ['#b38b59', '#6b8e6b', '#8a6f9e', '#a86a5c', '#5d7d8f', '#9a7b3f', '#7a6a5c'];
+/**
+ * Deterministic seven-colour palette for nicknames. Published from the DS
+ * (rather than kept as a private const) so the MessageList `colorForName`
+ * path and any future mentions / presence-pill palette share the same
+ * hashing. Move to tokens.css if this ever needs theme-switching.
+ */
+export const nickPalette = [
+  '#b38b59',
+  '#6b8e6b',
+  '#8a6f9e',
+  '#a86a5c',
+  '#5d7d8f',
+  '#9a7b3f',
+  '#7a6a5c',
+] as const;
+
+export const colorForName = (name: string): string => {
+  const idx = (name.charCodeAt(0) || 0) % nickPalette.length;
+  return nickPalette[idx] ?? '#7a6a5c';
+};
 
 interface AvatarProps {
   name?: string;
@@ -9,8 +28,7 @@ interface AvatarProps {
 
 export const Avatar = ({ name = '?', size = 20 }: AvatarProps) => {
   const ch = name[0]?.toUpperCase() ?? '?';
-  const idx = (name.charCodeAt(0) || 0) % palette.length;
-  const bg = palette[idx] ?? '#7a6a5c';
+  const bg = colorForName(name);
   return (
     <span
       style={{
@@ -32,10 +50,4 @@ export const Avatar = ({ name = '?', size = 20 }: AvatarProps) => {
       {ch}
     </span>
   );
-};
-
-/** Deterministic colour from a user's name — useful for message row nicknames. */
-export const colorForName = (name: string): string => {
-  const idx = (name.charCodeAt(0) || 0) % palette.length;
-  return palette[idx] ?? '#7a6a5c';
 };
