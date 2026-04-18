@@ -19,6 +19,16 @@ Then:
 
 That's the whole delivery contract. No cloud provider, no DNS, no certificates to wire up. If it builds on the reviewer's machine, it runs.
 
+### CI / e2e overlay
+
+`docker-compose.ci.yml` enables the dev-seed endpoints the Playwright large-history suite and the XMPP load test rely on. It is not layered into the default `docker compose up` so the committed demo never exposes the unauthenticated bulk-register surface. To run the e2e suite:
+
+```sh
+pnpm smoke
+```
+
+Which expands to `docker compose -f docker-compose.yml -f docker-compose.ci.yml up --build -d && playwright test`.
+
 ## Try it
 
 1. Register an account (email + username + password) at `/register`.

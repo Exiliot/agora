@@ -34,6 +34,7 @@ Listed in the order events happened, not when the entry was written.
 | 14 | Sat 17:12 | XMPP federation working + 50-client load test PASS | [2026-04-18-14-xmpp-working.md](2026-04-18-14-xmpp-working.md) |
 | 15 | Sat 17:28 | Wave-3 audit closure | [2026-04-18-15-wave-3.md](2026-04-18-15-wave-3.md) |
 | 16 | Sat 18:30 | Claude Design audit — six-phase closure | [2026-04-18-16-design-audit.md](2026-04-18-16-design-audit.md) |
+| 17 | Sat 19:50 | Spec + production-posture sweep | [2026-04-18-17-spec-prod-sweep.md](2026-04-18-17-spec-prod-sweep.md) |
 
 ## The philosophy underneath
 
