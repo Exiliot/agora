@@ -7,6 +7,12 @@ import { MessageList } from './MessageList';
 import { Composer } from './Composer';
 import { Sidebar } from './Sidebar';
 import { ManageRoomModal } from './ManageRoomModal';
+import { usePresenceOf } from '../../app/WsProvider';
+
+const MemberRow = ({ userId, username }: { userId: string; username: string }) => {
+  const state = usePresenceOf(userId);
+  return <Presence status={state} label={username} />;
+};
 
 const RoomHeader = ({ roomName, description, memberCount, visibility }: {
   roomName: string;
@@ -138,7 +144,7 @@ const ChatView = () => {
         <div style={{ marginTop: 4 }}>
           {detail?.members?.map((m) => (
             <div key={m.user.id} style={{ margin: '2px 0' }}>
-              <Presence status="offline" label={m.user.username} />
+              <MemberRow userId={m.user.id} username={m.user.username} />
             </div>
           ))}
         </div>

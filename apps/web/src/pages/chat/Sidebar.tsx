@@ -13,6 +13,22 @@ import {
 } from '../../ds';
 import { useConversations } from '../../features/conversations/useConversations';
 import { useCreateRoom } from '../../features/rooms/useCreateRoom';
+import { usePresenceOf } from '../../app/WsProvider';
+
+const DmRow = ({
+  name,
+  userId,
+  unread,
+  onClick,
+}: {
+  name: string;
+  userId: string;
+  unread: number;
+  onClick: () => void;
+}) => {
+  const status = usePresenceOf(userId);
+  return <ContactListItem name={name} status={status} unread={unread} onClick={onClick} />;
+};
 import { ApiError } from '../../lib/apiClient';
 import type { RoomVisibility } from '@agora/shared';
 
@@ -175,9 +191,10 @@ export const Sidebar = () => {
           <Meta>Contacts</Meta>
         </div>
         {dms.map((dm) => (
-          <ContactListItem
+          <DmRow
             key={dm.id}
             name={dm.otherUser.username}
+            userId={dm.otherUser.id}
             unread={dm.unreadCount}
             onClick={() => navigate(`/dm/${dm.otherUser.username}`)}
           />
