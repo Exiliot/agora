@@ -6,13 +6,15 @@
  */
 
 import type { MessageView } from '@agora/shared';
-import { and, eq, inArray, isNull } from 'drizzle-orm';
+import { and, eq, inArray, isNull, ne, sql } from 'drizzle-orm';
 import { uuidv7 } from 'uuidv7';
 import { db } from '../db/client.js';
 import { bus } from '../bus/bus.js';
 import { dmTopic, roomTopic, userTopic } from '../bus/topics.js';
-import { attachments, lastRead, messages, roomMembers } from '../db/schema.js';
+import { attachments, lastRead, messages, roomMembers, users } from '../db/schema.js';
 import { registerWsHandler, type WsContext } from '../ws/dispatcher.js';
+import { extractMentions } from '../notifications/mention.js';
+import { publishNotification } from '../notifications/publisher.js';
 import { hydrateMessage } from './history.js';
 import { canAccessRoom, canSendDm, loadDmForUser } from './permissions.js';
 import { incrementUnreadForMany, listOtherParticipants, resetUnread } from './unread.js';
@@ -168,6 +170,55 @@ registerWsHandler('message.send', async (ctx, event) => {
         count,
       },
     });
+  }
+
+  if (payload.conversationType === 'dm') {
+    for (const { userId: rid } of insertResult.counts) {
+      await publishNotification({
+        userId: rid,
+        kind: 'dm.new_message',
+        subjectType: 'dm',
+        subjectId: payload.conversationId,
+        actorId: userId,
+        payload: {
+          senderUsername: view.author?.username ?? 'unknown',
+          snippet: trimmedBody.slice(0, 120),
+        },
+      });
+    }
+  } else if (payload.conversationType === 'room' && trimmedBody) {
+    const mentioned = extractMentions(trimmedBody);
+    if (mentioned.length > 0) {
+      const targets = await db
+        .select({ id: users.id, username: users.username })
+        .from(users)
+        .innerJoin(
+          roomMembers,
+          and(
+            eq(roomMembers.userId, users.id),
+            eq(roomMembers.roomId, payload.conversationId),
+          ),
+        )
+        .where(
+          and(
+            inArray(sql`lower(${users.username})`, mentioned),
+            ne(users.id, userId),
+          ),
+        );
+      for (const target of targets) {
+        await publishNotification({
+          userId: target.id,
+          kind: 'room.mentioned',
+          subjectType: 'room',
+          subjectId: payload.conversationId,
+          actorId: userId,
+          payload: {
+            senderUsername: view.author?.username ?? 'unknown',
+            snippet: trimmedBody.slice(0, 120),
+          },
+        });
+      }
+    }
   }
 
   sendAck(ctx, reqId, view);
