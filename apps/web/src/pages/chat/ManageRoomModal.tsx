@@ -8,6 +8,7 @@ import {
   Input,
   Meta,
   Modal,
+  ModalScrim,
   Row,
   TabBar,
   Table,
@@ -173,20 +174,8 @@ export const ManageRoomModal = ({ room, onClose }: ManageRoomModalProps) => {
   const [active, setActive] = useState(0);
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: tokens.color.scrim,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 10,
-      }}
-      onClick={onClose}
-    >
-      <div onClick={(event) => event.stopPropagation()}>
-        <Modal title={`Manage · # ${room.name}`} width={560} onClose={onClose}>
+    <ModalScrim onClose={onClose}>
+      <Modal title={`Manage · # ${room.name}`} width={560} onClose={onClose}>
           <Col gap={12}>
             <TabBar items={tabs} active={active} onSelect={setActive} />
             {active === 0 ? <MembersTab room={room} /> : null}
@@ -194,8 +183,7 @@ export const ManageRoomModal = ({ room, onClose }: ManageRoomModalProps) => {
             {active === 2 ? <InviteTab roomId={room.id} /> : null}
             {active === 3 ? <SettingsTab room={room} onDeleted={onClose} /> : null}
           </Col>
-        </Modal>
-      </div>
-    </div>
+      </Modal>
+    </ModalScrim>
   );
 };

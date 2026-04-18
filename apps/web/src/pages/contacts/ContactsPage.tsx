@@ -6,6 +6,7 @@ import {
   Col,
   Input,
   Meta,
+  PageShell,
   Row,
   Table,
   tokens,
@@ -284,23 +285,11 @@ const Invitations = () => {
 };
 
 const ContactsPage = () => (
-  <div style={{ flex: 1, padding: '20px 24px', overflow: 'auto' }}>
-    <div style={{ maxWidth: 720 }}>
-      <h1
-        style={{
-          margin: 0,
-          fontFamily: tokens.type.sans,
-          fontSize: 18,
-          fontWeight: 600,
-          color: tokens.color.ink0,
-        }}
-      >
-        Contacts
-      </h1>
-      <div style={{ fontSize: 12, color: tokens.color.ink2, marginTop: 4 }}>
-        Add people by username, accept incoming requests, manage bans. Personal messages are only
-        allowed between friends.
-      </div>
+  <PageShell
+    title="Contacts"
+    subtitle="Add people by username, accept incoming requests, manage bans. Personal messages are only allowed between friends."
+  >
+    <div>
 
       <Section title="Add a friend">
         <UserSearch />
@@ -326,7 +315,7 @@ const ContactsPage = () => (
         <MyBans />
       </Section>
     </div>
-  </div>
+  </PageShell>
 );
 
 export default ContactsPage;

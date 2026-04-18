@@ -2,11 +2,13 @@ import { useState, type ChangeEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Button,
+  Check,
   Col,
   ContactListItem,
   Input,
   Meta,
   Modal,
+  ModalScrim,
   Row,
   RoomListItem,
   tokens,
@@ -41,20 +43,8 @@ const CreateRoomDialog = ({ onClose }: { onClose: () => void }) => {
   const createRoom = useCreateRoom();
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: tokens.color.scrim,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 10,
-      }}
-      onClick={onClose}
-    >
-      <div onClick={(event) => event.stopPropagation()}>
-        <Modal title="Create room" width={380} onClose={onClose}>
+    <ModalScrim onClose={onClose}>
+      <Modal title="Create room" width={380} onClose={onClose}>
           <Col gap={12}>
             <Input
               label="Name"
@@ -73,26 +63,22 @@ const CreateRoomDialog = ({ onClose }: { onClose: () => void }) => {
             <Col gap={4}>
               <Meta>Visibility</Meta>
               <Row gap={12}>
-                <label style={{ fontSize: 13, cursor: 'pointer' }}>
-                  <input
-                    type="radio"
-                    name="visibility"
-                    value="public"
-                    checked={visibility === 'public'}
-                    onChange={() => setVisibility('public')}
-                  />{' '}
-                  public
-                </label>
-                <label style={{ fontSize: 13, cursor: 'pointer' }}>
-                  <input
-                    type="radio"
-                    name="visibility"
-                    value="private"
-                    checked={visibility === 'private'}
-                    onChange={() => setVisibility('private')}
-                  />{' '}
-                  private
-                </label>
+                <Check
+                  radio
+                  name="visibility"
+                  value="public"
+                  label="public"
+                  checked={visibility === 'public'}
+                  onChange={() => setVisibility('public')}
+                />
+                <Check
+                  radio
+                  name="visibility"
+                  value="private"
+                  label="private"
+                  checked={visibility === 'private'}
+                  onChange={() => setVisibility('private')}
+                />
               </Row>
             </Col>
             {error ? <div style={{ fontSize: 12, color: tokens.color.danger }}>{error}</div> : null}
@@ -125,9 +111,8 @@ const CreateRoomDialog = ({ onClose }: { onClose: () => void }) => {
               </Button>
             </Row>
           </Col>
-        </Modal>
-      </div>
-    </div>
+      </Modal>
+    </ModalScrim>
   );
 };
 

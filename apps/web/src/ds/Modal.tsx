@@ -92,6 +92,7 @@ export const Modal = ({ title, children, onClose, width = 420 }: ModalProps) => 
           type="button"
           onClick={onClose}
           aria-label="Close"
+          className="modal-close-btn"
           style={{
             fontFamily: tokens.type.mono,
             color: tokens.color.ink2,
@@ -99,6 +100,13 @@ export const Modal = ({ title, children, onClose, width = 420 }: ModalProps) => 
             fontSize: 14,
             background: 'transparent',
             border: 'none',
+            width: 24,
+            height: 24,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: tokens.radius.xs,
+            padding: 0,
           }}
         >
           ×

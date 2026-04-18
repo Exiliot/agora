@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useMyRooms } from '../../features/rooms/useRooms';
 import { useRoom } from '../../features/rooms/useRoom';
-import { Badge, Button, Meta, Presence, Row, tokens } from '../../ds';
+import { Badge, Button, ContactListItem, Meta, Row, tokens } from '../../ds';
 import { MessageList } from './MessageList';
 import { Composer } from './Composer';
 import { Sidebar } from './Sidebar';
@@ -11,7 +11,7 @@ import { usePresenceOf } from '../../app/WsProvider';
 
 const MemberRow = ({ userId, username }: { userId: string; username: string }) => {
   const state = usePresenceOf(userId);
-  return <Presence status={state} label={username} />;
+  return <ContactListItem name={username} status={state} />;
 };
 
 const RoomHeader = ({ roomName, description, memberCount, visibility }: {

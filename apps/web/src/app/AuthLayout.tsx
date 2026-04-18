@@ -1,5 +1,5 @@
 import { Outlet } from 'react-router-dom';
-import { Logo, tokens } from '../ds';
+import { AuthHeader, tokens } from '../ds';
 
 export const AuthLayout = () => (
   <div
@@ -8,13 +8,19 @@ export const AuthLayout = () => (
       background: tokens.color.paper1,
       display: 'flex',
       flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: 24,
-      gap: 24,
     }}
   >
-    <Logo size={28} />
-    <Outlet />
+    <AuthHeader />
+    <div
+      style={{
+        flex: 1,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '40px 24px',
+      }}
+    >
+      <Outlet />
+    </div>
   </div>
 );

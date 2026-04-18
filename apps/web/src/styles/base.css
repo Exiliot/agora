@@ -44,6 +44,15 @@
   }
 }
 
+@layer components {
+  /* Modal close-button hover wash — rendered in JSX with a 24×24 hit area
+     so keyboard focus lands on a real button, and hover darkens to paper-2. */
+  .modal-close-btn:hover {
+    background: var(--paper-2);
+    color: var(--ink-0);
+  }
+}
+
 @layer utilities {
   /* Screen-reader-only content. Used for labels we don't want visible but
      must exist for assistive tech. */

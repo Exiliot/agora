@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes, CSSProperties, ReactNode } from 'react';
 import { tokens } from './tokens';
 
-export type ButtonVariant = 'default' | 'primary' | 'ghost' | 'link' | 'danger';
+export type ButtonVariant = 'default' | 'primary' | 'ghost' | 'link' | 'linkDanger' | 'danger';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -46,6 +46,14 @@ const variantStyles: Record<ButtonVariant, CSSProperties> = {
   link: {
     background: 'transparent',
     color: tokens.color.accent,
+    border: '1px solid transparent',
+    padding: 0,
+    textDecoration: 'underline',
+    textUnderlineOffset: 2,
+  },
+  linkDanger: {
+    background: 'transparent',
+    color: tokens.color.danger,
     border: '1px solid transparent',
     padding: 0,
     textDecoration: 'underline',

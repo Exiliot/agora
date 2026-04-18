@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { AttachmentSummary, ConversationType, MessageView, RoomRole } from '@agora/shared';
-import { FileCard, MessageRow, colorForName, tokens } from '../../ds';
+import { Button, FileCard, MessageRow, colorForName, tokens } from '../../ds';
 import { useMessages } from '../../features/messages/useMessages';
 import { useMe } from '../../features/auth/useMe';
 import { useWs } from '../../app/WsProvider';
@@ -69,44 +69,19 @@ const MessageActions = ({
         marginLeft: 8,
         fontFamily: tokens.type.mono,
         fontSize: 11,
-        color: tokens.color.ink3,
         display: 'inline-flex',
-        gap: 6,
+        gap: 8,
       }}
     >
       {canEdit ? (
-        <button
-          type="button"
-          onClick={handleEdit}
-          style={{
-            background: 'transparent',
-            border: 'none',
-            cursor: 'pointer',
-            color: tokens.color.ink2,
-            fontFamily: 'inherit',
-            fontSize: 'inherit',
-            padding: 0,
-          }}
-        >
+        <Button variant="link" size="sm" onClick={handleEdit} style={{ fontSize: 11 }}>
           edit
-        </button>
+        </Button>
       ) : null}
       {canDelete ? (
-        <button
-          type="button"
-          onClick={handleDelete}
-          style={{
-            background: 'transparent',
-            border: 'none',
-            cursor: 'pointer',
-            color: tokens.color.danger,
-            fontFamily: 'inherit',
-            fontSize: 'inherit',
-            padding: 0,
-          }}
-        >
+        <Button variant="linkDanger" size="sm" onClick={handleDelete} style={{ fontSize: 11 }}>
           delete
-        </button>
+        </Button>
       ) : null}
     </span>
   );
