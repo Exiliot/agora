@@ -15,6 +15,7 @@ import {
   signInRequest,
   type UserSelf,
 } from '@agora/shared';
+import { config } from '../config.js';
 import { db } from '../db/client.js';
 import { users } from '../db/schema.js';
 import { addRouteModule } from '../routes/registry.js';
@@ -49,7 +50,7 @@ const userAgentOf = (req: FastifyRequest): string | null => {
 
 const ipOf = (req: FastifyRequest): string | null => req.ip ?? null;
 
-const RESET_LINK_BASE = 'http://localhost:8080/reset';
+const RESET_LINK_BASE = `${config.APP_BASE_URL.replace(/\/$/, '')}/reset`;
 
 const issueSessionCookie = async (
   req: FastifyRequest,
@@ -227,7 +228,7 @@ addRouteModule({
       return reply.code(204).send();
     });
 
-    app.post('/api/auth/password-change', { onRequest: requireAuth }, async (req, reply) => {
+    app.post('/api/auth/password-change', { onRequest: requireAuth, ...authRateLimit }, async (req, reply) => {
       const parsed = passwordChangeRequest.safeParse(req.body);
       if (!parsed.success) {
         return reply.code(400).send({ error: 'invalid_input', issues: parsed.error.issues });

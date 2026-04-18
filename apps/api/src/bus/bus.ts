@@ -24,6 +24,43 @@ export interface Bus {
   countSubscribers(topic: string): number;
 }
 
+const YIELD_EVERY = 100;
+
+const dispatchOne = (
+  handler: Handler,
+  event: BusEvent,
+  serialised: string | undefined,
+  topic: string,
+): void => {
+  try {
+    handler(event, serialised);
+  } catch (err) {
+    // Log but do not rethrow — one bad subscriber must not kill fan-out.
+    // eslint-disable-next-line no-console
+    console.error('[bus] handler threw', { topic, type: event.type, err });
+  }
+};
+
+const dispatchBatched = async (
+  snapshot: Handler[],
+  event: BusEvent,
+  serialised: string | undefined,
+  topic: string,
+): Promise<void> => {
+  for (let i = 0; i < snapshot.length; i += YIELD_EVERY) {
+    const batch = snapshot.slice(i, i + YIELD_EVERY);
+    for (const handler of batch) {
+      const h = handler;
+      dispatchOne(h, event, serialised, topic);
+    }
+    // Yield to let other I/O (incoming WS frames, HTTP requests) interleave
+    // between batches so 1000-member fan-out doesn't stall the event loop.
+    if (i + YIELD_EVERY < snapshot.length) {
+      await new Promise<void>((resolve) => setImmediate(resolve));
+    }
+  }
+};
+
 const createInMemoryBus = (): Bus => {
   const table = new Map<string, Set<Handler>>();
 
@@ -35,15 +72,16 @@ const createInMemoryBus = (): Bus => {
       // handlers can reuse the serialised payload. Single-subscriber topics
       // skip the serialisation — the handler may not need it.
       const serialised = handlers.size > 1 ? JSON.stringify(event) : undefined;
-      for (const handler of handlers) {
-        try {
-          handler(event, serialised);
-        } catch (err) {
-          // Log but do not rethrow — one bad subscriber must not kill fan-out.
-          // eslint-disable-next-line no-console
-          console.error('[bus] handler threw', { topic, type: event.type, err });
-        }
+      // Snapshot the handler set so mutations during dispatch (an unsubscribe
+      // fired from a handler) don't skip siblings. Iterate synchronously for
+      // the common case; yield every YIELD_EVERY handlers to keep the event
+      // loop responsive when fanning out to large rooms (NFR-CAP-2 = 1000).
+      const snapshot = Array.from(handlers);
+      if (snapshot.length <= YIELD_EVERY) {
+        for (const handler of snapshot) dispatchOne(handler, event, serialised, topic);
+        return;
       }
+      void dispatchBatched(snapshot, event, serialised, topic);
     },
 
     subscribe(topic, handler) {

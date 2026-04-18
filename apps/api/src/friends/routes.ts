@@ -514,11 +514,19 @@ addRouteModule({
       });
 
       // --- search users ---------------------------------------------------
-      scoped.get('/api/users/search', async (req, reply) => {
+      // Throttled because returning prefix matches is an enumeration surface:
+      // anyone who can send two characters can walk the user table otherwise.
+      // 30/min per IP is plenty for a real user typing in a search box.
+      scoped.get(
+        '/api/users/search',
+        { config: { rateLimit: { max: 30, timeWindow: '1 minute' } } },
+        async (req, reply) => {
         if (!isAuthed(req)) return;
         const query = req.query as { q?: string; limit?: string };
         const rawQ = typeof query.q === 'string' ? query.q.trim() : '';
-        if (rawQ.length === 0) {
+        if (rawQ.length < 2) {
+          // Require at least 2 characters so typing 'a' doesn't fire a full
+          // ILIKE scan and also to slow prefix-walking enumeration attempts.
           return reply.send({ users: [] });
         }
 
@@ -548,7 +556,8 @@ addRouteModule({
 
         const mapped: UserPublic[] = rows.map((r) => ({ id: r.id, username: r.username }));
         return reply.send({ users: mapped });
-      });
+        },
+      );
 
       // --- user profile ---------------------------------------------------
       scoped.get<{ Params: { username: string } }>('/api/users/:username', async (req, reply) => {

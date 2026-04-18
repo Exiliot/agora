@@ -16,6 +16,12 @@ import { and, desc, eq, ilike, or, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import type { FastifyInstance } from 'fastify';
 import { uuidv7 } from 'uuidv7';
+import { z } from 'zod';
+
+const adminPostBody = z.object({ userId: z.string().uuid() });
+const removeMemberBody = z
+  .object({ reason: z.string().max(280).optional() })
+  .default({});
 import { db } from '../db/client.js';
 import { roomBans, roomInvitations, roomMembers, rooms, users } from '../db/schema.js';
 import { addRouteModule } from '../routes/registry.js';
@@ -207,21 +213,25 @@ addRouteModule({
           if (textMatch) whereClauses.push(textMatch);
         }
 
+        // `memberCount` is computed via a correlated subquery. At hackathon
+        // scale (handful to dozens of public rooms) the cost is negligible;
+        // a LATERAL join would help beyond ~hundreds of rooms but is
+        // finicky to write through drizzle's tag against aliased columns.
+        const memberCountSql = sql<number>`(
+          SELECT COUNT(*)::int FROM ${roomMembers}
+          WHERE ${roomMembers.roomId} = ${rooms.id}
+        )`;
         const rawRows = await db
           .select({
             id: rooms.id,
             name: rooms.name,
             description: rooms.description,
             visibility: rooms.visibility,
-            memberCount: sql<number>`(SELECT COUNT(*)::int FROM ${roomMembers} WHERE ${roomMembers.roomId} = ${rooms.id})`,
+            memberCount: memberCountSql,
           })
           .from(rooms)
           .where(and(...whereClauses))
-          .orderBy(
-            desc(
-              sql`(SELECT COUNT(*) FROM ${roomMembers} WHERE ${roomMembers.roomId} = ${rooms.id})`,
-            ),
-          )
+          .orderBy(desc(memberCountSql))
           .limit(limit);
 
         const summaries: RoomSummary[] = rawRows.map((r) => ({
@@ -506,11 +516,13 @@ addRouteModule({
         if (!isAuthed(req)) return;
         const { id } = req.params;
         const userId = req.user.id;
-        const body = req.body as { userId?: unknown };
-        if (typeof body?.userId !== 'string') {
-          return reply.code(400).send({ error: 'validation', message: 'userId is required' });
+        const parsed = adminPostBody.safeParse(req.body);
+        if (!parsed.success) {
+          return reply
+            .code(400)
+            .send({ error: 'validation', issues: parsed.error.issues });
         }
-        const targetId = body.userId;
+        const targetId = parsed.data.userId;
 
         const room = await loadRoom(id);
         if (!room) return reply.code(404).send({ error: 'not_found' });
@@ -603,8 +615,13 @@ addRouteModule({
             return reply.code(403).send({ error: 'forbidden', code: 'admin_cannot_remove_admin' });
           }
 
-          const body = (req.body ?? {}) as { reason?: unknown };
-          const reason = typeof body.reason === 'string' ? body.reason : null;
+          const parsedBody = removeMemberBody.safeParse(req.body ?? {});
+          if (!parsedBody.success) {
+            return reply
+              .code(400)
+              .send({ error: 'validation', issues: parsedBody.error.issues });
+          }
+          const reason = parsedBody.data.reason ?? null;
 
           await db.transaction(async (tx) => {
             await tx

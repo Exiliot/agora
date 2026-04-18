@@ -189,10 +189,7 @@ addRouteModule({
             .header('Content-Length', String(row.size))
             .header('Cache-Control', 'private, max-age=0, must-revalidate')
             .header('X-Content-Type-Options', 'nosniff')
-            .header(
-              'Content-Disposition',
-              `attachment; filename="${encodeRfc5987(row.originalFilename)}"`,
-            );
+            .header('Content-Disposition', contentDispositionFor(row.originalFilename));
           return reply.send(openStoredFile(hexHash));
         },
       );
@@ -251,11 +248,21 @@ export const checkAccess = async (
 };
 
 /**
- * RFC 5987 encoding for `Content-Disposition; filename="..."`. Keeps ASCII
- * printables as-is, escapes quotes and newlines, URL-encodes the rest.
+ * Build a spec-compliant `Content-Disposition` header for a downloaded
+ * attachment. Emits both `filename=` (ASCII fallback, quoted) and
+ * `filename*=UTF-8''…` (RFC 5987) so Cyrillic and other multi-byte
+ * filenames survive legacy proxies and older browsers.
  */
-const encodeRfc5987 = (name: string): string =>
-  name
-    .replace(/\\/g, '\\\\')
-    .replace(/"/g, '\\"')
-    .replace(/[\n\r]/g, ' ');
+const contentDispositionFor = (name: string): string => {
+  const ascii =
+    name
+      .replace(/\\/g, '\\\\')
+      .replace(/"/g, '\\"')
+      .replace(/[\n\r]/g, ' ')
+      .replace(/[^\x20-\x7E]/g, '_') || 'attachment';
+  const utf8 = encodeURIComponent(name).replace(
+    /['()*]/g,
+    (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`,
+  );
+  return `attachment; filename="${ascii}"; filename*=UTF-8''${utf8}`;
+};

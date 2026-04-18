@@ -1,0 +1,10 @@
+# CI / e2e overlay — enables the dev-seed endpoints the large-history and
+# XMPP load-test suites rely on. Layered on top of docker-compose.yml via
+#   docker compose -f docker-compose.yml -f docker-compose.ci.yml up --build
+# so the committed default (`docker compose up`) never exposes the
+# unauthenticated bulk-register surface.
+
+services:
+  api:
+    environment:
+      ALLOW_DEV_SEED: "1"

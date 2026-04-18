@@ -40,11 +40,25 @@ export const createWsClient = (): WsClient => {
   let socket: WebSocket | null = null;
   let state: WsClient['state'] = 'idle';
   let hasConnectedBefore = false;
+  let intentionallyClosed = false;
+  let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   const handlers = new Map<string, Set<EventHandler>>();
   const pending = new Map<string, PendingRequest>();
   let backoffMs = 1_000;
   let openConversationIds: string[] = [];
   let lastHeartbeatAt = 0;
+
+  const scheduleReconnect = () => {
+    if (intentionallyClosed || reconnectTimer) return;
+    // Jitter 0.5–1.5× the backoff so a mass-reconnect after a server restart
+    // doesn't produce synchronised retries from every client.
+    const delay = Math.round(backoffMs * (0.5 + Math.random()));
+    reconnectTimer = setTimeout(() => {
+      reconnectTimer = null;
+      openSocket();
+    }, delay);
+    backoffMs = Math.min(RECONNECT_MAX_MS, backoffMs * 2);
+  };
 
   const dispatch = (event: ServerEvent, reqId?: string) => {
     if (reqId) {
@@ -112,8 +126,7 @@ export const createWsClient = (): WsClient => {
       state = 'closed';
       for (const p of pending.values()) p.reject(new Error('ws closed'));
       pending.clear();
-      setTimeout(openSocket, backoffMs);
-      backoffMs = Math.min(RECONNECT_MAX_MS, backoffMs * 2);
+      scheduleReconnect();
     };
 
     ws.onerror = () => {
@@ -126,6 +139,11 @@ export const createWsClient = (): WsClient => {
       openSocket();
     },
     close() {
+      intentionallyClosed = true;
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+      }
       if (socket) {
         socket.onclose = null;
         socket.close();

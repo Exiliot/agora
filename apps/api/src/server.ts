@@ -32,7 +32,12 @@ await app.register(helmet, {
 
 await app.register(cookie, { secret: config.SESSION_SECRET });
 await app.register(sessionPlugin);
-await app.register(websocket);
+// 64 KiB WS payload cap — messages top out at 3 KB, plus envelope/payload
+// wrapping. Anything larger is malicious or buggy and we close the socket
+// so a flood of megabyte JSON blobs can't block the event loop on parse.
+await app.register(websocket, {
+  options: { maxPayload: 64 * 1024 },
+});
 
 // Uniform error shape for any uncaught error. Feature routes should still
 // return specific structured errors; this is the last-resort wrapper.
@@ -64,9 +69,20 @@ await registerAllRouteModules(app);
 
 const shutdown = async (signal: string): Promise<void> => {
   app.log.info({ signal }, 'shutting down');
-  await app.close();
-  await pool.end();
-  process.exit(0);
+  let failed = false;
+  try {
+    await app.close();
+  } catch (err) {
+    failed = true;
+    app.log.error({ err }, 'app.close failed during shutdown');
+  }
+  try {
+    await pool.end();
+  } catch (err) {
+    failed = true;
+    app.log.error({ err }, 'pool.end failed during shutdown');
+  }
+  process.exit(failed ? 1 : 0);
 };
 
 process.on('SIGINT', () => void shutdown('SIGINT'));

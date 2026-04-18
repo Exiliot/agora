@@ -44,6 +44,27 @@ export const registerWsPlugin = (app: FastifyInstance): void => {
 
     app.log.debug({ connId: conn.id, userId: user.id }, 'ws connected');
 
+    // Application-level ping/pong so silent half-open connections (NAT
+    // timeouts, mobile OS suspension behind nginx's 1h read timeout) get
+    // detected within ~60s. The `ws` library handles pong frames natively
+    // so we only need to fire pings and terminate on missed pong.
+    let alive = true;
+    const ping = setInterval(() => {
+      if (!alive) {
+        socket.terminate();
+        return;
+      }
+      alive = false;
+      try {
+        socket.ping();
+      } catch {
+        /* ignore; next tick will detect death */
+      }
+    }, 30_000);
+    socket.on('pong', () => {
+      alive = true;
+    });
+
     socket.on('message', (raw) => {
       let parsed: unknown;
       try {
@@ -109,6 +130,7 @@ export const registerWsPlugin = (app: FastifyInstance): void => {
     });
 
     socket.on('close', () => {
+      clearInterval(ping);
       connectionLifecycle.emit('close', conn);
       unsubscribeAll(conn);
       connections.remove(conn);

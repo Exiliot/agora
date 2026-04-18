@@ -12,6 +12,11 @@ import { subscribeConnection } from './connection-manager.js';
 import { dmTopic, roomTopic } from '../bus/topics.js';
 
 connectionLifecycle.on('hello', (conn) => {
+  // Skip the DB roundtrip if this connection already holds subscriptions —
+  // auto-subscribe is idempotent, but the two queries are not free and the
+  // client may re-send `hello` on WS reconnect churn.
+  if (conn.subscriptions.size > 0) return;
+
   void (async () => {
     const [rooms, dms] = await Promise.all([
       db.select({ roomId: roomMembers.roomId }).from(roomMembers).where(eq(roomMembers.userId, conn.userId)),

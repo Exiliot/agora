@@ -5,7 +5,11 @@ import * as schema from './schema.js';
 
 export const pool = new Pool({
   connectionString: config.DATABASE_URL,
-  max: 10,
+  max: config.PG_POOL_MAX,
+  // Fail fast on a statement stuck behind a lock instead of tying up a pool
+  // connection indefinitely — protects the whole app from one runaway query.
+  statement_timeout: 10_000,
+  idleTimeoutMillis: 30_000,
 });
 
 export const db = drizzle(pool, { schema });

@@ -3,16 +3,29 @@
  * users who should receive the `presence.update` event: their friends and the
  * members of any room they share.
  *
- * At MVP scale (hundreds of users, a few thousand friendships) this is cheap
- * enough to recompute on every broadcast. ADR-0002 warns against premature
- * caching; if this ever shows up in a profile we can add a short-lived memo.
+ * Cached for a short TTL so the 2-second sweeper doesn't hit the DB twice
+ * per transitioning user every tick. The cache is invalidated by the
+ * friendship and room-membership mutation paths (see
+ * `invalidatePresenceSubscribers`).
  */
 
 import { and, eq, inArray, ne, or } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import { friendships, roomMembers } from '../db/schema.js';
 
+const TTL_MS = 10_000;
+
+interface Entry {
+  at: number;
+  users: string[];
+}
+
+const cache = new Map<string, Entry>();
+
 export const listPresenceSubscribers = async (userId: string): Promise<string[]> => {
+  const cached = cache.get(userId);
+  if (cached && Date.now() - cached.at < TTL_MS) return cached.users;
+
   const friendRows = await db
     .select({ a: friendships.userAId, b: friendships.userBId })
     .from(friendships)
@@ -38,5 +51,20 @@ export const listPresenceSubscribers = async (userId: string): Promise<string[]>
   }
 
   subscribers.delete(userId);
-  return Array.from(subscribers);
+  const users = Array.from(subscribers);
+  cache.set(userId, { at: Date.now(), users });
+  return users;
+};
+
+/**
+ * Drop cached subscriber sets for the given users. Call after any mutation
+ * that changes who can see whose presence: friend accept/remove, user-ban
+ * create/remove, room join/leave/remove, room delete.
+ */
+export const invalidatePresenceSubscribers = (...userIds: string[]): void => {
+  for (const userId of userIds) cache.delete(userId);
+};
+
+export const __resetPresenceSubscriberCacheForTests = (): void => {
+  cache.clear();
 };

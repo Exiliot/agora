@@ -4,7 +4,18 @@ import { userPublic } from '../users/index.js';
 export const conversationType = z.enum(['room', 'dm']);
 export type ConversationType = z.infer<typeof conversationType>;
 
-export const messageBodySchema = z.string().min(1).max(3072);
+// FR-MSG-3: max 3 KB per message, UTF-8 only. The 3072-char soft cap
+// catches naive over-length strings fast, but we also enforce the real
+// byte budget because a user can fit far more than 3 KB in 3072 multi-
+// byte emoji. TextEncoder is available in Node and every modern browser.
+export const messageBodySchema = z
+  .string()
+  .min(1)
+  .max(3072)
+  .refine(
+    (s) => new TextEncoder().encode(s).byteLength <= 3 * 1024,
+    { message: 'message body exceeds 3 KB UTF-8' },
+  );
 
 export const attachmentSummary = z.object({
   id: z.string().uuid(),

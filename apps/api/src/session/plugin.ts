@@ -8,9 +8,16 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import fastifyPlugin from 'fastify-plugin';
 import { findSessionByToken, touchSession, type SessionRecord } from './store.js';
+import { config } from '../config.js';
 import { db } from '../db/client.js';
 import { users } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
+
+// In-memory throttle for session slide-writes. Without this, every
+// authenticated request fires an UPDATE sessions row — 1200+ writes/s at
+// NFR-CAP-1 scale. We only need one slide per session per
+// SESSION_TOUCH_MIN_INTERVAL_MS.
+const lastTouched = new Map<string, number>();
 
 export const COOKIE_NAME = 'agora_session';
 
@@ -55,9 +62,18 @@ const plugin = async (app: FastifyInstance): Promise<void> => {
     req.session = record;
     req.user = user;
 
-    // Slide the expiry window on every authenticated request, but cheaply —
-    // fire-and-forget, don't block the request.
-    void touchSession(record.id).catch(() => undefined);
+    // Slide the expiry window, but throttled: one UPDATE per session per
+    // SESSION_TOUCH_MIN_INTERVAL_MS. Fire-and-forget with a visible log on
+    // failure so pool exhaustion or transient errors aren't silent.
+    const now = Date.now();
+    const last = lastTouched.get(record.id) ?? 0;
+    if (now - last >= config.SESSION_TOUCH_MIN_INTERVAL_MS) {
+      lastTouched.set(record.id, now);
+      void touchSession(record.id).catch((err) => {
+        lastTouched.delete(record.id);
+        req.log.warn({ err, sessionId: record.id }, 'touchSession failed');
+      });
+    }
   });
 };
 

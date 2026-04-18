@@ -13,6 +13,22 @@ const schema = z.object({
   PRESENCE_TAB_GRACE_MS: z.coerce.number().int().positive().default(30_000),
   ALLOW_DEV_SEED: z.enum(['0', '1']).default('0'),
   ENABLE_XMPP_BRIDGE: z.enum(['0', '1']).default('0'),
+
+  // Absolute URL the web app is reachable at. Used to build the password-
+  // reset link that the mocked-email flow logs to stdout. Defaults to the
+  // docker-compose web port; override when running behind a real hostname.
+  APP_BASE_URL: z.string().url().default('http://localhost:8080'),
+
+  // Postgres pool max. 10 was the default and became a hot-path bottleneck
+  // at the 300-concurrent-users target (NFR-CAP-1) because a first-page
+  // load fires ~5 parallel queries per user. 30 covers that comfortably in
+  // one node process without exhausting pg's default max_connections=100.
+  PG_POOL_MAX: z.coerce.number().int().positive().default(30),
+
+  // Don't issue a session-sliding UPDATE on every authenticated request.
+  // Per-session in-memory timestamp throttles the write to once every
+  // SESSION_TOUCH_MIN_INTERVAL_MS per session.
+  SESSION_TOUCH_MIN_INTERVAL_MS: z.coerce.number().int().nonnegative().default(60_000),
 });
 
 const parsed = schema.parse(process.env);

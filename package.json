@@ -20,7 +20,7 @@
     "test": "pnpm --recursive --stream test",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "smoke": "docker compose up --build -d && pnpm smoke:wait && pnpm test:e2e; docker compose down",
+    "smoke": "docker compose -f docker-compose.yml -f docker-compose.ci.yml up --build -d && pnpm smoke:wait && pnpm test:e2e; docker compose -f docker-compose.yml -f docker-compose.ci.yml down",
     "smoke:wait": "node -e \"const u='http://localhost:3000/health';const s=Date.now();(async()=>{while(Date.now()-s<60000){try{const r=await fetch(u);if(r.ok){console.log('ok');return}}catch{}await new Promise(r=>setTimeout(r,500))}process.exit(1)})()\""
   },
   "devDependencies": {

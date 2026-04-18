@@ -18,6 +18,7 @@ import {
   lastRead,
   roomMembers,
   rooms,
+  userBans,
   users,
 } from '../db/schema.js';
 import { addRouteModule } from '../routes/registry.js';
@@ -202,6 +203,26 @@ addRouteModule({
         : [];
       const usernamesById = new Map(usernameRows.map((u) => [u.id, u.username]));
 
+      // Any user-ban between caller and DM counterparty (either direction)
+      // means the sidebar preview must hide the last-message body — per-spec
+      // history stays accessible but the preview is an unnecessary extra
+      // surface. Gathered upfront so the preview-mapping below stays simple.
+      const bannedPairs = otherUserIds.length
+        ? await db
+            .select({ a: userBans.bannerId, b: userBans.targetId })
+            .from(userBans)
+            .where(
+              or(
+                and(eq(userBans.bannerId, userId), inArray(userBans.targetId, otherUserIds)),
+                and(eq(userBans.targetId, userId), inArray(userBans.bannerId, otherUserIds)),
+              ),
+            )
+        : [];
+      const bannedOtherIds = new Set<string>();
+      for (const p of bannedPairs) {
+        bannedOtherIds.add(p.a === userId ? p.b : p.a);
+      }
+
       const allIds = [...memberRows.map((r) => r.id), ...dmRows.map((r) => r.id)];
       const unreadRows = allIds.length
         ? await db
@@ -238,16 +259,30 @@ addRouteModule({
         lastReadByKey.set(`${r.conversationType}:${r.conversationId}`, r.lastReadMessageId ?? null);
       }
 
+      // LATERAL per-conversation subquery. Cheaper than DISTINCT ON over
+      // unbounded history because each LATERAL picks the single latest row
+      // using the (conversation_type, conversation_id, id) index range.
       const previewResult = allIds.length
         ? await db.execute<PreviewRow>(sql`
-            SELECT DISTINCT ON (conversation_type, conversation_id)
-              conversation_type, conversation_id, id, body, created_at, author_id, deleted_at
-            FROM messages
-            WHERE conversation_id IN (${sql.join(
-              allIds.map((id) => sql`${id}`),
+            SELECT c.conversation_type, c.conversation_id,
+                   m.id, m.body, m.created_at, m.author_id, m.deleted_at
+            FROM (VALUES ${sql.join(
+              memberRows
+                .map((r) => sql`(${'room'}::conversation_type, ${r.id}::uuid)`)
+                .concat(
+                  dmRows.map((r) => sql`(${'dm'}::conversation_type, ${r.id}::uuid)`),
+                ),
               sql`, `,
-            )})
-            ORDER BY conversation_type, conversation_id, created_at DESC, id DESC
+            )}) AS c(conversation_type, conversation_id)
+            LEFT JOIN LATERAL (
+              SELECT id, body, created_at, author_id, deleted_at
+              FROM messages m
+              WHERE m.conversation_type = c.conversation_type
+                AND m.conversation_id = c.conversation_id
+              ORDER BY m.id DESC
+              LIMIT 1
+            ) m ON TRUE
+            WHERE m.id IS NOT NULL
           `)
         : null;
       const previewRows: PreviewRow[] = previewResult ? previewResult.rows : [];
@@ -282,6 +317,11 @@ addRouteModule({
       const dmEntries = dmRows.map((r) => {
         const otherUserId = r.userAId === userId ? r.userBId : r.userAId;
         const key = `dm:${r.id}`;
+        const rawPreview = previewByKey.get(key) ?? null;
+        const preview =
+          rawPreview && bannedOtherIds.has(otherUserId)
+            ? { ...rawPreview, body: '' }
+            : rawPreview;
         return {
           type: 'dm' as const,
           id: r.id,
@@ -291,7 +331,7 @@ addRouteModule({
           },
           unreadCount: unreadByKey.get(key) ?? 0,
           lastReadMessageId: lastReadByKey.get(key) ?? null,
-          preview: previewByKey.get(key) ?? null,
+          preview,
         };
       });
 

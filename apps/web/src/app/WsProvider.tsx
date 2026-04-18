@@ -57,18 +57,33 @@ export const WsProvider = ({ enabled, children }: WsProviderProps) => {
         useLastSeenStore
           .getState()
           .note(payload.conversationType, payload.conversationId, payload.id);
+        // Invalidate only the affected conversation's history, not every
+        // cached messages query. Wide invalidation was amplifying a single
+        // received message into 5-10 refetches per active conversation.
+        queryClient.invalidateQueries({
+          queryKey: ['messages', payload.conversationType, payload.conversationId],
+        });
       }
-      queryClient.invalidateQueries({ queryKey: ['messages'] });
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
     });
     const unsubscribeReopen = client.on('ws.reopen', () => {
       void backfillAllConversations(queryClient);
     });
-    const unsubscribeUpdated = client.on('message.updated', () => {
-      queryClient.invalidateQueries({ queryKey: ['messages'] });
+    const unsubscribeUpdated = client.on('message.updated', (event) => {
+      const payload = event.payload as MessageView | undefined;
+      if (!payload) return;
+      queryClient.invalidateQueries({
+        queryKey: ['messages', payload.conversationType, payload.conversationId],
+      });
     });
-    const unsubscribeDeleted = client.on('message.deleted', () => {
-      queryClient.invalidateQueries({ queryKey: ['messages'] });
+    const unsubscribeDeleted = client.on('message.deleted', (event) => {
+      const payload = event.payload as
+        | { conversationType: 'room' | 'dm'; conversationId: string }
+        | undefined;
+      if (!payload) return;
+      queryClient.invalidateQueries({
+        queryKey: ['messages', payload.conversationType, payload.conversationId],
+      });
     });
     const unsubscribeUnread = client.on('unread.updated', () => {
       queryClient.invalidateQueries({ queryKey: ['conversations'] });

@@ -35,23 +35,30 @@ export const sweepOnce = async (): Promise<void> => {
   // been removed from the registry — they need the offline transition.
   for (const userId of lastBroadcast.keys()) tracked.add(userId);
 
+  // Compute transitions first (cheap, in-memory) then fan out broadcasts in
+  // parallel. Sequential await per user caused the sweeper to exceed the
+  // 2-second interval under NFR-CAP-1 load (300 users).
+  const transitions: Array<{ userId: string; state: PresenceState }> = [];
   for (const userId of tracked) {
     const next = computeStateFor(userId);
     const previous = lastBroadcast.get(userId);
     if (previous === next) continue;
-    if (next === 'offline') {
-      lastBroadcast.delete(userId);
-    } else {
-      lastBroadcast.set(userId, next);
-    }
-    try {
-      await broadcast(userId, next);
-    } catch (err) {
-      // A DB blip in the subscription query shouldn't crash the sweeper.
-      // eslint-disable-next-line no-console
-      console.error('[presence] broadcast failed', { userId, state: next, err });
-    }
+    if (next === 'offline') lastBroadcast.delete(userId);
+    else lastBroadcast.set(userId, next);
+    transitions.push({ userId, state: next });
   }
+
+  await Promise.all(
+    transitions.map(async ({ userId, state }) => {
+      try {
+        await broadcast(userId, state);
+      } catch (err) {
+        // A DB blip in the subscription query shouldn't crash the sweeper.
+        // eslint-disable-next-line no-console
+        console.error('[presence] broadcast failed', { userId, state, err });
+      }
+    }),
+  );
 };
 
 const handle = setInterval(() => {
