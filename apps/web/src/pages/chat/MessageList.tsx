@@ -113,17 +113,49 @@ const MessageActions = ({
 };
 
 export const MessageList = ({ conversationType, conversationId, myRoomRole }: MessageListProps) => {
-  const { data, isLoading, fetchNextPage, hasNextPage } = useMessages(
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useMessages(
     conversationType,
     conversationId,
   );
   const { data: me } = useMe();
   const ref = useRef<HTMLDivElement>(null);
+  const topSentinel = useRef<HTMLDivElement>(null);
+  const didInitialScroll = useRef<Record<string, boolean>>({});
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
+  // Initial scroll-to-bottom when opening a conversation.
   useEffect(() => {
-    if (data && ref.current) ref.current.scrollTop = ref.current.scrollHeight;
+    if (data && ref.current && !didInitialScroll.current[conversationId]) {
+      ref.current.scrollTop = ref.current.scrollHeight;
+      didInitialScroll.current[conversationId] = true;
+    }
   }, [data, conversationId]);
+
+  // Auto-load older messages when the top sentinel comes into view.
+  useEffect(() => {
+    const scroller = ref.current;
+    const sentinel = topSentinel.current;
+    if (!scroller || !sentinel || !hasNextPage) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && !isFetchingNextPage) {
+          // Remember the current scrollHeight so we can restore position after load.
+          const prevHeight = scroller.scrollHeight;
+          const prevTop = scroller.scrollTop;
+          void fetchNextPage().then(() => {
+            requestAnimationFrame(() => {
+              if (!scroller) return;
+              const delta = scroller.scrollHeight - prevHeight;
+              scroller.scrollTop = prevTop + delta;
+            });
+          });
+        }
+      },
+      { root: scroller, rootMargin: '200px 0px 0px 0px' },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasNextPage, fetchNextPage, isFetchingNextPage]);
 
   if (isLoading) {
     return (
@@ -155,24 +187,32 @@ export const MessageList = ({ conversationType, conversationId, myRoomRole }: Me
         background: '#fff',
       }}
     >
+      <div ref={topSentinel} />
       {hasNextPage ? (
-        <button
-          type="button"
-          onClick={() => fetchNextPage()}
+        <div
           style={{
             margin: '8px auto',
             display: 'block',
+            textAlign: 'center',
             fontFamily: tokens.type.mono,
             fontSize: 11,
-            color: tokens.color.ink2,
-            background: 'transparent',
-            border: `1px dashed ${tokens.color.rule}`,
-            padding: '4px 10px',
-            cursor: 'pointer',
+            color: tokens.color.ink3,
           }}
         >
-          load older
-        </button>
+          {isFetchingNextPage ? 'loading older…' : 'scroll up for older messages'}
+        </div>
+      ) : messages.length > 0 ? (
+        <div
+          style={{
+            margin: '8px auto',
+            textAlign: 'center',
+            fontFamily: tokens.type.mono,
+            fontSize: 11,
+            color: tokens.color.ink3,
+          }}
+        >
+          — beginning of conversation —
+        </div>
       ) : null}
       {messages.length === 0 ? (
         <div style={{ padding: 24, textAlign: 'center', color: tokens.color.ink3, fontSize: 12 }}>
