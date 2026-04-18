@@ -21,3 +21,4 @@ import '../friends/routes.js';
 import '../attachments/routes.js';
 import '../attachments/sweeper.js';
 import '../attachments/bus-handlers.js';
+import '../ws/auto-subscribe.js';

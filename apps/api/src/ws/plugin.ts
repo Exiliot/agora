@@ -19,8 +19,8 @@ export interface AuthedUser {
 }
 
 const extractUser = (req: FastifyRequest): AuthedUser | null => {
-  const session = (req as unknown as { session?: { user?: AuthedUser } }).session;
-  return session?.user ?? null;
+  if (!req.user) return null;
+  return { id: req.user.id, username: req.user.username };
 };
 
 export const registerWsPlugin = (app: FastifyInstance): void => {

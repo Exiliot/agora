@@ -20,6 +20,8 @@ import { db } from '../db/client.js';
 import { roomBans, roomInvitations, roomMembers, rooms, users } from '../db/schema.js';
 import { addRouteModule } from '../routes/registry.js';
 import { isAuthed, requireAuth } from '../session/require-auth.js';
+import { connections, subscribeConnection, unsubscribeConnection } from '../ws/connection-manager.js';
+import { roomTopic } from '../bus/topics.js';
 import {
   publishInvitationReceived,
   publishRoomAccessLost,
@@ -155,6 +157,10 @@ addRouteModule({
 
             return room;
           });
+
+          for (const conn of connections.forUser(userId)) {
+            subscribeConnection(conn, roomTopic(inserted.id));
+          }
 
           const detail = await loadRoomDetail(
             {
@@ -304,6 +310,10 @@ addRouteModule({
           joinedAt: new Date(),
         });
 
+        for (const conn of connections.forUser(userId)) {
+          subscribeConnection(conn, roomTopic(id));
+        }
+
         publishRoomMemberJoined(id, { id: userId, username });
 
         const detail = await loadRoomDetail(room, userId);
@@ -330,6 +340,10 @@ addRouteModule({
         await db
           .delete(roomMembers)
           .where(and(eq(roomMembers.roomId, id), eq(roomMembers.userId, userId)));
+
+        for (const conn of connections.forUser(userId)) {
+          unsubscribeConnection(conn, roomTopic(id));
+        }
 
         publishRoomMemberLeft(id, userId);
         return reply.code(204).send();
@@ -462,6 +476,10 @@ addRouteModule({
 
           await tx.delete(roomInvitations).where(eq(roomInvitations.id, id));
         });
+
+        for (const conn of connections.forUser(userId)) {
+          subscribeConnection(conn, roomTopic(invitation.roomId));
+        }
 
         publishRoomMemberJoined(invitation.roomId, { id: userId, username });
         return reply.code(200).send({ roomId: invitation.roomId });
