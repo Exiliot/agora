@@ -6,6 +6,7 @@ import { createWsClient, type WsClient } from '../lib/wsClient';
 import { backfillAllConversations } from '../features/messages/backfill';
 import { useLastSeenStore } from '../features/messages/lastSeen';
 import type { MessagesPage } from '../features/messages/useMessages';
+import { maybeFireNative } from '../features/notifications/native';
 import type {
   NotificationsInfiniteData,
   NotificationsPage,
@@ -197,6 +198,7 @@ export const WsProvider = ({ enabled, children }: WsProviderProps) => {
       // up but unread-count (distinct rows) stays the same. The cheapest
       // reconciliation is to invalidate and let the scalar endpoint re-fetch.
       queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] });
+      maybeFireNative(payload);
     });
 
     const unsubNotificationRead = client.on('notification.read', (event) => {
