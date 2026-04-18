@@ -1,11 +1,8 @@
 /**
  * WebSocket handlers for messaging: send/edit/delete/mark-read. Each handler
- * is registered at module scope via `registerWsHandler`; the ws plugin routes
- * incoming client events through the dispatcher.
- *
- * Handlers are defensive about transport-level failure modes (validation, bad
- * ids) but trust framework guarantees for auth (ctx.conn.userId is set by the
- * plugin before a handler sees the connection).
+ * is registered at module scope via `registerWsHandler`. Events arrive
+ * pre-validated through the shared zod discriminated union, so handlers
+ * consume typed variants rather than casting from `unknown`.
  */
 
 import type { MessageView } from '@agora/shared';
@@ -19,8 +16,6 @@ import { registerWsHandler, type WsContext } from '../ws/dispatcher.js';
 import { hydrateMessage } from './history.js';
 import { canAccessRoom, canSendDm, loadDmForUser } from './permissions.js';
 import { incrementUnreadForMany, listOtherParticipants, resetUnread } from './unread.js';
-
-type ReqEvent = { type: string; reqId?: string; payload: unknown };
 
 const sendAck = (ctx: WsContext, reqId: string | undefined, result?: unknown): void => {
   if (!reqId) return;
@@ -40,17 +35,20 @@ const sendErr = (
 };
 
 const publishNewMessage = (view: MessageView): void => {
-  const topic = view.conversationType === 'room' ? roomTopic(view.conversationId) : dmTopic(view.conversationId);
+  const topic =
+    view.conversationType === 'room' ? roomTopic(view.conversationId) : dmTopic(view.conversationId);
   bus.publish(topic, { type: 'message.new', payload: view });
 };
 
 const publishUpdated = (view: MessageView): void => {
-  const topic = view.conversationType === 'room' ? roomTopic(view.conversationId) : dmTopic(view.conversationId);
+  const topic =
+    view.conversationType === 'room' ? roomTopic(view.conversationId) : dmTopic(view.conversationId);
   bus.publish(topic, { type: 'message.updated', payload: view });
 };
 
 const publishDeleted = (view: MessageView): void => {
-  const topic = view.conversationType === 'room' ? roomTopic(view.conversationId) : dmTopic(view.conversationId);
+  const topic =
+    view.conversationType === 'room' ? roomTopic(view.conversationId) : dmTopic(view.conversationId);
   bus.publish(topic, {
     type: 'message.deleted',
     payload: {
@@ -63,15 +61,8 @@ const publishDeleted = (view: MessageView): void => {
 
 // ---- message.send ---------------------------------------------------------
 
-registerWsHandler('message.send', async (ctx, raw) => {
-  const evt = raw as ReqEvent;
-  const payload = evt.payload as {
-    conversationType: 'room' | 'dm';
-    conversationId: string;
-    body: string;
-    replyToId?: string;
-    attachmentIds?: string[];
-  };
+registerWsHandler('message.send', async (ctx, event) => {
+  const { reqId, payload } = event;
   const userId = ctx.conn.userId;
 
   const permission =
@@ -83,7 +74,7 @@ registerWsHandler('message.send', async (ctx, raw) => {
           return canSendDm(userId, loaded.otherUserId);
         })();
   if (!permission.ok) {
-    sendErr(ctx, evt.reqId, permission.code, 'not allowed');
+    sendErr(ctx, reqId, permission.code, 'not allowed');
     return;
   }
 
@@ -102,7 +93,7 @@ registerWsHandler('message.send', async (ctx, raw) => {
       target.conversationType !== payload.conversationType ||
       target.conversationId !== payload.conversationId
     ) {
-      sendErr(ctx, evt.reqId, 'not_found', 'reply target not found in this conversation');
+      sendErr(ctx, reqId, 'not_found', 'reply target not found in this conversation');
       return;
     }
   }
@@ -132,7 +123,6 @@ registerWsHandler('message.send', async (ctx, raw) => {
       payload.conversationId,
       userId,
     );
-    // Single batched INSERT ... ON CONFLICT instead of N round-trips.
     const byUser = await incrementUnreadForMany(
       tx,
       recipients,
@@ -157,14 +147,13 @@ registerWsHandler('message.send', async (ctx, raw) => {
     });
   }
 
-  sendAck(ctx, evt.reqId, view);
+  sendAck(ctx, reqId, view);
 });
 
 // ---- message.edit ---------------------------------------------------------
 
-registerWsHandler('message.edit', async (ctx, raw) => {
-  const evt = raw as ReqEvent;
-  const payload = evt.payload as { id: string; body: string };
+registerWsHandler('message.edit', async (ctx, event) => {
+  const { reqId, payload } = event;
   const userId = ctx.conn.userId;
 
   const [existing] = await db
@@ -173,11 +162,11 @@ registerWsHandler('message.edit', async (ctx, raw) => {
     .where(eq(messages.id, payload.id))
     .limit(1);
   if (!existing || existing.deletedAt) {
-    sendErr(ctx, evt.reqId, 'not_found', 'message not found');
+    sendErr(ctx, reqId, 'not_found', 'message not found');
     return;
   }
   if (existing.authorId !== userId) {
-    sendErr(ctx, evt.reqId, 'not_member', 'only the author can edit');
+    sendErr(ctx, reqId, 'not_member', 'only the author can edit');
     return;
   }
 
@@ -189,20 +178,19 @@ registerWsHandler('message.edit', async (ctx, raw) => {
     .where(eq(messages.id, payload.id))
     .returning();
   if (!updated) {
-    sendErr(ctx, evt.reqId, 'not_found', 'message vanished during update');
+    sendErr(ctx, reqId, 'not_found', 'message vanished during update');
     return;
   }
 
   const view = await hydrateMessage(updated);
   publishUpdated(view);
-  sendAck(ctx, evt.reqId, view);
+  sendAck(ctx, reqId, view);
 });
 
 // ---- message.delete -------------------------------------------------------
 
-registerWsHandler('message.delete', async (ctx, raw) => {
-  const evt = raw as ReqEvent;
-  const payload = evt.payload as { id: string };
+registerWsHandler('message.delete', async (ctx, event) => {
+  const { reqId, payload } = event;
   const userId = ctx.conn.userId;
 
   const [existing] = await db
@@ -211,7 +199,7 @@ registerWsHandler('message.delete', async (ctx, raw) => {
     .where(eq(messages.id, payload.id))
     .limit(1);
   if (!existing || existing.deletedAt) {
-    sendErr(ctx, evt.reqId, 'not_found', 'message not found');
+    sendErr(ctx, reqId, 'not_found', 'message not found');
     return;
   }
 
@@ -230,7 +218,7 @@ registerWsHandler('message.delete', async (ctx, raw) => {
     }
   }
   if (!allowed) {
-    sendErr(ctx, evt.reqId, 'not_member', 'only author or room admin can delete');
+    sendErr(ctx, reqId, 'not_member', 'only author or room admin can delete');
     return;
   }
 
@@ -241,24 +229,19 @@ registerWsHandler('message.delete', async (ctx, raw) => {
     .where(eq(messages.id, payload.id))
     .returning();
   if (!updated) {
-    sendErr(ctx, evt.reqId, 'not_found', 'message vanished during delete');
+    sendErr(ctx, reqId, 'not_found', 'message vanished during delete');
     return;
   }
 
   const view = await hydrateMessage(updated);
   publishDeleted(view);
-  sendAck(ctx, evt.reqId, { id: updated.id });
+  sendAck(ctx, reqId, { id: updated.id });
 });
 
 // ---- mark.read ------------------------------------------------------------
 
-registerWsHandler('mark.read', async (ctx, raw) => {
-  const evt = raw as ReqEvent;
-  const payload = evt.payload as {
-    conversationType: 'room' | 'dm';
-    conversationId: string;
-    messageId: string;
-  };
+registerWsHandler('mark.read', async (ctx, event) => {
+  const { payload } = event;
   const userId = ctx.conn.userId;
 
   await db
