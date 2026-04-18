@@ -10,6 +10,7 @@ import {
   type WsConnection,
 } from './connection-manager.js';
 import { dispatchWsEvent } from './dispatcher.js';
+import { connectionLifecycle } from './lifecycle.js';
 import { userTopic } from '../bus/topics.js';
 
 export interface AuthedUser {
@@ -72,6 +73,7 @@ export const registerWsPlugin = (app: FastifyInstance): void => {
       const e = event.data;
       if (e.type === 'hello') {
         conn.tabId = e.payload.tabId;
+        connectionLifecycle.emit('hello', conn);
         conn.send({ type: 'ack', payload: { reqId: e.reqId, result: { hello: 'ok' } } });
         return;
       }
@@ -95,6 +97,7 @@ export const registerWsPlugin = (app: FastifyInstance): void => {
     });
 
     socket.on('close', () => {
+      connectionLifecycle.emit('close', conn);
       unsubscribeAll(conn);
       connections.remove(conn);
       app.log.debug({ connId: conn.id, userId: user.id }, 'ws disconnected');
