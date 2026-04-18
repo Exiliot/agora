@@ -24,6 +24,8 @@ import { addRouteModule } from '../routes/registry.js';
 import { requireAuth } from '../session/require-auth.js';
 import { fetchHistory } from './history.js';
 import { canAccessRoom, canSendDm, loadDmForUser } from './permissions.js';
+import { connections, subscribeConnection } from '../ws/connection-manager.js';
+import { dmTopic } from '../bus/topics.js';
 
 const MAX_HISTORY_LIMIT = 100;
 const MAX_SINCE_LIMIT = 500;
@@ -155,6 +157,14 @@ addRouteModule({
       if (!row) {
         return reply.code(500).send({ error: 'internal' });
       }
+
+      // Auto-subscribe both participants' live WS connections to this DM topic
+      for (const uid of [a, b]) {
+        for (const conn of connections.forUser(uid)) {
+          subscribeConnection(conn, dmTopic(row.id));
+        }
+      }
+
       return reply.send({ id: row.id, created: row.id === id });
     });
 

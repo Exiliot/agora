@@ -12,7 +12,7 @@ export interface ConversationRoom extends RoomSummary {
 export interface ConversationDm {
   type: 'dm';
   id: string;
-  counterparty: { id: string; username: string };
+  otherUser: { id: string; username: string };
   unreadCount: number;
   lastReadMessageId: string | null;
   preview: string | null;

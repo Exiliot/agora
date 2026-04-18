@@ -11,7 +11,7 @@ const DmView = () => {
   const { data } = useConversations();
 
   const dm = useMemo(
-    () => data?.dms.find((d) => d.counterparty.username === username),
+    () => data?.dms.find((d) => d.otherUser.username === username),
     [data, username],
   );
 
@@ -48,7 +48,7 @@ const DmView = () => {
           }}
         >
           <div style={{ fontFamily: tokens.type.sans, fontSize: 14, fontWeight: 600 }}>
-            @ {dm.counterparty.username}
+            @ {dm.otherUser.username}
           </div>
           <div style={{ fontSize: 11, color: tokens.color.ink2 }}>direct message</div>
         </div>

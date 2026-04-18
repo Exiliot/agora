@@ -177,9 +177,9 @@ export const Sidebar = () => {
         {dms.map((dm) => (
           <ContactListItem
             key={dm.id}
-            name={dm.counterparty.username}
+            name={dm.otherUser.username}
             unread={dm.unreadCount}
-            onClick={() => navigate(`/dm/${dm.counterparty.username}`)}
+            onClick={() => navigate(`/dm/${dm.otherUser.username}`)}
           />
         ))}
       </div>
