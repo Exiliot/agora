@@ -1,13 +1,19 @@
 import { useState, type FormEvent } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button, Check, Col, Input, Modal, Row, Toast, tokens } from '../../ds';
 import { useSignIn } from '../../features/auth/useSignIn';
 import { ApiError } from '../../lib/apiClient';
 
+interface SignInFlashState {
+  flash?: string;
+}
+
 const SignInPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const nextUrl = searchParams.get('next') ?? '/chat';
+  const flash = (location.state as SignInFlashState | null)?.flash ?? null;
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -61,6 +67,7 @@ const SignInPage = () => {
             onChange={(event) => setPassword(event.target.value)}
           />
           <Check label="Keep me signed in" defaultChecked />
+          {flash && !error ? <Toast tone="success">{flash}</Toast> : null}
           {error ? <Toast tone="error">{error}</Toast> : null}
           <Row gap={8} style={{ justifyContent: 'space-between', alignItems: 'center' }}>
             <Link

@@ -193,12 +193,14 @@ addRouteModule({
       if (row && !row.deletedAt) {
         const issued = await issueResetToken(row.id);
         const link = `${RESET_LINK_BASE}?token=${issued.token}`;
-        // Reset tokens grant account takeover; never log at info in production.
-        // Demo environment only — emit to stderr at debug level and flag the
-        // intent so log aggregators can redact.
-        req.log.debug({ auth: 'reset_link_issued' }, link);
+        // Reset tokens grant account takeover; in a real deployment with a
+        // mailer wired up this should NOT be logged. Agora ships as a demo
+        // with no email service, so the operator's only way to find the link
+        // is the server log. Logged to stderr with a stable tag so testers
+        // can `docker compose logs api | grep "AUTH reset link"`.
+        req.log.info({ auth: 'reset_link_issued' }, link);
         // eslint-disable-next-line no-console
-        if (process.env.NODE_ENV !== 'production') console.error('[AUTH reset link]', link);
+        console.error('[AUTH reset link]', link);
       }
 
       return reply.code(204).send();

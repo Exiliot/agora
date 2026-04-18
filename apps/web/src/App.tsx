@@ -8,6 +8,7 @@ import { ProtectedRoute } from './app/ProtectedRoute';
 import { WsProvider } from './app/WsProvider';
 import SignInPage from './pages/sign-in/SignInPage';
 import RegisterPage from './pages/register/RegisterPage';
+import ResetPasswordPage from './pages/reset/ResetPasswordPage';
 import ChatView from './pages/chat/ChatView';
 import PublicRoomsPage from './pages/public/PublicRoomsPage';
 import SessionsPage from './pages/sessions/SessionsPage';
@@ -25,6 +26,7 @@ const AppRoutes = () => {
         <Route element={<AuthLayout />}>
           <Route path="/sign-in" element={<SignInPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/reset" element={<ResetPasswordPage />} />
         </Route>
         <Route
           element={
