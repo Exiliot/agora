@@ -11,11 +11,26 @@ test('api health endpoint returns ok', async ({ request }) => {
 test('web root renders the agora wordmark', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('banner')).toContainText(/agora/i);
-  await expect(page.getByText(/scaffolding · day 1/i)).toBeVisible();
 });
 
-test('web talks to api through the nginx proxy (/api and /ws)', async ({ page }) => {
-  await page.goto('/');
-  await expect(page.getByText(/state: open/i)).toBeVisible({ timeout: 10_000 });
-  await expect(page.getByText(/echo reply: hello from agora/i)).toBeVisible({ timeout: 10_000 });
+test('register + me + create room round-trip works', async ({ request }) => {
+  const unique = Date.now();
+  const email = `smoke_${unique}@example.com`;
+  const username = `smk${unique}`;
+  const password = 'smoke1234';
+
+  const register = await request.post('http://localhost:3000/api/auth/register', {
+    data: { email, username, password },
+  });
+  expect(register.status()).toBe(201);
+
+  const me = await request.get('http://localhost:3000/api/auth/me');
+  expect(me.status()).toBe(200);
+  const meBody = (await me.json()) as { user: { username: string } };
+  expect(meBody.user.username).toBe(username);
+
+  const createRoom = await request.post('http://localhost:3000/api/rooms', {
+    data: { name: `room-${unique}`, visibility: 'public', description: 'smoke' },
+  });
+  expect(createRoom.status()).toBe(201);
 });
