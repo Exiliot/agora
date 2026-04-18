@@ -3,6 +3,7 @@ import websocket from '@fastify/websocket';
 import cookie from '@fastify/cookie';
 import { config } from './config.js';
 import { pingDb, pool } from './db/client.js';
+import { runMigrations } from './db/migrate.js';
 import { registerEchoWs } from './ws/echo.js';
 
 const app = Fastify({
@@ -42,6 +43,9 @@ process.on('SIGINT', () => void shutdown('SIGINT'));
 process.on('SIGTERM', () => void shutdown('SIGTERM'));
 
 try {
+  app.log.info('running migrations');
+  await runMigrations();
+  app.log.info('migrations applied');
   await app.listen({ host: config.HOST, port: config.PORT });
   app.log.info({ host: config.HOST, port: config.PORT }, 'api listening');
 } catch (err) {
