@@ -59,9 +59,9 @@ If the hackathon ends without Phase 2 being implemented, this ADR remains `Accep
 
 Shipped in a single hackathon day. Trail of journal entries:
 
-1. `docs/journal/2026-04-18-xmpp-spike.md` – single-server HTTP-auth proof.
-2. `docs/journal/2026-04-18-xmpp-federation.md` – two-server compose overlay, dialback s2s, SASL wall documented.
-3. `docs/journal/2026-04-18-xmpp-working.md` – SASL unblocked (direct-TLS c2s + `mod_auth_http` GET contract), federation smoke green, 50-client load test PASS (50/50 delivered, p95 = 13 ms).
+1. `docs/journal/2026-04-18-09-xmpp-spike.md` – single-server HTTP-auth proof.
+2. `docs/journal/2026-04-18-12-xmpp-federation.md` – two-server compose overlay, dialback s2s, SASL wall documented.
+3. `docs/journal/2026-04-18-14-xmpp-working.md` – SASL unblocked (direct-TLS c2s + `mod_auth_http` GET contract), federation smoke green, 50-client load test PASS (50/50 delivered, p95 = 13 ms).
 
 Two concrete deltas vs. the Decision section above:
 

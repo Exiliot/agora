@@ -1,6 +1,6 @@
 # 2026-04-18 · XMPP federation — continued on main
 
-Supersedes the earlier `2026-04-18-xmpp-spike.md`. After merging the spike branch into main (per "no separate branch anymore") the work continues here.
+Supersedes the earlier `2026-04-18-09-xmpp-spike.md`. After merging the spike branch into main (per "no separate branch anymore") the work continues here.
 
 ## What's in place on `main`
 

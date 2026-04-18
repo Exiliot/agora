@@ -1,6 +1,6 @@
 # 2026-04-18 · XMPP federation — working, loaded, green
 
-Follow-on to `2026-04-18-xmpp-federation.md`. The SASL wall came down, two-server federation passes, and the 50-client load test clears the ST-XMPP-3 bar. This is the entry to read if you want the resolved story rather than the debug trail.
+Follow-on to `2026-04-18-12-xmpp-federation.md`. The SASL wall came down, two-server federation passes, and the 50-client load test clears the ST-XMPP-3 bar. This is the entry to read if you want the resolved story rather than the debug trail.
 
 ## The two things that unblocked SASL
 
@@ -112,9 +112,9 @@ Shipped alongside the XMPP work in the same session:
 
 Accepted + implemented on main. The "Phase 2 planned" hedge in the ADR is stale — both the sidecar and the load-test goal are real code in this repo. The journal chain for the detail trail:
 
-1. `2026-04-18-xmpp-spike.md` — initial single-server HTTP-auth proof.
-2. `2026-04-18-xmpp-federation.md` — two-server setup, SASL wall, triaged halt.
-3. `2026-04-18-xmpp-working.md` (this file) — unblock, federation, load test PASS.
+1. `2026-04-18-09-xmpp-spike.md` — initial single-server HTTP-auth proof.
+2. `2026-04-18-12-xmpp-federation.md` — two-server setup, SASL wall, triaged halt.
+3. `2026-04-18-14-xmpp-working.md` (this file) — unblock, federation, load test PASS.
 
 ## Takeaways
 

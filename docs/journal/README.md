@@ -6,31 +6,33 @@ The point isn't just a submission artefact. It's so that after the hackathon we 
 
 ## Conventions
 
-- One file per session, named `YYYY-MM-DD-topic.md`.
+- One file per session, named `YYYY-MM-DD-NN-topic.md`. The numeric `NN` fixes chronological ordering in any filesystem or GitHub listing, so files read top-down in the order events actually happened.
 - Present-at-the-time voice. If we got something wrong and learned later, annotate with a later `**Update (YYYY-MM-DD):**` line, don't rewrite history.
 - Each entry ends with a **Takeaways** section — the bit worth reading even if you skim.
 - Decisions that have consequences beyond a single session get promoted to an ADR in `docs/adrs/` and are cross-linked.
 
 ## Entries
 
-| Date | Session | File |
-|---|---|---|
-| 2026-04-17 | Pre-event prep and audit | *(covered inline in first kickoff entry)* |
-| 2026-04-18 | Kickoff and ADLC setup | [2026-04-18-kickoff.md](2026-04-18-kickoff.md) |
-| 2026-04-18 | Build day — features, integration, smoke | [2026-04-18-build.md](2026-04-18-build.md) |
-| 2026-04-18 | Auth + sessions (subagent) | [2026-04-18-auth.md](2026-04-18-auth.md) |
-| 2026-04-18 | Rooms (subagent) | [2026-04-18-rooms.md](2026-04-18-rooms.md) |
-| 2026-04-18 | Messages (subagent) | [2026-04-18-messages.md](2026-04-18-messages.md) |
-| 2026-04-18 | Presence (subagent) | [2026-04-18-presence.md](2026-04-18-presence.md) |
-| 2026-04-18 | Friends (subagent) | [2026-04-18-friends.md](2026-04-18-friends.md) |
-| 2026-04-18 | Attachments (subagent) | [2026-04-18-attachments.md](2026-04-18-attachments.md) |
-| 2026-04-18 | XMPP sidecar spike (initial, obsoleted by federation entry) | [2026-04-18-xmpp-spike.md](2026-04-18-xmpp-spike.md) |
-| 2026-04-18 | Afternoon — polish, virtualisation, audits, wave-1 fixes | [2026-04-18-afternoon.md](2026-04-18-afternoon.md) |
-| 2026-04-18 | Wave-1 audit closure | [2026-04-18-wave-1.md](2026-04-18-wave-1.md) |
-| 2026-04-18 | Wave-2 audit closure | [2026-04-18-wave-2.md](2026-04-18-wave-2.md) |
-| 2026-04-18 | XMPP federation on main (continuation) | [2026-04-18-xmpp-federation.md](2026-04-18-xmpp-federation.md) |
-| 2026-04-18 | XMPP federation working + load test PASS | [2026-04-18-xmpp-working.md](2026-04-18-xmpp-working.md) |
-| 2026-04-18 | Wave-3 audit closure | [2026-04-18-wave-3.md](2026-04-18-wave-3.md) |
+Listed in the order events happened, not when the entry was written.
+
+| # | Approx. time | Session | File |
+|---|---|---|---|
+| — | 2026-04-17 | Pre-event prep and audit | *(covered inline in the kickoff entry)* |
+| 01 | Sat 12:30 | Kickoff and ADLC setup | [2026-04-18-01-kickoff.md](2026-04-18-01-kickoff.md) |
+| 02 | Sat 13:30 | Auth + sessions (subagent) | [2026-04-18-02-auth.md](2026-04-18-02-auth.md) |
+| 03 | Sat 13:34 | Rooms (subagent) | [2026-04-18-03-rooms.md](2026-04-18-03-rooms.md) |
+| 04 | Sat 13:38 | Messages (subagent) | [2026-04-18-04-messages.md](2026-04-18-04-messages.md) |
+| 05 | Sat 13:48 | Presence (subagent) | [2026-04-18-05-presence.md](2026-04-18-05-presence.md) |
+| 06 | Sat 13:49 | Friends (subagent) | [2026-04-18-06-friends.md](2026-04-18-06-friends.md) |
+| 07 | Sat 13:51 | Attachments (subagent) | [2026-04-18-07-attachments.md](2026-04-18-07-attachments.md) |
+| 08 | Sat 14:00–15:10 | Build day — features, integration, smoke | [2026-04-18-08-build.md](2026-04-18-08-build.md) |
+| 09 | Sat 15:42 | XMPP sidecar spike (superseded by federation entry) | [2026-04-18-09-xmpp-spike.md](2026-04-18-09-xmpp-spike.md) |
+| 10 | Sat 15:10–17:00 | Afternoon — polish, virtualisation, audits | [2026-04-18-10-afternoon.md](2026-04-18-10-afternoon.md) |
+| 11 | Sat 16:20 | Wave-1 audit closure | [2026-04-18-11-wave-1.md](2026-04-18-11-wave-1.md) |
+| 12 | Sat 16:30 | XMPP federation on main (SASL wall documented) | [2026-04-18-12-xmpp-federation.md](2026-04-18-12-xmpp-federation.md) |
+| 13 | Sat 16:53 | Wave-2 audit closure | [2026-04-18-13-wave-2.md](2026-04-18-13-wave-2.md) |
+| 14 | Sat 17:12 | XMPP federation working + 50-client load test PASS | [2026-04-18-14-xmpp-working.md](2026-04-18-14-xmpp-working.md) |
+| 15 | Sat 17:28 | Wave-3 audit closure | [2026-04-18-15-wave-3.md](2026-04-18-15-wave-3.md) |
 
 ## The philosophy underneath
 

@@ -17,6 +17,8 @@ Then:
 - `http://localhost:8080` — the web app
 - `http://localhost:3000/health` — api health check
 
+That's the whole delivery contract. No cloud provider, no DNS, no certificates to wire up. If it builds on the reviewer's machine, it runs.
+
 ## Try it
 
 1. Register an account (email + username + password) at `/register`.
@@ -59,11 +61,25 @@ NODE_TLS_REJECT_UNAUTHORIZED=0 node tools/xmpp-load-test.mjs 50
 
 Observed on the reference setup: 50/50 messages delivered across the s2s link, p50 = 10 ms, p95 = 13 ms. The load-test harness enforces ≥ 95% delivery at p95 ≤ 5000 ms and exits non-zero on miss.
 
-`NODE_TLS_REJECT_UNAUTHORIZED=0` is present because Prosody uses a self-signed cert inside the compose network. Direct-TLS c2s on port 5223 (`xmpps://`), s2s via XEP-0220 dialback. The journal trail is in `docs/journal/2026-04-18-xmpp-*.md` if you want the debug story rather than the final setup.
+`NODE_TLS_REJECT_UNAUTHORIZED=0` is present because Prosody uses a self-signed cert inside the compose network. Direct-TLS c2s on port 5223 (`xmpps://`), s2s via XEP-0220 dialback. The journal trail lives in `docs/journal/` — entries `09`, `12`, and `14` cover the spike, the SASL wall, and the fix respectively.
 
 ## Stack
 
-Node 24 · TypeScript · Fastify 5 · Postgres 16 · Drizzle ORM · React 19 · Vite · TanStack Query · Tailwind · Biome · pnpm workspaces · Playwright.
+Node 24 · TypeScript (strict) · Fastify 5 · Postgres 16 · Drizzle ORM · React 19 · Vite · TanStack Query · Zustand · Tailwind · Biome · pnpm workspaces · Playwright · Prosody 0.12 (optional XMPP overlay).
+
+## Security and production posture
+
+- **Server-side sessions**, argon2id hashes, SHA-256 token hashing at rest, rotate-on-password-change, individually revocable. See [ADR-0001](docs/adrs/0001-server-side-sessions.md).
+- **`@fastify/rate-limit`** on all `/api/auth/*` routes (10/min per IP anon, per-session on `password-change`).
+- **`@fastify/helmet`** on the api; nginx carries the SPA-appropriate CSP + `X-Content-Type-Options: nosniff` + `X-Frame-Options: DENY` + `Referrer-Policy: no-referrer` + a restrictive `Permissions-Policy`.
+- **WebSocket `subscribe` ACL** gated by the same `canAccessRoom` / `canAccessDm` / `userId === conn.userId` helpers as the HTTP history routes — no client-initiated subscribe slips past membership checks.
+- **WS same-origin check** at upgrade; mismatches close 4403.
+- **Session secret** is generated from 48 bytes of `randomBytes` on boot if the env var isn't provided, with a warning. `docker-compose.yml` does not commit one, so a fresh clone never ships with a known secret.
+- **Postgres is not exposed on the host port.** Api reaches db through the compose network; developers who want psql run `docker compose exec db psql -U app -d app`.
+- **Attachment mime allowlist + nosniff** on downloads; `originalFilename` truncated to 255 bytes.
+- **Accessibility baseline**: `:focus-visible`, sr-only class, Modal focus-trap + Escape, MessageList `role="log" aria-live="polite"`, composer labelled, primary nav carries `aria-current`, sign-out is a real `<button>`, skip-to-content link present, AA-compliant contrast on all token pairings.
+
+Everything is journalled — see `docs/journal/2026-04-18-11-wave-1.md`, `…-13-wave-2.md`, `…-15-wave-3.md` for the audit → fix trail.
 
 ## Project docs
 
@@ -72,7 +88,9 @@ Node 24 · TypeScript · Fastify 5 · Postgres 16 · Drizzle ORM · React 19 · 
 - [Architecture](docs/architecture.md), [data model](docs/data-model.md), [WebSocket protocol](docs/ws-protocol.md).
 - [Design system](docs/design/README.md) — Claude Design (Opus 4.7) handoff bundle.
 - [ADRs](docs/adrs/) — immutable decisions that shape everything.
-- [Journal](docs/journal/) — decisions, detours, lessons as they happen.
+- [Journal](docs/journal/) — decisions, detours, lessons as they happened. Entries are numbered (`01`, `02`, …) so they sort chronologically.
+- [Audits](docs/audits/) — security, performance, a11y, code quality reports against the afternoon `main`.
+- [Demo script](docs/demo-script.md) — five-minute reviewer walkthrough.
 
 ## ADLC
 
@@ -83,11 +101,16 @@ This repo was built as an explicit experiment in agent-driven development: conte
 ```
 agora/
 ├── apps/
-│   ├── api/          # Fastify backend
-│   └── web/          # Vite + React frontend
+│   ├── api/                    # Fastify backend
+│   └── web/                    # Vite + React frontend
 ├── packages/
-│   └── shared/       # zod schemas shared between api and web
-├── docs/             # spec, architecture, adrs, journal, design
-├── tests/e2e/        # Playwright delivery-contract smoke tests
-└── docker-compose.yml
+│   └── shared/                 # zod schemas shared between api and web
+├── docs/                       # spec, architecture, adrs, journal, design, audits
+├── tests/e2e/                  # Playwright delivery-contract smoke tests
+├── tools/
+│   ├── prosody/                # XMPP sidecar Dockerfile + config template
+│   ├── xmpp-federation-test.mjs
+│   └── xmpp-load-test.mjs
+├── docker-compose.yml          # base stack (db + api + web)
+└── docker-compose.xmpp.yml     # optional overlay (prosody-a + prosody-b)
 ```
