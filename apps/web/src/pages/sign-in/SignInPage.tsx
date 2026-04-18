@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Button, Check, Col, Input, Modal, Row, tokens } from '../../ds';
+import { Button, Check, Col, Input, Modal, Row, Toast, tokens } from '../../ds';
 import { useSignIn } from '../../features/auth/useSignIn';
 import { ApiError } from '../../lib/apiClient';
 
@@ -55,25 +55,13 @@ const SignInPage = () => {
             type="password"
             autoComplete="current-password"
             required
+            reveal
             error={hasError}
             value={password}
             onChange={(event) => setPassword(event.target.value)}
           />
           <Check label="Keep me signed in" defaultChecked />
-          {error ? (
-            <div
-              role="alert"
-              style={{
-                fontSize: 12,
-                color: tokens.color.danger,
-                background: tokens.color.dangerSoft,
-                borderLeft: `3px solid ${tokens.color.danger}`,
-                padding: '6px 10px',
-              }}
-            >
-              {error}
-            </div>
-          ) : null}
+          {error ? <Toast tone="error">{error}</Toast> : null}
           <Row gap={8} style={{ justifyContent: 'space-between', alignItems: 'center' }}>
             <Link
               to="/reset"

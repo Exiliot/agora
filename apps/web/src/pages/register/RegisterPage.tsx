@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Button, Col, Input, Modal, Row, tokens } from '../../ds';
+import { Button, Col, Input, Modal, Row, Toast, tokens } from '../../ds';
 import { useRegister } from '../../features/auth/useRegister';
 import { ApiError } from '../../lib/apiClient';
 
@@ -66,6 +66,7 @@ const RegisterPage = () => {
             type="password"
             autoComplete="new-password"
             required
+            reveal
             minLength={8}
             value={password}
             onChange={(event) => setPassword(event.target.value)}
@@ -75,24 +76,12 @@ const RegisterPage = () => {
             type="password"
             autoComplete="new-password"
             required
+            reveal
             minLength={8}
             value={confirm}
             onChange={(event) => setConfirm(event.target.value)}
           />
-          {error ? (
-            <div
-              role="alert"
-              style={{
-                fontSize: 12,
-                color: tokens.color.danger,
-                background: tokens.color.dangerSoft,
-                borderLeft: `3px solid ${tokens.color.danger}`,
-                padding: '6px 10px',
-              }}
-            >
-              {error}
-            </div>
-          ) : null}
+          {error ? <Toast tone="error">{error}</Toast> : null}
           <Row gap={8} style={{ justifyContent: 'space-between', alignItems: 'center' }}>
             <Link
               to="/sign-in"

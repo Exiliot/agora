@@ -5,9 +5,11 @@ import {
   Button,
   Col,
   Input,
+  ListRow,
   Meta,
   PageShell,
   Row,
+  SectionHeader,
   TabBar,
   Table,
   tokens,
@@ -35,18 +37,7 @@ import {
 
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <section style={{ marginTop: 24 }}>
-    <h2
-      style={{
-        margin: '0 0 6px',
-        fontFamily: tokens.type.sans,
-        fontSize: 13,
-        fontWeight: 600,
-        color: tokens.color.ink1,
-        letterSpacing: 0.2,
-      }}
-    >
-      {title}
-    </h2>
+    <SectionHeader>{title}</SectionHeader>
     {children}
   </section>
 );
@@ -67,30 +58,24 @@ const UserSearch = () => {
       {data.length > 0 ? (
         <Col gap={6}>
           {data.map((user) => (
-            <Row
+            <ListRow
               key={user.id}
-              style={{
-                justifyContent: 'space-between',
-                padding: '6px 10px',
-                background: '#fff',
-                border: `1px solid ${tokens.color.rule}`,
-                borderRadius: tokens.radius.xs,
-              }}
-            >
-              <span style={{ fontFamily: tokens.type.mono, fontSize: 13 }}>{user.username}</span>
-              <Button
-                size="sm"
-                disabled={justSent.has(user.id) || send.isPending}
-                onClick={() =>
-                  send.mutate(
-                    { targetUsername: user.username },
-                    { onSuccess: () => setJustSent((prev) => new Set(prev).add(user.id)) },
-                  )
-                }
-              >
-                {justSent.has(user.id) ? 'Sent' : 'Add friend'}
-              </Button>
-            </Row>
+              title={user.username}
+              actions={
+                <Button
+                  size="sm"
+                  disabled={justSent.has(user.id) || send.isPending}
+                  onClick={() =>
+                    send.mutate(
+                      { targetUsername: user.username },
+                      { onSuccess: () => setJustSent((prev) => new Set(prev).add(user.id)) },
+                    )
+                  }
+                >
+                  {justSent.has(user.id) ? 'Sent' : 'Add friend'}
+                </Button>
+              }
+            />
           ))}
         </Col>
       ) : q ? (
@@ -108,33 +93,21 @@ const IncomingRequests = () => {
   return (
     <Col gap={6}>
       {data.map((req) => (
-        <Row
+        <ListRow
           key={req.id}
-          style={{
-            justifyContent: 'space-between',
-            padding: '6px 10px',
-            background: '#fff',
-            border: `1px solid ${tokens.color.rule}`,
-            borderRadius: tokens.radius.xs,
-          }}
-        >
-          <Col gap={2}>
-            <span style={{ fontFamily: tokens.type.mono, fontSize: 13 }}>
-              {req.sender.username}
-            </span>
-            {req.note ? (
-              <span style={{ fontSize: 11, color: tokens.color.ink2 }}>“{req.note}”</span>
-            ) : null}
-          </Col>
-          <Row gap={6}>
-            <Button size="sm" variant="primary" onClick={() => accept.mutate(req.id)}>
-              Accept
-            </Button>
-            <Button size="sm" onClick={() => reject.mutate(req.id)}>
-              Reject
-            </Button>
-          </Row>
-        </Row>
+          title={req.sender.username}
+          meta={req.note ? `“${req.note}”` : undefined}
+          actions={
+            <>
+              <Button size="sm" variant="primary" onClick={() => accept.mutate(req.id)}>
+                Accept
+              </Button>
+              <Button size="sm" onClick={() => reject.mutate(req.id)}>
+                Reject
+              </Button>
+            </>
+          }
+        />
       ))}
     </Col>
   );
@@ -147,23 +120,15 @@ const OutgoingRequests = () => {
   return (
     <Col gap={6}>
       {data.map((req) => (
-        <Row
+        <ListRow
           key={req.id}
-          style={{
-            justifyContent: 'space-between',
-            padding: '6px 10px',
-            background: '#fff',
-            border: `1px solid ${tokens.color.rule}`,
-            borderRadius: tokens.radius.xs,
-          }}
-        >
-          <span style={{ fontFamily: tokens.type.mono, fontSize: 13 }}>
-            {req.recipient.username}
-          </span>
-          <Button size="sm" variant="danger" onClick={() => cancel.mutate(req.id)}>
-            Cancel
-          </Button>
-        </Row>
+          title={req.recipient.username}
+          actions={
+            <Button size="sm" onClick={() => cancel.mutate(req.id)}>
+              Cancel
+            </Button>
+          }
+        />
       ))}
     </Col>
   );
@@ -176,7 +141,7 @@ const FriendList = () => {
   const openDm = useOpenDm();
   const navigate = useNavigate();
 
-  if (data.length === 0) return <Meta>no friends yet — search for a user above</Meta>;
+  if (data.length === 0) return <Meta>no friends yet – search for a user above</Meta>;
   return (
     <Table
       cols={['Friend', 'Since', '']}
@@ -244,42 +209,34 @@ const Invitations = () => {
   return (
     <Col gap={6}>
       {data.map((inv) => (
-        <Row
+        <ListRow
           key={inv.id}
-          style={{
-            justifyContent: 'space-between',
-            padding: '6px 10px',
-            background: '#fff',
-            border: `1px solid ${tokens.color.rule}`,
-            borderRadius: tokens.radius.xs,
-          }}
-        >
-          <Col gap={2}>
-            <Row gap={6}>
-              <span style={{ fontFamily: tokens.type.mono, fontSize: 13 }}># {inv.room.name}</span>
+          title={
+            <Row gap={6} style={{ alignItems: 'center' }}>
+              <span># {inv.room.name}</span>
               <Badge tone="private">private</Badge>
             </Row>
-            <span style={{ fontSize: 11, color: tokens.color.ink2 }}>
-              invited by {inv.inviter?.username ?? '(deleted)'}
-            </span>
-          </Col>
-          <Row gap={6}>
-            <Button
-              size="sm"
-              variant="primary"
-              onClick={() =>
-                accept.mutate(inv.id, {
-                  onSuccess: () => navigate(`/chat/${inv.room.name}`),
-                })
-              }
-            >
-              Accept
-            </Button>
-            <Button size="sm" onClick={() => reject.mutate(inv.id)}>
-              Reject
-            </Button>
-          </Row>
-        </Row>
+          }
+          meta={`invited by ${inv.inviter?.username ?? '(deleted)'}`}
+          actions={
+            <>
+              <Button
+                size="sm"
+                variant="primary"
+                onClick={() =>
+                  accept.mutate(inv.id, {
+                    onSuccess: () => navigate(`/chat/${inv.room.name}`),
+                  })
+                }
+              >
+                Accept
+              </Button>
+              <Button size="sm" onClick={() => reject.mutate(inv.id)}>
+                Reject
+              </Button>
+            </>
+          }
+        />
       ))}
     </Col>
   );

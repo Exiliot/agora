@@ -21,3 +21,6 @@ export * from './PageShell';
 export * from './ListRow';
 export * from './ModalScrim';
 export * from './AuthHeader';
+export * from './SectionHeader';
+export * from './ConfirmModal';
+export * from './ImageLightbox';

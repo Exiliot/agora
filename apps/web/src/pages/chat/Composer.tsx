@@ -167,41 +167,58 @@ export const Composer = ({
       ) : null}
       {pending.length > 0 ? (
         <Row gap={6} style={{ marginBottom: 6, flexWrap: 'wrap' }}>
-          {pending.map((a) => (
-            <span
-              key={a.id}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '2px 6px',
-                border: `1px solid ${tokens.color.rule}`,
-                borderRadius: tokens.radius.xs,
-                background: tokens.color.paper0,
-                fontFamily: tokens.type.mono,
-                fontSize: 11,
-                color: tokens.color.ink1,
-              }}
-            >
-              📎 {a.originalFilename}
-              <button
-                type="button"
-                aria-label={`Remove ${a.originalFilename}`}
-                onClick={() => setPending((prev) => prev.filter((p) => p.id !== a.id))}
+          {pending.map((a) => {
+            const kind = (a.mimeType.split('/')[1] ?? 'file').slice(0, 4).toUpperCase();
+            return (
+              <span
+                key={a.id}
                 style={{
-                  background: 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: tokens.color.ink2,
-                  padding: 0,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '2px 6px',
+                  border: `1px solid ${tokens.color.rule}`,
+                  borderRadius: tokens.radius.xs,
+                  background: tokens.color.paper0,
                   fontFamily: tokens.type.mono,
-                  fontSize: 12,
+                  fontSize: 11,
+                  color: tokens.color.ink1,
                 }}
               >
-                ×
-              </button>
-            </span>
-          ))}
+                <span
+                  aria-hidden="true"
+                  style={{
+                    fontFamily: tokens.type.mono,
+                    fontSize: 10,
+                    letterSpacing: 0.6,
+                    color: tokens.color.ink2,
+                    background: tokens.color.paper2,
+                    padding: '0 4px',
+                    borderRadius: tokens.radius.xs,
+                  }}
+                >
+                  {kind}
+                </span>
+                {a.originalFilename}
+                <button
+                  type="button"
+                  aria-label={`Remove ${a.originalFilename}`}
+                  onClick={() => setPending((prev) => prev.filter((p) => p.id !== a.id))}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: tokens.color.ink2,
+                    padding: 0,
+                    fontFamily: tokens.type.mono,
+                    fontSize: 12,
+                  }}
+                >
+                  ×
+                </button>
+              </span>
+            );
+          })}
         </Row>
       ) : null}
       <div
@@ -258,7 +275,7 @@ export const Composer = ({
               disabled={uploading || pending.length >= 4}
               aria-label="Attach file"
             >
-              📎 Attach
+              Attach
             </Button>
             <span
               id={hintId}

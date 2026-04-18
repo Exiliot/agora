@@ -20,9 +20,14 @@ export const Toast = ({ tone = 'info', title, children }: ToastProps) => {
   const t = tones[tone];
   return (
     <div
+      role={tone === 'error' || tone === 'warn' ? 'alert' : undefined}
       style={{
-        border: `1px solid ${t.bd}`,
+        // Accent-bar-only per DS spec: no outer outline, a 3px tone bar on the
+        // left, thin rule on top/bottom to keep definition on white pages.
+        borderTop: `1px solid ${tokens.color.rule}`,
+        borderBottom: `1px solid ${tokens.color.rule}`,
         borderLeft: `3px solid ${t.bd}`,
+        borderRight: 'none',
         background: t.bg,
         color: t.fg,
         padding: '8px 12px',

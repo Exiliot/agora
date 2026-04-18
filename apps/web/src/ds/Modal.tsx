@@ -75,17 +75,17 @@ export const Modal = ({ title, children, onClose, width = 420 }: ModalProps) => 
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '9px 12px',
+          padding: '7px 10px',
           background: tokens.gradient.chrome,
           borderBottom: `1px solid ${tokens.color.rule}`,
           fontFamily: tokens.type.sans,
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: 600,
           color: tokens.color.ink0,
-          letterSpacing: 0.1,
+          letterSpacing: 0.2,
         }}
       >
-        <h2 id={titleId} style={{ margin: 0, fontSize: 12, fontWeight: 600 }}>
+        <h2 id={titleId} style={{ margin: 0, fontSize: 11, fontWeight: 600 }}>
           {title}
         </h2>
         <button

@@ -2,6 +2,7 @@ import type { MouseEventHandler } from 'react';
 import type { PresenceState } from '@agora/shared/presence';
 import { tokens } from './tokens';
 import { Badge } from './Badge';
+import { Presence } from './Presence';
 
 interface ContactListItemProps {
   name: string;
@@ -36,21 +37,7 @@ export const ContactListItem = ({
       textAlign: 'left',
     }}
   >
-    <span
-      aria-hidden="true"
-      style={{
-        width: 9,
-        height: 9,
-        display: 'inline-block',
-        flexShrink: 0,
-        background: status === 'online' ? tokens.color.online : 'transparent',
-        border: status !== 'online' ? `1px solid ${status === 'afk' ? tokens.color.afk : tokens.color.offline}` : 'none',
-        backgroundImage:
-          status === 'afk'
-            ? `linear-gradient(135deg, ${tokens.color.afk} 50%, transparent 50%)`
-            : undefined,
-      }}
-    />
+    <Presence status={status} size={9} />
     <span style={{ flex: 1 }}>{name}</span>
     {unread > 0 ? <Badge tone="mention">{unread}</Badge> : null}
   </button>

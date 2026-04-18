@@ -11,6 +11,7 @@ import {
   ModalScrim,
   Row,
   RoomListItem,
+  Toast,
   tokens,
 } from '../../ds';
 import { useConversations } from '../../features/conversations/useConversations';
@@ -81,7 +82,7 @@ const CreateRoomDialog = ({ onClose }: { onClose: () => void }) => {
                 />
               </Row>
             </Col>
-            {error ? <div style={{ fontSize: 12, color: tokens.color.danger }}>{error}</div> : null}
+            {error ? <Toast tone="error">{error}</Toast> : null}
             <Row gap={8} style={{ justifyContent: 'flex-end' }}>
               <Button onClick={onClose}>Cancel</Button>
               <Button
@@ -121,10 +122,21 @@ export const Sidebar = () => {
   const { data, isLoading } = useConversations();
   const navigate = useNavigate();
   const [createOpen, setCreateOpen] = useState(false);
+  const [filter, setFilter] = useState('');
 
-  const publicRooms = (data?.rooms ?? []).filter((room) => room.visibility === 'public');
-  const privateRooms = (data?.rooms ?? []).filter((room) => room.visibility === 'private');
-  const dms = data?.dms ?? [];
+  const q = filter.trim().toLowerCase();
+  const matches = (name: string) => !q || name.toLowerCase().includes(q);
+
+  const publicRooms = (data?.rooms ?? [])
+    .filter((room) => room.visibility === 'public')
+    .filter((room) => matches(room.name));
+  const privateRooms = (data?.rooms ?? [])
+    .filter((room) => room.visibility === 'private')
+    .filter((room) => matches(room.name));
+  const dms = (data?.dms ?? []).filter((dm) => matches(dm.otherUser.username));
+  const hasFilter = q.length > 0;
+  const noResults =
+    hasFilter && publicRooms.length === 0 && privateRooms.length === 0 && dms.length === 0;
 
   return (
     <aside
@@ -139,24 +151,34 @@ export const Sidebar = () => {
       }}
     >
       <div style={{ padding: '12px 12px 6px' }}>
-        <Input placeholder="Search…" inputStyle={{ fontSize: 12, padding: '6px 8px' }} />
+        <Input
+          placeholder="Filter rooms & contacts…"
+          value={filter}
+          onChange={(event) => setFilter(event.target.value)}
+          aria-label="Filter rooms and direct messages"
+          inputStyle={{ fontSize: 12, padding: '6px 8px' }}
+        />
       </div>
       <div style={{ overflow: 'auto', flex: 1 }}>
-        <div style={{ padding: '8px 12px 4px' }}>
-          <Meta>Rooms</Meta>
-        </div>
         {isLoading ? (
           <div style={{ padding: '4px 16px', fontSize: 12, color: tokens.color.ink3 }}>loading…</div>
         ) : null}
-        {publicRooms.map((room) => (
-          <RoomListItem
-            key={room.id}
-            name={room.name}
-            unread={room.unreadCount}
-            active={room.name === roomName}
-            onClick={() => navigate(`/chat/${room.name}`)}
-          />
-        ))}
+        {publicRooms.length > 0 ? (
+          <>
+            <div style={{ padding: '8px 12px 4px' }}>
+              <Meta>Rooms</Meta>
+            </div>
+            {publicRooms.map((room) => (
+              <RoomListItem
+                key={room.id}
+                name={room.name}
+                unread={room.unreadCount}
+                active={room.name === roomName}
+                onClick={() => navigate(`/chat/${room.name}`)}
+              />
+            ))}
+          </>
+        ) : null}
         {privateRooms.length > 0 ? (
           <>
             <div style={{ padding: '10px 12px 4px' }}>
@@ -174,18 +196,34 @@ export const Sidebar = () => {
             ))}
           </>
         ) : null}
-        <div style={{ padding: '10px 12px 4px' }}>
-          <Meta>Contacts</Meta>
-        </div>
-        {dms.map((dm) => (
-          <DmRow
-            key={dm.id}
-            name={dm.otherUser.username}
-            userId={dm.otherUser.id}
-            unread={dm.unreadCount}
-            onClick={() => navigate(`/dm/${dm.otherUser.username}`)}
-          />
-        ))}
+        {dms.length > 0 ? (
+          <>
+            <div style={{ padding: '10px 12px 4px' }}>
+              <Meta>Contacts</Meta>
+            </div>
+            {dms.map((dm) => (
+              <DmRow
+                key={dm.id}
+                name={dm.otherUser.username}
+                userId={dm.otherUser.id}
+                unread={dm.unreadCount}
+                onClick={() => navigate(`/dm/${dm.otherUser.username}`)}
+              />
+            ))}
+          </>
+        ) : null}
+        {noResults ? (
+          <div
+            style={{
+              padding: '10px 16px',
+              fontFamily: tokens.type.mono,
+              fontSize: 12,
+              color: tokens.color.ink3,
+            }}
+          >
+            no matches for “{filter}”
+          </div>
+        ) : null}
       </div>
       <div style={{ padding: 10, borderTop: `1px solid ${tokens.color.rule}` }}>
         <Button size="sm" style={{ width: '100%' }} onClick={() => setCreateOpen(true)}>

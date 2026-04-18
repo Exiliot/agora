@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { RoomDetail, RoomRole } from '@agora/shared';
 import {
   Badge,
   Button,
   Col,
+  ConfirmModal,
   Input,
   Meta,
   Modal,
@@ -12,6 +13,7 @@ import {
   Row,
   TabBar,
   Table,
+  Toast,
   tokens,
 } from '../../ds';
 import {
@@ -76,32 +78,37 @@ const AdminsTab = ({ room }: { room: ManageRoomModalProps['room'] }) => {
     joinedAt: room.createdAt,
   };
   const admins = room.members.filter((m) => m.role === 'admin');
+
+  const renderRow = (
+    member: typeof room.members[number],
+    roleBadge: ReactNode,
+    action: ReactNode,
+  ): ReactNode[] => [
+    <span key="u" style={{ fontFamily: tokens.type.mono, fontSize: 13 }}>
+      {member.user.username}
+    </span>,
+    roleBadge,
+    action,
+  ];
+
   return (
     <Table
       cols={['Username', 'Role', 'Actions']}
       rows={[
-        [
-          <span key="u" style={{ fontFamily: tokens.type.mono, fontSize: 13 }}>
-            {ownerRow.user.username}
-          </span>,
-          <Badge key="r" tone="accent">
-            owner
-          </Badge>,
-          <Meta key="a">locked</Meta>,
-        ],
-        ...admins.map((m) => [
-          <span key="u" style={{ fontFamily: tokens.type.mono, fontSize: 13 }}>
-            {m.user.username}
-          </span>,
-          <Badge key="r">admin</Badge>,
-          amOwner ? (
-            <Button key="a" size="sm" onClick={() => demote.mutate(m.user.id)}>
-              Remove admin
-            </Button>
-          ) : (
-            <Meta key="a">—</Meta>
+        renderRow(ownerRow, <Badge tone="accent">owner</Badge>, <Meta>locked</Meta>),
+        ...admins.map((m) =>
+          renderRow(
+            m,
+            <Badge>admin</Badge>,
+            amOwner ? (
+              <Button size="sm" onClick={() => demote.mutate(m.user.id)}>
+                Remove admin
+              </Button>
+            ) : (
+              <Meta>–</Meta>
+            ),
           ),
-        ]),
+        ),
       ]}
     />
   );
@@ -162,8 +169,8 @@ const InviteTab = ({ roomId }: { roomId: string }) => {
           Send invite
         </Button>
       </Row>
-      {ok ? <div style={{ fontSize: 12, color: tokens.color.online }}>{ok}</div> : null}
-      {error ? <div style={{ fontSize: 12, color: tokens.color.danger }}>{error}</div> : null}
+      {ok ? <Toast tone="success">{ok}</Toast> : null}
+      {error ? <Toast tone="error">{error}</Toast> : null}
     </Col>
   );
 };
@@ -177,6 +184,7 @@ const SettingsTab = ({
 }) => {
   const delMut = useDeleteRoom();
   const navigate = useNavigate();
+  const [confirmDelete, setConfirmDelete] = useState(false);
   return (
     <Col gap={12}>
       <Meta>Name</Meta>
@@ -189,28 +197,38 @@ const SettingsTab = ({
       </div>
       {room.myRole === 'owner' ? (
         <Row gap={8} style={{ marginTop: 12, justifyContent: 'flex-end' }}>
-          <Button
-            variant="danger"
-            onClick={() => {
-              if (!window.confirm(`Delete #${room.name}? This cannot be undone.`)) return;
-              delMut.mutate(room.id, {
-                onSuccess: () => {
-                  onDeleted();
-                  navigate('/chat');
-                },
-              });
-            }}
-          >
+          <Button variant="danger" onClick={() => setConfirmDelete(true)}>
             Delete room
           </Button>
         </Row>
+      ) : null}
+      {confirmDelete ? (
+        <ConfirmModal
+          title="Delete room"
+          confirmLabel="Delete room"
+          pending={delMut.isPending}
+          onCancel={() => setConfirmDelete(false)}
+          onConfirm={() =>
+            delMut.mutate(room.id, {
+              onSuccess: () => {
+                setConfirmDelete(false);
+                onDeleted();
+                navigate('/chat');
+              },
+            })
+          }
+        >
+          Delete{' '}
+          <span style={{ fontFamily: tokens.type.mono }}># {room.name}</span>? The room, its
+          messages and its attachments will be removed for everyone. This can't be undone.
+        </ConfirmModal>
       ) : null}
     </Col>
   );
 };
 
 export const ManageRoomModal = ({ room, onClose }: ManageRoomModalProps) => {
-  const tabs = ['Members', 'Admins', 'Banned', 'Invite', 'Settings'];
+  const tabs = ['Members', 'Admins', 'Banned users', 'Invitations', 'Settings'];
   const [active, setActive] = useState(0);
 
   return (

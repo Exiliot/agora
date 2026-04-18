@@ -1,6 +1,6 @@
 /**
  * JS mirror of the CSS tokens in `src/styles/tokens.css`. Use for inline
- * styles where a CSS class would be cumbersome. Never invent values here —
+ * styles where a CSS class would be cumbersome. Never invent values here –
  * add them in tokens.css first and mirror.
  */
 
@@ -26,6 +26,7 @@ export const tokens = {
     dangerSoft: 'var(--danger-soft)',
     mentionBg: 'var(--mention-bg)',
     mentionFg: 'var(--mention-fg)',
+    mentionWash: 'var(--mention-wash)',
     chromeUp: 'var(--chrome-up)',
     chromeDown: 'var(--chrome-down)',
     scrim: 'var(--scrim)',

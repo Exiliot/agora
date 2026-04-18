@@ -52,6 +52,14 @@ export const MessageRow = ({
 
   const userColor = color ?? '#7a6a5c';
 
+  // Left-rail priority: mention first (amber), self second (accent-soft), none.
+  // Using a single 2px rail keeps the row width steady across states.
+  const railColor = mention
+    ? tokens.color.mentionFg
+    : self
+      ? tokens.color.accentSoft
+      : 'transparent';
+
   return (
     <div
       style={{
@@ -62,9 +70,9 @@ export const MessageRow = ({
         fontSize: 13,
         lineHeight: 1.5,
         background: mention
-          ? 'linear-gradient(90deg, rgba(240,210,120,.2), transparent 60%)'
+          ? `linear-gradient(90deg, ${tokens.color.mentionWash}, transparent 60%)`
           : undefined,
-        borderLeft: mention ? `2px solid ${tokens.color.mentionFg}` : '2px solid transparent',
+        borderLeft: `2px solid ${railColor}`,
         opacity: deleted ? 0.4 : 1,
       }}
     >
@@ -90,7 +98,6 @@ export const MessageRow = ({
           style={{
             color: userColor,
             fontWeight: 600,
-            textDecoration: self ? 'underline' : 'none',
           }}
         >
           {user}

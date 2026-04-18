@@ -1,6 +1,6 @@
 /* Design tokens ported from docs/design/Design System.html (:root CSS vars).
    Authored in Claude Design (Opus 4.7) and accepted as the system palette.
-   Do not invent new values here — see docs/design/README.md.
+   Do not invent new values here – see docs/design/README.md.
 
    Values realigned to the Claude Design reference palette (warm hex paper
    tones + teal accent + amber mention) after the v1 audit found this file
@@ -38,6 +38,9 @@
   /* Mentions */
   --mention-bg: #fbecb5;
   --mention-fg: #8a6a10;
+  /* Translucent variant used for the mention row wash – fades into the page
+     background while keeping the mention hue. Derived from --mention-bg. */
+  --mention-wash: rgba(251, 236, 181, 0.55);
 
   /* Radii / elevation */
   --r-xs: 2px;
@@ -46,7 +49,7 @@
   --shadow-1: 0 1px 0 rgba(0, 0, 0, 0.04);
   --shadow-2: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 0 rgba(255, 255, 255, 0.6) inset;
 
-  /* Chrome gradients — classic web-chat button / modal-title feel */
+  /* Chrome gradients – classic web-chat button / modal-title feel */
   --chrome-up: #fdfaf1;
   --chrome-down: #f1ebda;
   --grad-chrome: linear-gradient(180deg, var(--chrome-up) 0%, var(--chrome-down) 100%);

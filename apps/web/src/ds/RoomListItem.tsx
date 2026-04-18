@@ -1,5 +1,6 @@
 import type { MouseEventHandler } from 'react';
 import { tokens } from './tokens';
+import { Badge } from './Badge';
 
 interface RoomListItemProps {
   name: string;
@@ -56,25 +57,6 @@ export const RoomListItem = ({
     >
       {name}
     </span>
-    {unread > 0 ? (
-      <span
-        aria-hidden="true"
-        style={{
-          fontSize: 10,
-          minWidth: 18,
-          height: 15,
-          padding: '0 5px',
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: tokens.color.mentionFg,
-          color: '#fff',
-          borderRadius: 2,
-          fontWeight: 600,
-        }}
-      >
-        {unread}
-      </span>
-    ) : null}
+    {unread > 0 ? <Badge tone="mention">{unread}</Badge> : null}
   </button>
 );
