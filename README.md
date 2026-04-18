@@ -19,15 +19,27 @@ Then:
 
 ## Try it
 
-1. Register an account (email + username + password).
-2. Create a public room; post a message.
-3. Open a second browser (or Incognito window), register a second user, join the same room, send a message from both sides.
-4. Open the sessions page — log out one session; the other stays alive.
-5. Add the second user as a friend; send a direct message.
-6. Attach an image via the paper-clip button or paste it from the clipboard.
-7. Close one tab; watch presence move online → AFK → offline as you stop interacting.
+1. Register an account (email + username + password) at `/register`.
+2. Create a public room from the sidebar; send a message.
+3. Open a second browser / Incognito window; register a second user.
+4. From the second user, browse `/public`, join the same room, chat. Messages arrive in real-time on both sides over WebSockets.
+5. On one user, go to `/contacts`, search for the other user, send a friend request.
+6. The other user accepts from `/contacts`, then opens a DM via the "Message" button. DMs appear in the sidebar and support the same message features as rooms.
+7. Create a private room on one side, send a room invitation by username, accept it on the other. Private rooms don't appear in the public catalogue.
+8. As owner/admin in a room, click "Manage room" in the right sidebar for members / bans / invitations / settings tabs. Ban a member; they're kicked in real-time.
+9. Go to `/sessions` to see active browser sessions; log out one and stay signed in on the other.
 
-> **Demo note**: the hackathon MVP scope is the core chat flows. The scaffolding in this repo is ready; feature implementation happens in the ADLC loop documented under `.claude/commands/feature.md`.
+## Features
+
+- **Accounts**: register, sign-in/out, password-reset (mock email, reset URL logged to stdout), password change, delete account with cascade.
+- **Sessions**: server-side, DB-backed, individually revocable, sliding 14-day expiry.
+- **Rooms**: create/browse/search public, invite-only private, join/leave, owner + admins with promote/demote, ban with read-only history for the banned user, delete with cascade.
+- **Messages**: real-time over WebSockets, send/edit/delete, UTF-8 + multiline + emoji, reply threading, infinite-scroll history, unread counters.
+- **DMs**: open from Contacts, friendship-gated, identical message feature set.
+- **Contacts**: friend requests (send/accept/reject/cancel), unfriend, user-to-user ban with history preserved read-only.
+- **Presence**: in-memory multi-tab state machine with online / AFK / offline states (AFK after 60s of no interaction across all tabs, offline when all tabs close).
+- **Attachments**: upload via `POST /api/attachments` (20 MB file / 3 MB image caps), content-addressed disk storage, ACL checked at download against current membership, orphan sweep every 15 min, cascade on room delete.
+- **Moderation**: room management modal with members, banned users, invitations, settings tabs.
 
 ## Stack
 

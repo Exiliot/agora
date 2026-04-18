@@ -17,6 +17,13 @@ The point isn't just a submission artefact. It's so that after the hackathon we 
 |---|---|---|
 | 2026-04-17 | Pre-event prep and audit | *(covered inline in first kickoff entry)* |
 | 2026-04-18 | Kickoff and ADLC setup | [2026-04-18-kickoff.md](2026-04-18-kickoff.md) |
+| 2026-04-18 | Build day — features, integration, smoke | [2026-04-18-build.md](2026-04-18-build.md) |
+| 2026-04-18 | Auth + sessions (subagent) | [2026-04-18-auth.md](2026-04-18-auth.md) |
+| 2026-04-18 | Rooms (subagent) | [2026-04-18-rooms.md](2026-04-18-rooms.md) |
+| 2026-04-18 | Messages (subagent) | [2026-04-18-messages.md](2026-04-18-messages.md) |
+| 2026-04-18 | Presence (subagent) | [2026-04-18-presence.md](2026-04-18-presence.md) |
+| 2026-04-18 | Friends (subagent) | [2026-04-18-friends.md](2026-04-18-friends.md) |
+| 2026-04-18 | Attachments (subagent) | [2026-04-18-attachments.md](2026-04-18-attachments.md) |
 
 ## The philosophy underneath
 
