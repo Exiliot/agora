@@ -6,6 +6,7 @@ import { pingDb, pool } from './db/client.js';
 import { runMigrations } from './db/migrate.js';
 import { registerWsPlugin } from './ws/plugin.js';
 import { registerAllRouteModules } from './routes/index.js';
+import { sessionPlugin } from './session/plugin.js';
 
 const app = Fastify({
   logger: {
@@ -18,7 +19,8 @@ const app = Fastify({
   disableRequestLogging: config.NODE_ENV === 'production',
 });
 
-await app.register(cookie);
+await app.register(cookie, { secret: config.SESSION_SECRET });
+await app.register(sessionPlugin);
 await app.register(websocket);
 
 app.get('/health', async () => {
