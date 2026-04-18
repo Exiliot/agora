@@ -8,8 +8,10 @@ services:
       POSTGRES_USER: app
       POSTGRES_PASSWORD: app
       POSTGRES_DB: app
-    ports:
-      - "5432:5432"
+    # No host port: postgres is only reachable from the api container via
+    # the compose network. Developers who want psql access can override with
+    # `docker compose exec db psql -U app -d app` or add a ports stanza in a
+    # docker-compose.override.yml that stays out of the committed tree.
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:

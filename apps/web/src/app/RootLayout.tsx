@@ -36,6 +36,9 @@ export const RootLayout = () => {
         background: tokens.color.paper1,
       }}
     >
+      <a href="#main" className="skip-link">
+        Skip to content
+      </a>
       <header
         style={{
           display: 'flex',
@@ -49,28 +52,49 @@ export const RootLayout = () => {
       >
         <Logo />
         <div style={{ width: 16 }} />
-        <NavLink to="/chat" style={{ textDecoration: 'none' }}>
-          <NavTab active={active('/chat')}>Chat</NavTab>
-        </NavLink>
-        <NavLink to="/public" style={{ textDecoration: 'none' }}>
-          <NavTab active={active('/public')}>Public rooms</NavTab>
-        </NavLink>
-        <NavLink to="/contacts" style={{ textDecoration: 'none' }}>
-          <NavTab active={active('/contacts')}>
-            Contacts
-            <NotificationsBadge />
-          </NavTab>
-        </NavLink>
-        <NavLink to="/sessions" style={{ textDecoration: 'none' }}>
-          <NavTab active={active('/sessions')}>Sessions</NavTab>
-        </NavLink>
-        <div style={{ flex: 1 }} />
+        <nav
+          aria-label="Primary"
+          style={{ display: 'flex', alignItems: 'center', gap: 0, flex: 1 }}
+        >
+          <NavLink to="/chat" style={{ textDecoration: 'none' }}>
+            <NavTab active={active('/chat')} aria-current={active('/chat') ? 'page' : undefined}>
+              Chat
+            </NavTab>
+          </NavLink>
+          <NavLink to="/public" style={{ textDecoration: 'none' }}>
+            <NavTab
+              active={active('/public')}
+              aria-current={active('/public') ? 'page' : undefined}
+            >
+              Public rooms
+            </NavTab>
+          </NavLink>
+          <NavLink to="/contacts" style={{ textDecoration: 'none' }}>
+            <NavTab
+              active={active('/contacts')}
+              aria-current={active('/contacts') ? 'page' : undefined}
+            >
+              Contacts
+              <NotificationsBadge />
+            </NavTab>
+          </NavLink>
+          <NavLink to="/sessions" style={{ textDecoration: 'none' }}>
+            <NavTab
+              active={active('/sessions')}
+              aria-current={active('/sessions') ? 'page' : undefined}
+            >
+              Sessions
+            </NavTab>
+          </NavLink>
+        </nav>
         {user ? (
           <>
-            <NavTab style={{ cursor: 'default' }}>{user.username}</NavTab>
+            <NavTab as="span" style={{ cursor: 'default' }}>
+              {user.username}
+            </NavTab>
             <NavTab
+              as="button"
               danger
-              style={{ cursor: 'pointer' }}
               onClick={() => signOut.mutate(undefined, { onSuccess: () => go('/sign-in') })}
             >
               Sign out
@@ -79,7 +103,7 @@ export const RootLayout = () => {
         ) : null}
       </header>
 
-      <main style={{ flex: 1, display: 'flex', minHeight: 0 }}>
+      <main id="main" style={{ flex: 1, display: 'flex', minHeight: 0 }}>
         <Outlet />
       </main>
     </div>

@@ -1,4 +1,4 @@
-import { useState, type KeyboardEvent } from 'react';
+import { useId, useState, type KeyboardEvent } from 'react';
 import type { ConversationType } from '@agora/shared';
 import { Button, Row, tokens } from '../../ds';
 import { useWs } from '../../app/WsProvider';
@@ -10,6 +10,8 @@ interface ComposerProps {
 
 export const Composer = ({ conversationType, conversationId }: ComposerProps) => {
   const ws = useWs();
+  const labelId = useId();
+  const hintId = useId();
   const [body, setBody] = useState('');
   const [sending, setSending] = useState(false);
 
@@ -54,7 +56,12 @@ export const Composer = ({ conversationType, conversationId }: ComposerProps) =>
           borderRadius: tokens.radius.xs,
         }}
       >
+        <label htmlFor={labelId} className="sr-only">
+          Message
+        </label>
         <textarea
+          id={labelId}
+          aria-describedby={hintId}
           value={body}
           onChange={(event) => setBody(event.target.value)}
           onKeyDown={onKeyDown}
@@ -80,7 +87,10 @@ export const Composer = ({ conversationType, conversationId }: ComposerProps) =>
             borderTop: `1px solid ${tokens.color.paper2}`,
           }}
         >
-          <span style={{ fontFamily: tokens.type.mono, fontSize: 11, color: tokens.color.ink3 }}>
+          <span
+            id={hintId}
+            style={{ fontFamily: tokens.type.mono, fontSize: 11, color: tokens.color.ink3 }}
+          >
             ⏎ send · ⇧⏎ newline
           </span>
           <Button variant="primary" size="sm" disabled={!body.trim() || sending} onClick={send}>

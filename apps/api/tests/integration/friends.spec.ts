@@ -58,7 +58,10 @@ describe('friends event publishers', () => {
     publishFriendRequestReceived(recipientId, payload);
 
     expect(handler).toHaveBeenCalledTimes(1);
-    expect(handler).toHaveBeenCalledWith({ type: 'friend.request_received', payload });
+    expect(handler).toHaveBeenCalledWith(
+      { type: 'friend.request_received', payload },
+      undefined,
+    );
     off();
   });
 
@@ -74,10 +77,10 @@ describe('friends event publishers', () => {
 
     publishFriendshipCreated(me, other);
 
-    expect(handler).toHaveBeenCalledWith({
-      type: 'friendship.created',
-      payload: { userId: other },
-    });
+    expect(handler).toHaveBeenCalledWith(
+      { type: 'friendship.created', payload: { userId: other } },
+      undefined,
+    );
     off();
   });
 
@@ -96,14 +99,14 @@ describe('friends event publishers', () => {
     publishFriendshipRemoved(me, other);
     publishFriendshipRemoved(other, me);
 
-    expect(myHandler).toHaveBeenCalledWith({
-      type: 'friendship.removed',
-      payload: { userId: other },
-    });
-    expect(otherHandler).toHaveBeenCalledWith({
-      type: 'friendship.removed',
-      payload: { userId: me },
-    });
+    expect(myHandler).toHaveBeenCalledWith(
+      { type: 'friendship.removed', payload: { userId: other } },
+      undefined,
+    );
+    expect(otherHandler).toHaveBeenCalledWith(
+      { type: 'friendship.removed', payload: { userId: me } },
+      undefined,
+    );
 
     offMine();
     offTheirs();
@@ -124,14 +127,14 @@ describe('friends event publishers', () => {
     publishUserBanCreated(banner, banner, target);
     publishUserBanCreated(target, banner, target);
 
-    expect(bannerHandler).toHaveBeenCalledWith({
-      type: 'user_ban.created',
-      payload: { bannerId: banner, targetId: target },
-    });
-    expect(targetHandler).toHaveBeenCalledWith({
-      type: 'user_ban.created',
-      payload: { bannerId: banner, targetId: target },
-    });
+    expect(bannerHandler).toHaveBeenCalledWith(
+      { type: 'user_ban.created', payload: { bannerId: banner, targetId: target } },
+      undefined,
+    );
+    expect(targetHandler).toHaveBeenCalledWith(
+      { type: 'user_ban.created', payload: { bannerId: banner, targetId: target } },
+      undefined,
+    );
 
     offBanner();
     offTarget();
@@ -149,10 +152,10 @@ describe('friends event publishers', () => {
 
     publishUserBanRemoved(banner, banner, target);
 
-    expect(handler).toHaveBeenCalledWith({
-      type: 'user_ban.removed',
-      payload: { bannerId: banner, targetId: target },
-    });
+    expect(handler).toHaveBeenCalledWith(
+      { type: 'user_ban.removed', payload: { bannerId: banner, targetId: target } },
+      undefined,
+    );
     off();
   });
 
@@ -168,10 +171,10 @@ describe('friends event publishers', () => {
 
     publishFriendRequestCancelled(recipientId, requestId);
 
-    expect(handler).toHaveBeenCalledWith({
-      type: 'friend.request_cancelled',
-      payload: { requestId },
-    });
+    expect(handler).toHaveBeenCalledWith(
+      { type: 'friend.request_cancelled', payload: { requestId } },
+      undefined,
+    );
     off();
   });
 });

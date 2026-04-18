@@ -47,10 +47,10 @@ describe('room event publishers', () => {
     publishRoomMemberJoined(roomId, user);
 
     expect(handler).toHaveBeenCalledTimes(1);
-    expect(handler).toHaveBeenCalledWith({
-      type: 'room.member_joined',
-      payload: { roomId, user },
-    });
+    expect(handler).toHaveBeenCalledWith(
+      { type: 'room.member_joined', payload: { roomId, user } },
+      undefined,
+    );
     unsubscribe();
   });
 
@@ -65,10 +65,10 @@ describe('room event publishers', () => {
 
     publishRoomDeleted(roomId);
 
-    expect(handler).toHaveBeenCalledWith({
-      type: 'room.deleted',
-      payload: { roomId },
-    });
+    expect(handler).toHaveBeenCalledWith(
+      { type: 'room.deleted', payload: { roomId } },
+      undefined,
+    );
     unsubscribe();
   });
 
@@ -84,10 +84,10 @@ describe('room event publishers', () => {
 
     publishRoomAccessLost(userId, roomId, 'removed');
 
-    expect(handler).toHaveBeenCalledWith({
-      type: 'room.access_lost',
-      payload: { roomId, reason: 'removed' },
-    });
+    expect(handler).toHaveBeenCalledWith(
+      { type: 'room.access_lost', payload: { roomId, reason: 'removed' } },
+      undefined,
+    );
     unsubscribe();
   });
 
@@ -99,19 +99,36 @@ describe('room event publishers', () => {
     const targetId = '00000000-0000-0000-0000-000000000006';
     const payload = {
       id: 'inv-1',
-      room: { id: 'room-1', name: 'general', description: null },
+      roomId: 'room-1',
+      roomName: 'general',
       inviter: { id: 'inv-er', username: 'bob' },
-      createdAt: '2026-04-18T00:00:00.000Z',
     };
     const handler = vi.fn();
     const unsubscribe = bus.subscribe(userTopic(targetId), handler);
 
     publishInvitationReceived(targetId, payload);
 
-    expect(handler).toHaveBeenCalledWith({
-      type: 'invitation.received',
-      payload,
-    });
+    expect(handler).toHaveBeenCalledWith({ type: 'invitation.received', payload }, undefined);
     unsubscribe();
+  });
+
+  it('should publish room.member_removed with byUserId matching the shared schema', async () => {
+    const { bus } = await import('../../src/bus/bus.js');
+    const { roomTopic } = await import('../../src/bus/topics.js');
+    const { publishRoomMemberRemoved } = await import('../../src/rooms/events.js');
+
+    const roomId = '00000000-0000-0000-0000-000000000007';
+    const target = '00000000-0000-0000-0000-000000000008';
+    const by = '00000000-0000-0000-0000-000000000009';
+    const handler = vi.fn();
+    const off = bus.subscribe(roomTopic(roomId), handler);
+
+    publishRoomMemberRemoved(roomId, target, by);
+
+    expect(handler).toHaveBeenCalledWith(
+      { type: 'room.member_removed', payload: { roomId, userId: target, byUserId: by } },
+      undefined,
+    );
+    off();
   });
 });

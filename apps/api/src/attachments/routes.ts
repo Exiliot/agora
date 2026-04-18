@@ -30,6 +30,25 @@ import {
 
 const isImageMime = (mime: string): boolean => mime.toLowerCase().startsWith('image/');
 
+const IMAGE_MIME_ALLOWLIST = new Set([
+  'image/png',
+  'image/jpeg',
+  'image/gif',
+  'image/webp',
+  'image/avif',
+]);
+
+// Normalise an uploaded mime against a small allowlist. Non-image content
+// is stored as application/octet-stream so browsers can't be tricked into
+// rendering a disguised payload inline on download; with
+// X-Content-Type-Options: nosniff the browser won't override the chosen
+// Content-Type either.
+const normaliseMime = (mime: string): string => {
+  const lower = mime.toLowerCase();
+  if (IMAGE_MIME_ALLOWLIST.has(lower)) return lower;
+  return 'application/octet-stream';
+};
+
 interface AttachmentResponse {
   id: string;
   size: number;
@@ -74,8 +93,8 @@ addRouteModule({
           return reply.code(400).send({ error: 'validation', message: 'no file part' });
         }
 
-        const originalFilename = part.filename || 'unnamed';
-        const mimeType = part.mimetype || 'application/octet-stream';
+        const originalFilename = (part.filename || 'unnamed').slice(0, 255);
+        const mimeType = normaliseMime(part.mimetype || 'application/octet-stream');
         const image = isImageMime(mimeType);
         const perFileCap = image ? MAX_IMAGE_BYTES : MAX_FILE_BYTES;
 
@@ -169,6 +188,7 @@ addRouteModule({
             .header('Content-Type', row.mimeType)
             .header('Content-Length', String(row.size))
             .header('Cache-Control', 'private, max-age=0, must-revalidate')
+            .header('X-Content-Type-Options', 'nosniff')
             .header(
               'Content-Disposition',
               `attachment; filename="${encodeRfc5987(row.originalFilename)}"`,

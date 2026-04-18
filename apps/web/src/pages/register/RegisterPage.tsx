@@ -79,7 +79,11 @@ const RegisterPage = () => {
             value={confirm}
             onChange={(event) => setConfirm(event.target.value)}
           />
-          {error ? <div style={{ fontSize: 12, color: 'var(--danger)' }}>{error}</div> : null}
+          {error ? (
+            <div role="alert" style={{ fontSize: 12, color: 'var(--danger)' }}>
+              {error}
+            </div>
+          ) : null}
           <Row gap={8} style={{ justifyContent: 'space-between', alignItems: 'center' }}>
             <Link to="/sign-in" style={{ fontSize: 12, color: 'var(--accent)' }}>
               Already have an account?

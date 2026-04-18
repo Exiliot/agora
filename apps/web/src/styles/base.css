@@ -53,4 +53,22 @@
     white-space: nowrap;
     border-width: 0;
   }
+
+  /* Skip link: hidden off-screen until focused, then appears at the top-left
+     so keyboard users can jump past the primary nav. */
+  .skip-link {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    background: var(--paper-0);
+    color: var(--accent-ink);
+    padding: 8px 12px;
+    border: 1px solid var(--rule);
+    font-size: 13px;
+    z-index: 1000;
+  }
+  .skip-link:focus {
+    left: 8px;
+    top: 8px;
+  }
 }

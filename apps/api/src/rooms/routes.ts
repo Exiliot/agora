@@ -421,9 +421,9 @@ addRouteModule({
 
           publishInvitationReceived(target.id, {
             id: invitation.id,
-            room: { id: room.id, name: room.name, description: room.description },
+            roomId: room.id,
+            roomName: room.name,
             inviter: { id: userId, username: req.user.username },
-            createdAt: invitation.createdAt.toISOString(),
           });
 
           return reply.code(201).send({

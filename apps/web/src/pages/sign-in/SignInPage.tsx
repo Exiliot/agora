@@ -57,7 +57,9 @@ const SignInPage = () => {
           />
           <Check label="Keep me signed in" defaultChecked />
           {error ? (
-            <div style={{ fontSize: 12, color: 'var(--danger)' }}>{error}</div>
+            <div role="alert" style={{ fontSize: 12, color: 'var(--danger)' }}>
+              {error}
+            </div>
           ) : null}
           <Row gap={8} style={{ justifyContent: 'space-between', alignItems: 'center' }}>
             <Link to="/reset" style={{ fontSize: 12, color: 'var(--accent)' }}>

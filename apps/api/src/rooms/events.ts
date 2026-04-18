@@ -34,7 +34,7 @@ export const publishRoomMemberRemoved = (
 ): void => {
   bus.publish(roomTopic(roomId), {
     type: 'room.member_removed',
-    payload: { roomId, userId: targetUserId, by: byUserId },
+    payload: { roomId, userId: targetUserId, byUserId },
   });
 };
 
@@ -72,9 +72,9 @@ export const publishRoomAccessLost = (
 
 export interface InvitationReceivedPayload {
   id: string;
-  room: { id: string; name: string; description: string | null };
+  roomId: string;
+  roomName: string;
   inviter: MinimalUser | null;
-  createdAt: string;
 }
 
 export const publishInvitationReceived = (

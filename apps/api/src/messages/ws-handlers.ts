@@ -6,12 +6,12 @@
  */
 
 import type { MessageView } from '@agora/shared';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, inArray, isNull } from 'drizzle-orm';
 import { uuidv7 } from 'uuidv7';
 import { db } from '../db/client.js';
 import { bus } from '../bus/bus.js';
 import { dmTopic, roomTopic, userTopic } from '../bus/topics.js';
-import { lastRead, messages, roomMembers } from '../db/schema.js';
+import { attachments, lastRead, messages, roomMembers } from '../db/schema.js';
 import { registerWsHandler, type WsContext } from '../ws/dispatcher.js';
 import { hydrateMessage } from './history.js';
 import { canAccessRoom, canSendDm, loadDmForUser } from './permissions.js';
@@ -116,6 +116,22 @@ registerWsHandler('message.send', async (ctx, event) => {
       })
       .returning();
     if (!inserted) throw new Error('message insert returned no rows');
+
+    if (payload.attachmentIds && payload.attachmentIds.length > 0) {
+      // Link only attachments the caller uploaded and that haven't been
+      // linked to another message yet. Quietly skips ids that don't match
+      // — the orphan sweeper cleans up genuinely dangling uploads.
+      await tx
+        .update(attachments)
+        .set({ messageId: inserted.id })
+        .where(
+          and(
+            inArray(attachments.id, payload.attachmentIds),
+            eq(attachments.uploaderId, userId),
+            isNull(attachments.messageId),
+          ),
+        );
+    }
 
     const recipients = await listOtherParticipants(
       tx,
