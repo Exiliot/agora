@@ -28,7 +28,8 @@ services:
       HOST: "0.0.0.0"
       PORT: "3000"
       DATABASE_URL: "postgres://app:app@db:5432/app"
-      SESSION_SECRET: "dev-only-session-secret-change-me-in-production-xxxxxxxxx"
+      # SESSION_SECRET intentionally unset — api generates a random one at boot.
+      # Set this in a real deployment so sessions survive restarts.
       STORAGE_ROOT: "/data/attachments"
       ALLOW_DEV_SEED: "1"
     ports:

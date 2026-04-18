@@ -7,7 +7,7 @@ interface RoomListItemProps {
   active?: boolean;
   isPrivate?: boolean;
   muted?: boolean;
-  onClick?: MouseEventHandler<HTMLDivElement>;
+  onClick?: MouseEventHandler<HTMLButtonElement>;
 }
 
 export const RoomListItem = ({
@@ -18,22 +18,33 @@ export const RoomListItem = ({
   muted = false,
   onClick,
 }: RoomListItemProps) => (
-  <div
+  <button
+    type="button"
     onClick={onClick}
+    aria-current={active ? 'true' : undefined}
+    aria-label={`${isPrivate ? 'Private room' : 'Room'} ${name}${unread > 0 ? `, ${unread} unread` : ''}`}
     style={{
       display: 'flex',
       alignItems: 'center',
       gap: 4,
+      width: '100%',
       padding: '3px 10px 3px 16px',
       background: active ? tokens.color.accentSoft : 'transparent',
       borderLeft: active ? `2px solid ${tokens.color.accent}` : '2px solid transparent',
+      borderRight: 'none',
+      borderTop: 'none',
+      borderBottom: 'none',
       fontFamily: tokens.type.mono,
       fontSize: 13,
       color: active ? tokens.color.accentInk : muted ? tokens.color.ink2 : tokens.color.ink0,
       cursor: 'pointer',
+      textAlign: 'left',
     }}
   >
-    <span style={{ color: tokens.color.ink2, width: 12, textAlign: 'center', fontSize: 11 }}>
+    <span
+      aria-hidden="true"
+      style={{ color: tokens.color.ink2, width: 12, textAlign: 'center', fontSize: 11 }}
+    >
       {isPrivate ? '•' : '#'}
     </span>
     <span
@@ -47,6 +58,7 @@ export const RoomListItem = ({
     </span>
     {unread > 0 ? (
       <span
+        aria-hidden="true"
         style={{
           fontSize: 10,
           minWidth: 18,
@@ -64,5 +76,5 @@ export const RoomListItem = ({
         {unread}
       </span>
     ) : null}
-  </div>
+  </button>
 );

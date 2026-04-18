@@ -12,7 +12,7 @@
   --ink-0: #1a1a17;
   --ink-1: #3a3a34;
   --ink-2: #6b6a60;
-  --ink-3: #9a988c;
+  --ink-3: #6f6d62; /* darkened from #9a988c for WCAG AA on paper-1 */
 
   /* Single accent: oxidized teal */
   --accent: oklch(0.52 0.07 190);

@@ -17,4 +17,40 @@
   *::after {
     box-sizing: border-box;
   }
+
+  /* Keyboard focus ring — the design removes default outlines on inputs and
+     buttons, so we restore visible focus for keyboard users via :focus-visible.
+     Pointer focus stays un-ringed (WCAG 2.4.7). */
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: var(--r-xs);
+  }
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible,
+  [role="button"]:focus-visible,
+  [role="dialog"]:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
+@layer utilities {
+  /* Screen-reader-only content. Used for labels we don't want visible but
+     must exist for assistive tech. */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
 }

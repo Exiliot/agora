@@ -27,6 +27,7 @@ import {
 } from '../session/store.js';
 import { hashPassword, verifyPassword } from './password.js';
 import { consumeResetToken, issueResetToken } from './password-reset.js';
+import { authRateLimit, registerRateLimitPlugin } from './rate-limit.js';
 
 const toUserSelf = (row: {
   id: string;
@@ -65,8 +66,9 @@ const issueSessionCookie = async (
 
 addRouteModule({
   name: 'auth',
-  register(app: FastifyInstance) {
-    app.post('/api/auth/register', async (req, reply) => {
+  async register(app: FastifyInstance) {
+    await registerRateLimitPlugin(app);
+    app.post('/api/auth/register', authRateLimit, async (req, reply) => {
       const parsed = registerRequest.safeParse(req.body);
       if (!parsed.success) {
         return reply.code(400).send({ error: 'invalid_input', issues: parsed.error.issues });
@@ -110,7 +112,7 @@ addRouteModule({
       return reply.code(201).send({ user: toUserSelf(inserted) });
     });
 
-    app.post('/api/auth/sign-in', async (req, reply) => {
+    app.post('/api/auth/sign-in', authRateLimit, async (req, reply) => {
       const parsed = signInRequest.safeParse(req.body);
       if (!parsed.success) {
         return reply.code(400).send({ error: 'invalid_input', issues: parsed.error.issues });
@@ -173,7 +175,7 @@ addRouteModule({
       return reply.code(200).send({ user: toUserSelf(row) });
     });
 
-    app.post('/api/auth/password-reset/request', async (req, reply) => {
+    app.post('/api/auth/password-reset/request', authRateLimit, async (req, reply) => {
       const parsed = passwordResetRequest.safeParse(req.body);
       if (!parsed.success) {
         return reply.code(400).send({ error: 'invalid_input', issues: parsed.error.issues });
@@ -201,7 +203,7 @@ addRouteModule({
       return reply.code(204).send();
     });
 
-    app.post('/api/auth/password-reset/consume', async (req, reply) => {
+    app.post('/api/auth/password-reset/consume', authRateLimit, async (req, reply) => {
       const parsed = passwordResetConsume.safeParse(req.body);
       if (!parsed.success) {
         return reply.code(400).send({ error: 'invalid_input', issues: parsed.error.issues });

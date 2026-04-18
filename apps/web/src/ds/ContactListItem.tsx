@@ -7,7 +7,7 @@ interface ContactListItemProps {
   name: string;
   status?: PresenceState;
   unread?: number;
-  onClick?: MouseEventHandler<HTMLDivElement>;
+  onClick?: MouseEventHandler<HTMLButtonElement>;
 }
 
 export const ContactListItem = ({
@@ -16,20 +16,28 @@ export const ContactListItem = ({
   unread = 0,
   onClick,
 }: ContactListItemProps) => (
-  <div
+  <button
+    type="button"
     onClick={onClick}
+    aria-label={`${name}, ${status}${unread > 0 ? `, ${unread} unread` : ''}`}
     style={{
       display: 'flex',
       alignItems: 'center',
       gap: 6,
+      width: '100%',
       padding: '3px 10px 3px 16px',
       fontFamily: tokens.type.mono,
       fontSize: 13,
       color: status === 'offline' ? tokens.color.ink2 : tokens.color.ink0,
       cursor: 'pointer',
+      background: 'transparent',
+      border: 'none',
+      borderLeft: '2px solid transparent',
+      textAlign: 'left',
     }}
   >
     <span
+      aria-hidden="true"
       style={{
         width: 9,
         height: 9,
@@ -45,5 +53,5 @@ export const ContactListItem = ({
     />
     <span style={{ flex: 1 }}>{name}</span>
     {unread > 0 ? <Badge tone="mention">{unread}</Badge> : null}
-  </div>
+  </button>
 );

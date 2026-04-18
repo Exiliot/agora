@@ -18,7 +18,7 @@ import { lastRead, messages, roomMembers } from '../db/schema.js';
 import { registerWsHandler, type WsContext } from '../ws/dispatcher.js';
 import { hydrateMessage } from './history.js';
 import { canAccessRoom, canSendDm, loadDmForUser } from './permissions.js';
-import { incrementUnread, listOtherParticipants, resetUnread } from './unread.js';
+import { incrementUnreadForMany, listOtherParticipants, resetUnread } from './unread.js';
 
 type ReqEvent = { type: string; reqId?: string; payload: unknown };
 
@@ -132,17 +132,14 @@ registerWsHandler('message.send', async (ctx, raw) => {
       payload.conversationId,
       userId,
     );
-    const counts = await Promise.all(
-      recipients.map(async (rid) => {
-        const count = await incrementUnread(
-          tx,
-          rid,
-          payload.conversationType,
-          payload.conversationId,
-        );
-        return { userId: rid, count };
-      }),
+    // Single batched INSERT ... ON CONFLICT instead of N round-trips.
+    const byUser = await incrementUnreadForMany(
+      tx,
+      recipients,
+      payload.conversationType,
+      payload.conversationId,
     );
+    const counts = recipients.map((rid) => ({ userId: rid, count: byUser.get(rid) ?? 0 }));
     return { row: inserted, counts };
   });
 

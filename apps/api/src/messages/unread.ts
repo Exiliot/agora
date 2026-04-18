@@ -70,6 +70,42 @@ export const incrementUnread = async (
   return row?.count ?? 0;
 };
 
+/**
+ * Bulk version: single INSERT ... ON CONFLICT DO UPDATE covering every
+ * recipient in one round-trip. Called from the message-send transaction
+ * instead of per-user incrementUnread. Scales to 1000-member rooms without
+ * serialising N round-trips on the event loop.
+ */
+export const incrementUnreadForMany = async (
+  tx: Db,
+  userIds: readonly string[],
+  conversationType: ConversationType,
+  conversationId: string,
+): Promise<Map<string, number>> => {
+  if (userIds.length === 0) return new Map();
+  const values = userIds.map((userId) => ({
+    userId,
+    conversationType,
+    conversationId,
+    count: 1,
+  }));
+  const rows = await (tx as typeof db)
+    .insert(conversationUnreads)
+    .values(values)
+    .onConflictDoUpdate({
+      target: [
+        conversationUnreads.userId,
+        conversationUnreads.conversationType,
+        conversationUnreads.conversationId,
+      ],
+      set: { count: sql`${conversationUnreads.count} + 1` },
+    })
+    .returning({ userId: conversationUnreads.userId, count: conversationUnreads.count });
+  const out = new Map<string, number>();
+  for (const r of rows) out.set(r.userId, r.count);
+  return out;
+};
+
 export const resetUnread = async (
   userId: string,
   conversationType: ConversationType,

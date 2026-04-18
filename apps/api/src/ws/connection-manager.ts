@@ -15,6 +15,8 @@ export interface WsConnection {
   tabId: string | null;
   readonly subscriptions: Map<string, () => void>;
   send(event: BusEvent): void;
+  /** Send a pre-serialised JSON frame — used by bus fan-out to skip a per-connection stringify. */
+  sendRaw(serialised: string, type: string): void;
   closeWith(code: number, reason?: string): void;
 }
 
@@ -28,18 +30,26 @@ export const createConnection = (args: {
   const subscriptions = new Map<string, () => void>();
   let queued = 0;
 
-  const send = (event: BusEvent): void => {
+  const writeFrame = (serialised: string, type: string) => {
     // Bounded outbound queue — drop presence updates under pressure, never drop
     // messages (see docs/ws-protocol.md §6).
-    if (queued >= MAX_OUTBOUND_QUEUE && event.type === 'presence.update') return;
+    if (queued >= MAX_OUTBOUND_QUEUE && type === 'presence.update') return;
     queued += 1;
-    args.socket.send(JSON.stringify(event), (err) => {
+    args.socket.send(serialised, (err) => {
       queued = Math.max(0, queued - 1);
       if (err) {
         // eslint-disable-next-line no-console
         console.warn('[ws] send failed', { connId: args.id, err: err.message });
       }
     });
+  };
+
+  const send = (event: BusEvent): void => {
+    writeFrame(JSON.stringify(event), event.type);
+  };
+
+  const sendRaw = (serialised: string, type: string): void => {
+    writeFrame(serialised, type);
   };
 
   const closeWith = (code: number, reason?: string): void => {
@@ -57,13 +67,20 @@ export const createConnection = (args: {
     tabId: null,
     subscriptions,
     send,
+    sendRaw,
     closeWith,
   };
 };
 
 export const subscribeConnection = (conn: WsConnection, topic: string): void => {
   if (conn.subscriptions.has(topic)) return;
-  const unsubscribe = bus.subscribe(topic, (event) => conn.send(event));
+  const unsubscribe = bus.subscribe(topic, (event, serialised) => {
+    if (serialised) {
+      conn.sendRaw(serialised, event.type);
+    } else {
+      conn.send(event);
+    }
+  });
   conn.subscriptions.set(topic, unsubscribe);
 };
 

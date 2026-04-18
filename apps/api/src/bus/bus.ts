@@ -3,6 +3,11 @@
  *
  * Handlers are notified synchronously in the order they subscribed. Handler
  * exceptions are caught and logged; they do not affect other subscribers.
+ *
+ * Publish pre-serialises the event once and passes both the object and the
+ * JSON string to every handler. WS subscribers can `ws.send(serialised)`
+ * directly and skip a per-connection JSON.stringify — matters in large rooms
+ * where a single message fans out to hundreds of sockets.
  */
 
 export type BusEvent = {
@@ -10,7 +15,7 @@ export type BusEvent = {
   readonly payload: unknown;
 };
 
-type Handler = (event: BusEvent) => void;
+type Handler = (event: BusEvent, serialised?: string) => void;
 
 export interface Bus {
   publish(topic: string, event: BusEvent): void;
@@ -26,9 +31,13 @@ const createInMemoryBus = (): Bus => {
     publish(topic, event) {
       const handlers = table.get(topic);
       if (!handlers || handlers.size === 0) return;
+      // Pre-stringify once if there's more than one subscriber so individual
+      // handlers can reuse the serialised payload. Single-subscriber topics
+      // skip the serialisation — the handler may not need it.
+      const serialised = handlers.size > 1 ? JSON.stringify(event) : undefined;
       for (const handler of handlers) {
         try {
-          handler(event);
+          handler(event, serialised);
         } catch (err) {
           // Log but do not rethrow — one bad subscriber must not kill fan-out.
           // eslint-disable-next-line no-console

@@ -250,6 +250,10 @@ export const MessageList = ({ conversationType, conversationId, myRoomRole }: Me
     <div
       ref={scrollRef}
       data-testid="message-scroller"
+      role="log"
+      aria-live="polite"
+      aria-relevant="additions text"
+      aria-label="Message history"
       style={{
         flex: 1,
         overflowY: 'auto',
