@@ -11,6 +11,8 @@ import RegisterPage from './pages/register/RegisterPage';
 import ChatView from './pages/chat/ChatView';
 import PublicRoomsPage from './pages/public/PublicRoomsPage';
 import SessionsPage from './pages/sessions/SessionsPage';
+import ContactsPage from './pages/contacts/ContactsPage';
+import DmView from './pages/dm/DmView';
 
 const AppRoutes = () => {
   const { data: user } = useMe();
@@ -33,9 +35,10 @@ const AppRoutes = () => {
         >
           <Route path="/chat" element={<ChatView />} />
           <Route path="/chat/:roomName" element={<ChatView />} />
+          <Route path="/dm/:username" element={<DmView />} />
           <Route path="/public" element={<PublicRoomsPage />} />
           <Route path="/sessions" element={<SessionsPage />} />
-          <Route path="/contacts" element={<ChatView />} />
+          <Route path="/contacts" element={<ContactsPage />} />
           <Route path="/profile" element={<ChatView />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
