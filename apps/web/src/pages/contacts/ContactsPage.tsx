@@ -25,6 +25,11 @@ import {
   useUnfriend,
 } from '../../features/friends/useFriends';
 import { useOpenDm } from '../../features/dm/useOpenDm';
+import {
+  useAcceptInvitation,
+  useMyInvitations,
+  useRejectInvitation,
+} from '../../features/rooms/useRoomAdmin';
 
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <section style={{ marginTop: 28 }}>
@@ -217,6 +222,56 @@ const MyBans = () => {
   );
 };
 
+const Invitations = () => {
+  const { data = [] } = useMyInvitations();
+  const accept = useAcceptInvitation();
+  const reject = useRejectInvitation();
+  const navigate = useNavigate();
+  if (data.length === 0) return <Meta>no pending invitations</Meta>;
+  return (
+    <Col gap={6}>
+      {data.map((inv) => (
+        <Row
+          key={inv.id}
+          style={{
+            justifyContent: 'space-between',
+            padding: '6px 10px',
+            background: '#fff',
+            border: `1px solid ${tokens.color.rule}`,
+            borderRadius: tokens.radius.xs,
+          }}
+        >
+          <Col gap={2}>
+            <Row gap={6}>
+              <span style={{ fontFamily: tokens.type.mono, fontSize: 13 }}># {inv.room.name}</span>
+              <Badge tone="private">private</Badge>
+            </Row>
+            <span style={{ fontSize: 11, color: tokens.color.ink2 }}>
+              invited by {inv.inviter?.username ?? '(deleted)'}
+            </span>
+          </Col>
+          <Row gap={6}>
+            <Button
+              size="sm"
+              variant="primary"
+              onClick={() =>
+                accept.mutate(inv.id, {
+                  onSuccess: () => navigate(`/chat/${inv.room.name}`),
+                })
+              }
+            >
+              Accept
+            </Button>
+            <Button size="sm" onClick={() => reject.mutate(inv.id)}>
+              Reject
+            </Button>
+          </Row>
+        </Row>
+      ))}
+    </Col>
+  );
+};
+
 const ContactsPage = () => (
   <div style={{ flex: 1, padding: '24px 32px', overflow: 'auto' }}>
     <div style={{ maxWidth: 760 }}>
@@ -236,6 +291,10 @@ const ContactsPage = () => (
 
       <Section title="Outgoing requests">
         <OutgoingRequests />
+      </Section>
+
+      <Section title="Room invitations">
+        <Invitations />
       </Section>
 
       <Section title="Friends">
