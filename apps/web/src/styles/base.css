@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import './tokens.css';
+
+@layer base {
+  html,
+  body {
+    margin: 0;
+    background: var(--paper-1);
+    color: var(--ink-0);
+    font-family: var(--sans);
+  }
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+}

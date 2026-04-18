@@ -1,0 +1,44 @@
+/* Design tokens ported from docs/design/Design System.html (:root CSS vars).
+   Authored in Claude Design (Opus 4.7) and accepted as the system palette.
+   Do not invent new values here — see docs/design/README.md. */
+
+:root {
+  /* Paper / ink neutrals (warm) */
+  --paper-0: #fbf9f4;
+  --paper-1: #f6f3ec;
+  --paper-2: #ede9df;
+  --paper-3: #e2ddcf;
+  --rule: #d6d0be;
+  --ink-0: #1a1a17;
+  --ink-1: #3a3a34;
+  --ink-2: #6b6a60;
+  --ink-3: #9a988c;
+
+  /* Single accent: oxidized teal */
+  --accent: oklch(0.52 0.07 190);
+  --accent-soft: oklch(0.92 0.03 190);
+  --accent-ink: oklch(0.34 0.06 190);
+
+  /* Status (flat swatches) */
+  --online: oklch(0.62 0.14 145);
+  --afk: oklch(0.72 0.12 75);
+  --offline: #a8a49a;
+  --danger: oklch(0.52 0.16 27);
+  --danger-soft: oklch(0.93 0.04 27);
+
+  /* Mentions */
+  --mention-bg: oklch(0.93 0.05 85);
+  --mention-fg: oklch(0.36 0.08 55);
+
+  /* Radii / elevation */
+  --r-xs: 2px;
+  --r-sm: 3px;
+  --r-md: 4px;
+  --shadow-1: 0 1px 0 rgba(0, 0, 0, 0.04);
+  --shadow-2: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 0 rgba(255, 255, 255, 0.6) inset;
+
+  /* Type */
+  --sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+  --serif: 'IBM Plex Serif', Georgia, serif;
+}
