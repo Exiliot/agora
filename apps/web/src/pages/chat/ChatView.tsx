@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import type { RoomDetail, RoomRole } from '@agora/shared';
 import { useMyRooms } from '../../features/rooms/useRooms';
 import { useRoom } from '../../features/rooms/useRoom';
+import { useFocusBroadcast } from '../../features/notifications/focus';
 import { Badge, Button, ContactListItem, Meta, Row, tokens } from '../../ds';
 import { MessageList } from './MessageList';
 import { Composer } from './Composer';
@@ -160,6 +161,8 @@ const ChatView = () => {
   );
   const { data: detail } = useRoom(room?.id ?? null);
   const [manageOpen, setManageOpen] = useState(false);
+
+  useFocusBroadcast('room', room?.id ?? null);
 
   if (!roomName) {
     return (

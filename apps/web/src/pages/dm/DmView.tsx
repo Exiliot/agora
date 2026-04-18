@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import { Toast, tokens } from '../../ds';
 import { useConversations } from '../../features/conversations/useConversations';
 import { useIncomingBans, useMyBans } from '../../features/friends/useFriends';
+import { useFocusBroadcast } from '../../features/notifications/focus';
 import { MessageList } from '../chat/MessageList';
 import { Composer } from '../chat/Composer';
 import { Sidebar } from '../chat/Sidebar';
@@ -26,6 +27,8 @@ const DmView = () => {
     if (incoming.some((b) => b.banner.id === dm.otherUser.id)) return 'banned-by-them';
     return null;
   }, [dm, outgoing, incoming]);
+
+  useFocusBroadcast('dm', dm?.id ?? null);
 
   if (!dm) {
     return (
