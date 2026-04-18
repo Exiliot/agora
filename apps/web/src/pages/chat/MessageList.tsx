@@ -1,7 +1,18 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { AttachmentSummary, ConversationType, MessageView, RoomRole } from '@agora/shared';
-import { Button, FileCard, MessageRow, colorForName, tokens, useToast } from '../../ds';
+import {
+  Button,
+  Col,
+  FileCard,
+  MessageRow,
+  Modal,
+  ModalScrim,
+  Row,
+  colorForName,
+  tokens,
+  useToast,
+} from '../../ds';
 import { useMessages } from '../../features/messages/useMessages';
 import { useMe } from '../../features/auth/useMe';
 import { useWs } from '../../app/WsProvider';
@@ -42,44 +53,23 @@ const formatTime = (iso: string): string => {
 };
 
 const MessageActions = ({
-  msg,
+  visible,
   canEdit,
   canDelete,
+  onEdit,
+  onDelete,
 }: {
-  msg: MessageView;
+  visible: boolean;
   canEdit: boolean;
   canDelete: boolean;
+  onEdit: () => void;
+  onDelete: () => void;
 }) => {
-  const ws = useWs();
-  const toast = useToast();
+  // Always mounted so hover transitions don't remount and shift layout.
+  // `opacity` + `pointer-events` gate visibility and interaction; the
+  // transition smooths the appearance so the flicker pattern from
+  // conditional render is gone entirely.
   if (!canEdit && !canDelete) return null;
-  const handleEdit = async () => {
-    const next = window.prompt('Edit message', msg.body);
-    if (next === null) return;
-    const trimmed = next.trim();
-    if (!trimmed || trimmed === msg.body) return;
-    try {
-      await ws?.request('message.edit', { id: msg.id, body: trimmed });
-    } catch (err) {
-      toast.push({
-        tone: 'error',
-        title: 'Edit failed',
-        body: err instanceof Error ? err.message : 'could not edit message',
-      });
-    }
-  };
-  const handleDelete = async () => {
-    if (!window.confirm('Delete this message?')) return;
-    try {
-      await ws?.request('message.delete', { id: msg.id });
-    } catch (err) {
-      toast.push({
-        tone: 'error',
-        title: 'Delete failed',
-        body: err instanceof Error ? err.message : 'could not delete message',
-      });
-    }
-  };
   return (
     <span
       style={{
@@ -88,19 +78,106 @@ const MessageActions = ({
         fontSize: 11,
         display: 'inline-flex',
         gap: 8,
+        opacity: visible ? 1 : 0,
+        pointerEvents: visible ? 'auto' : 'none',
+        transition: 'opacity 80ms ease',
       }}
     >
       {canEdit ? (
-        <Button variant="link" size="sm" onClick={handleEdit} style={{ fontSize: 11 }}>
+        <Button variant="link" size="sm" onClick={onEdit} style={{ fontSize: 11 }}>
           edit
         </Button>
       ) : null}
       {canDelete ? (
-        <Button variant="linkDanger" size="sm" onClick={handleDelete} style={{ fontSize: 11 }}>
+        <Button variant="linkDanger" size="sm" onClick={onDelete} style={{ fontSize: 11 }}>
           delete
         </Button>
       ) : null}
     </span>
+  );
+};
+
+const InlineEditor = ({
+  initial,
+  onSave,
+  onCancel,
+}: {
+  initial: string;
+  onSave: (next: string) => void;
+  onCancel: () => void;
+}) => {
+  const [value, setValue] = useState(initial);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (el) {
+      el.focus();
+      // Move cursor to the end of existing text.
+      el.setSelectionRange(el.value.length, el.value.length);
+    }
+  }, []);
+
+  const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      onCancel();
+      return;
+    }
+    if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+      event.preventDefault();
+      const trimmed = value.trim();
+      if (trimmed && trimmed !== initial) onSave(trimmed);
+      else onCancel();
+    }
+  };
+
+  return (
+    <Col gap={4} style={{ marginTop: 2, marginBottom: 2, flex: 1, minWidth: 0 }}>
+      <textarea
+        ref={textareaRef}
+        value={value}
+        onChange={(event) => setValue(event.target.value)}
+        onKeyDown={onKeyDown}
+        rows={Math.min(6, Math.max(1, value.split('\n').length))}
+        style={{
+          width: '100%',
+          resize: 'vertical',
+          fontFamily: tokens.type.mono,
+          fontSize: 13,
+          padding: '6px 8px',
+          background: '#fff',
+          color: tokens.color.ink0,
+          border: `1px solid ${tokens.color.rule}`,
+          borderTop: `1px solid ${tokens.color.ruleStrong}`,
+          borderRadius: tokens.radius.xs,
+          outline: 'none',
+          boxShadow: 'inset 0 1px 0 rgba(0,0,0,.04)',
+        }}
+      />
+      <Row
+        gap={8}
+        style={{
+          alignItems: 'center',
+          fontFamily: tokens.type.mono,
+          fontSize: 11,
+          color: tokens.color.ink2,
+        }}
+      >
+        <Button
+          variant="primary"
+          size="sm"
+          disabled={!value.trim() || value.trim() === initial}
+          onClick={() => onSave(value.trim())}
+        >
+          Save
+        </Button>
+        <Button size="sm" onClick={onCancel}>
+          Cancel
+        </Button>
+        <span>⌘⏎ to save · Esc to cancel</span>
+      </Row>
+    </Col>
   );
 };
 
@@ -109,15 +186,25 @@ const MessageItem = ({
   isMine,
   canModerate,
   hovered,
+  editing,
   onEnter,
   onLeave,
+  onEdit,
+  onDelete,
+  onCancelEdit,
+  onSaveEdit,
 }: {
   msg: MessageView;
   isMine: boolean;
   canModerate: boolean;
   hovered: boolean;
+  editing: boolean;
   onEnter: () => void;
   onLeave: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  onCancelEdit: () => void;
+  onSaveEdit: (next: string) => void;
 }) => {
   const deleted = Boolean(msg.deletedAt);
   const canEdit = isMine && !deleted;
@@ -130,22 +217,86 @@ const MessageItem = ({
         color={colorForName(msg.author?.username ?? '?')}
         deleted={deleted}
       >
-        {msg.body !== '(attachment)' || msg.attachments.length === 0 ? msg.body : ''}
-        {msg.editedAt ? (
-          <span style={{ color: tokens.color.ink3, fontSize: 11, marginLeft: 6 }}>(edited)</span>
-        ) : null}
-        {hovered ? <MessageActions msg={msg} canEdit={canEdit} canDelete={canDelete} /> : null}
-        {msg.attachments.length > 0 ? (
-          <div style={{ marginTop: 4, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {msg.attachments.map((a) => (
-              <AttachmentPreview key={a.id} attachment={a} />
-            ))}
-          </div>
-        ) : null}
+        {editing ? (
+          <InlineEditor initial={msg.body} onSave={onSaveEdit} onCancel={onCancelEdit} />
+        ) : (
+          <>
+            {/* Body text gets its own span so its textContent is exactly
+                the message body — uncluttered by the always-mounted
+                MessageActions text (kept opacity-gated for no-flicker
+                hover). Preserves test/screen-reader text-matching. */}
+            <span data-testid="message-body">
+              {msg.body !== '(attachment)' || msg.attachments.length === 0 ? msg.body : ''}
+            </span>
+            {msg.editedAt ? (
+              <span style={{ color: tokens.color.ink3, fontSize: 11, marginLeft: 6 }}>
+                (edited)
+              </span>
+            ) : null}
+            <MessageActions
+              visible={hovered}
+              canEdit={canEdit}
+              canDelete={canDelete}
+              onEdit={onEdit}
+              onDelete={onDelete}
+            />
+            {msg.attachments.length > 0 ? (
+              <div style={{ marginTop: 4, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {msg.attachments.map((a) => (
+                  <AttachmentPreview key={a.id} attachment={a} />
+                ))}
+              </div>
+            ) : null}
+          </>
+        )}
       </MessageRow>
     </div>
   );
 };
+
+const DeleteConfirm = ({
+  msg,
+  onClose,
+  onConfirm,
+}: {
+  msg: MessageView;
+  onClose: () => void;
+  onConfirm: () => void;
+}) => (
+  <ModalScrim onClose={onClose}>
+    <Modal title="Delete message" width={440} onClose={onClose}>
+      <Col gap={12}>
+        <div style={{ fontSize: 13, color: tokens.color.ink1, lineHeight: 1.55 }}>
+          This will remove the message for everyone in this conversation. The author and the
+          timestamp stay in the history, but the content is gone. This can't be undone.
+        </div>
+        <div
+          style={{
+            background: tokens.color.paper1,
+            border: `1px solid ${tokens.color.rule}`,
+            padding: '8px 12px',
+            borderRadius: tokens.radius.xs,
+            fontFamily: tokens.type.mono,
+            fontSize: 12,
+            color: tokens.color.ink1,
+            maxHeight: 120,
+            overflow: 'auto',
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-word',
+          }}
+        >
+          {msg.body || '(attachment)'}
+        </div>
+        <Row gap={8} style={{ justifyContent: 'flex-end' }}>
+          <Button onClick={onClose}>Cancel</Button>
+          <Button variant="danger" onClick={onConfirm}>
+            Delete
+          </Button>
+        </Row>
+      </Col>
+    </Modal>
+  </ModalScrim>
+);
 
 export const MessageList = ({ conversationType, conversationId, myRoomRole }: MessageListProps) => {
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useMessages(
@@ -153,10 +304,47 @@ export const MessageList = ({ conversationType, conversationId, myRoomRole }: Me
     conversationId,
   );
   const { data: me } = useMe();
+  const ws = useWs();
+  const toast = useToast();
   const scrollRef = useRef<HTMLDivElement>(null);
   const topSentinelRef = useRef<HTMLDivElement>(null);
   const didInitialScroll = useRef<Record<string, boolean>>({});
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<MessageView | null>(null);
+
+  const startEdit = (id: string) => {
+    setEditingId(id);
+    setHoveredId(null);
+  };
+  const cancelEdit = () => setEditingId(null);
+  const saveEdit = async (id: string, body: string) => {
+    try {
+      await ws?.request('message.edit', { id, body });
+      setEditingId(null);
+    } catch (err) {
+      toast.push({
+        tone: 'error',
+        title: 'Edit failed',
+        body: err instanceof Error ? err.message : 'could not edit message',
+      });
+    }
+  };
+  const requestDelete = (msg: MessageView) => setConfirmDelete(msg);
+  const performDelete = async () => {
+    const target = confirmDelete;
+    if (!target) return;
+    setConfirmDelete(null);
+    try {
+      await ws?.request('message.delete', { id: target.id });
+    } catch (err) {
+      toast.push({
+        tone: 'error',
+        title: 'Delete failed',
+        body: err instanceof Error ? err.message : 'could not delete message',
+      });
+    }
+  };
 
   const messages: MessageView[] = useMemo(
     () =>
@@ -320,14 +508,26 @@ export const MessageList = ({ conversationType, conversationId, myRoomRole }: Me
                   isMine={isMine}
                   canModerate={canModerate}
                   hovered={hoveredId === msg.id}
+                  editing={editingId === msg.id}
                   onEnter={() => setHoveredId(msg.id)}
                   onLeave={() => setHoveredId((prev) => (prev === msg.id ? null : prev))}
+                  onEdit={() => startEdit(msg.id)}
+                  onDelete={() => requestDelete(msg)}
+                  onCancelEdit={cancelEdit}
+                  onSaveEdit={(next) => void saveEdit(msg.id, next)}
                 />
               </div>
             );
           })}
         </div>
       )}
+      {confirmDelete ? (
+        <DeleteConfirm
+          msg={confirmDelete}
+          onClose={() => setConfirmDelete(null)}
+          onConfirm={performDelete}
+        />
+      ) : null}
     </div>
   );
 };

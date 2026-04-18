@@ -11,32 +11,46 @@ interface FileCardProps {
 
 export const FileCard = ({ name, size, kind = 'file', comment, image, href }: FileCardProps) => {
   if (image) {
+    // Real image rendered from `href`. Browser carries the auth cookie on
+    // the request so the download endpoint's ACL runs. Stripe placeholder
+    // is kept inline as a CSS background so the card still has shape
+    // while the image is loading or if it 404s — the <img> sits on top
+    // and covers the stripes once bytes arrive.
     return (
       <a
         href={href}
+        target="_blank"
+        rel="noopener noreferrer"
         style={{
           display: 'inline-block',
           margin: '4px 0',
           border: `1px solid ${tokens.color.rule}`,
           background: '#fff',
           padding: 4,
-          maxWidth: 280,
+          maxWidth: 320,
           textDecoration: 'none',
         }}
       >
         <div
           style={{
-            height: 140,
+            maxHeight: 240,
             background: `repeating-linear-gradient(45deg, ${tokens.color.paper2} 0 8px, ${tokens.color.paper1} 8px 16px)`,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontFamily: tokens.type.mono,
-            fontSize: 11,
-            color: tokens.color.ink2,
+            overflow: 'hidden',
           }}
         >
-          [image preview]
+          <img
+            src={href}
+            alt={name}
+            style={{
+              display: 'block',
+              maxWidth: '100%',
+              maxHeight: 240,
+              objectFit: 'contain',
+            }}
+          />
         </div>
         <div
           style={{
@@ -47,6 +61,7 @@ export const FileCard = ({ name, size, kind = 'file', comment, image, href }: Fi
           }}
         >
           {name} · {size}
+          {comment ? ` — ${comment}` : ''}
         </div>
       </a>
     );

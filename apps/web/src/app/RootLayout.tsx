@@ -31,7 +31,12 @@ export const RootLayout = () => {
     <ToastHost>
     <div
       style={{
-        minHeight: '100vh',
+        // Pinned to viewport height, not minHeight: MessageList uses a
+        // flex:1 + overflow:auto chain to host its virtualiser. Letting
+        // the root grow with content (minHeight: 100vh) breaks that chain
+        // — the scroller ends up as tall as its content and the top
+        // IntersectionObserver keeps firing page after page of history.
+        height: '100vh',
         display: 'flex',
         flexDirection: 'column',
         background: tokens.color.paper1,
