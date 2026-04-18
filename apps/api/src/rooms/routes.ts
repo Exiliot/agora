@@ -12,7 +12,7 @@ import {
   createRoomRequest,
   inviteToRoomRequest,
 } from '@agora/shared/rooms';
-import { and, desc, eq, ilike, or, sql } from 'drizzle-orm';
+import { and, desc, eq, ilike, inArray, or, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import type { FastifyInstance } from 'fastify';
 import { uuidv7 } from 'uuidv7';
@@ -24,6 +24,7 @@ const removeMemberBody = z
   .default({});
 import { db } from '../db/client.js';
 import { roomBans, roomInvitations, roomMembers, rooms, users } from '../db/schema.js';
+import { publishNotification } from '../notifications/publisher.js';
 import { addRouteModule } from '../routes/registry.js';
 import { isAuthed, requireAuth } from '../session/require-auth.js';
 import { connections, subscribeConnection, unsubscribeConnection } from '../ws/connection-manager.js';
@@ -384,6 +385,19 @@ addRouteModule({
         for (const m of priorMembers) {
           publishRoomAccessLost(m.userId, id, 'room_deleted');
         }
+
+        for (const m of priorMembers) {
+          if (m.userId === userId) continue;
+          await publishNotification({
+            userId: m.userId,
+            kind: 'room.deleted',
+            subjectType: 'room',
+            subjectId: id,
+            actorId: userId,
+            payload: { roomName: room.name },
+          });
+        }
+
         return reply.code(204).send();
       });
 
@@ -434,6 +448,15 @@ addRouteModule({
             roomId: room.id,
             roomName: room.name,
             inviter: { id: userId, username: req.user.username },
+          });
+
+          await publishNotification({
+            userId: target.id,
+            kind: 'room.invitation',
+            subjectType: 'room',
+            subjectId: room.id,
+            actorId: userId,
+            payload: { roomName: room.name, inviterUsername: req.user.username },
           });
 
           return reply.code(201).send({
@@ -535,6 +558,31 @@ addRouteModule({
         }
 
         publishRoomMemberJoined(invitation.roomId, { id: userId, username });
+
+        const loadedRoom = await loadRoom(invitation.roomId);
+        if (loadedRoom && loadedRoom.visibility === 'private') {
+          const adminRows = await db
+            .select({ userId: roomMembers.userId })
+            .from(roomMembers)
+            .where(
+              and(
+                eq(roomMembers.roomId, invitation.roomId),
+                inArray(roomMembers.role, ['owner', 'admin']),
+              ),
+            );
+          for (const r of adminRows) {
+            if (r.userId === userId) continue;
+            await publishNotification({
+              userId: r.userId,
+              kind: 'room.joined_private',
+              subjectType: 'room',
+              subjectId: invitation.roomId,
+              actorId: userId,
+              payload: { roomName: loadedRoom.name, joinerUsername: username },
+            });
+          }
+        }
+
         return reply.code(200).send({ roomId: invitation.roomId });
       });
 
@@ -590,6 +638,16 @@ addRouteModule({
           .where(and(eq(roomMembers.roomId, id), eq(roomMembers.userId, targetId)));
 
         publishRoomAdminAdded(id, targetId);
+
+        await publishNotification({
+          userId: targetId,
+          kind: 'room.role_changed',
+          subjectType: 'room',
+          subjectId: id,
+          actorId: userId,
+          payload: { roomName: room.name, role: 'admin', change: 'promoted' },
+        });
+
         return reply.code(201).send({ roomId: id, userId: targetId });
       });
 
@@ -626,6 +684,16 @@ addRouteModule({
             .where(and(eq(roomMembers.roomId, id), eq(roomMembers.userId, targetId)));
 
           publishRoomAdminRemoved(id, targetId);
+
+          await publishNotification({
+            userId: targetId,
+            kind: 'room.role_changed',
+            subjectType: 'room',
+            subjectId: id,
+            actorId: callerId,
+            payload: { roomName: room.name, role: 'member', change: 'demoted' },
+          });
+
           return reply.code(204).send();
         },
       );
@@ -684,6 +752,16 @@ addRouteModule({
 
           publishRoomMemberRemoved(id, targetId, callerId);
           publishRoomAccessLost(targetId, id, 'removed');
+
+          await publishNotification({
+            userId: targetId,
+            kind: 'room.removed',
+            subjectType: 'room',
+            subjectId: id,
+            actorId: callerId,
+            payload: { roomName: room.name, reason: reason ?? null },
+          });
+
           return reply.code(204).send();
         },
       );
