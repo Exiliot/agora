@@ -16,5 +16,7 @@ import '../rooms/routes.js';
 import '../messages/routes.js';
 import '../messages/ws-handlers.js';
 // import '../friends/routes.js';
-// import '../attachments/routes.js';
+import '../attachments/routes.js';
+import '../attachments/sweeper.js';
+import '../attachments/bus-handlers.js';
 // import '../notifications/routes.js';
