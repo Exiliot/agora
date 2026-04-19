@@ -48,4 +48,4 @@ Adopt **client-supplied reqId as an idempotency key** for `message.send`. Server
 
 ## Implementation
 
-Landed in commit <SHA> on 2026-04-19. Touches `packages/shared/src/messages/index.ts` (optional `clientMessageId` on send payload), `apps/api/src/db/schema.ts` + migration `0003_messages_client_message_id.sql` (new nullable column and partial unique index), `apps/api/src/messages/send-dedupe.ts` (in-memory LRU), `apps/api/src/messages/ws-handlers.ts` (lookup before insert + unique-violation backstop), and `apps/web/src/pages/chat/Composer.tsx` (client generates a fresh UUID per send attempt).
+Landed in commit 38328fb on 2026-04-19. Touches `packages/shared/src/messages/index.ts` (optional `clientMessageId` on send payload), `apps/api/src/db/schema.ts` + migration `0003_messages_client_message_id.sql` (new nullable column and partial unique index), `apps/api/src/messages/send-dedupe.ts` (in-memory LRU), `apps/api/src/messages/ws-handlers.ts` (lookup before insert + unique-violation backstop), and `apps/web/src/pages/chat/Composer.tsx` (client generates a fresh UUID per send attempt).
