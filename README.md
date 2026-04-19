@@ -130,7 +130,7 @@ Everything is journalled. The 2026-04-18 wave entries (`…-11-wave-1.md`, `…-
 - [Design system](docs/design/README.md) — Claude Design (Opus 4.7) handoff bundle.
 - [ADRs](docs/adrs/) — immutable decisions that shape everything.
 - [Journal](docs/journal/) — decisions, detours, lessons as they happened. Entries are numbered (`01`, `02`, …) so they sort chronologically.
-- [Audits](docs/audits/) — four specialist audits (product, security, performance, a11y) dated 2026-04-19, all rows either closed or deferred with named revisit triggers. Older code-quality audit from 2026-04-18 kept for trace.
+- [Audits](docs/audits/) — per-category rolling documents (product, security, performance, a11y, code-quality); the 2026-04-19 round closed or deferred every row with a named revisit trigger, earlier rounds kept inline for trace.
 - [Demo script](docs/demo-script.md) — five-minute reviewer walkthrough.
 - [Retrospective](docs/journal/2026-04-19-09-retrospective.md) — what the experiment actually was, the final scoreboard, what worked, what didn't.
 

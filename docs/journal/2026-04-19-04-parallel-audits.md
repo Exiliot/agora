@@ -11,10 +11,10 @@ Ran four independent audits against the current `main` in parallel, each by a re
 
 | Audit | Critical | High | Medium | Low | Info | Report |
 |---|---|---|---|---|---|---|
-| Product integrity | 2 | 5 | 8 | 7 | – | [2026-04-19-product-integrity.md](../audits/2026-04-19-product-integrity.md) |
-| Security and privacy | 0 | 3 | 8 | 10 | 4 | [2026-04-19-security-privacy.md](../audits/2026-04-19-security-privacy.md) |
-| Performance and data integrity | 0 | 5 | 11 | 7 | 2 | [2026-04-19-performance.md](../audits/2026-04-19-performance.md) |
-| Accessibility round 2 | 0 | 4 | 9 | 6 | 3 | [2026-04-19-accessibility.md](../audits/2026-04-19-accessibility.md) |
+| Product integrity | 2 | 5 | 8 | 7 | – | [product-integrity.md](../audits/product-integrity.md) |
+| Security and privacy | 0 | 3 | 8 | 10 | 4 | [security.md](../audits/security.md) |
+| Performance and data integrity | 0 | 5 | 11 | 7 | 2 | [performance.md](../audits/performance.md) |
+| Accessibility round 2 | 0 | 4 | 9 | 6 | 3 | [accessibility.md](../audits/accessibility.md) |
 | Totals | **2** | **17** | **36** | **30** | **9** | |
 
 ## What the audits agreed on (cross-cutting themes)

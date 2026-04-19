@@ -18,7 +18,7 @@
  * compose, and (b) nginx path-gating which only proxies `/api/` and `/ws`.
  * A compromised sibling container on the docker network can still reach
  * them directly — the pre-shared-header + internal-port binding is tracked
- * as deferred finding 3 in `docs/audits/2026-04-19-security-privacy.md`,
+ * as deferred finding 3 in `docs/audits/security.md`,
  * scoped to a follow-up ADR once the XMPP sidecar ships.
  */
 
