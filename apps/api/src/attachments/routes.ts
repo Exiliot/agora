@@ -103,7 +103,11 @@ addRouteModule({
         try {
           result = await writeStreamToStorage(part.file, tempName);
         } catch (err) {
-          return reply.code(500).send({ error: 'internal', message: (err as Error).message });
+          // Log the underlying cause server-side; reply with a generic
+          // shape so filesystem paths and drizzle internals never reach
+          // the caller.
+          req.log.error({ err }, 'attachment upload failed');
+          return reply.code(500).send({ error: 'internal' });
         }
 
         if (part.file.truncated || result.size > perFileCap) {

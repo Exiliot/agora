@@ -78,13 +78,9 @@ registerWsHandler('message.send', async (ctx, event) => {
           return canSendDm(userId, loaded.otherUserId);
         })();
   if (!permission.ok) {
-    // eslint-disable-next-line no-console
-    console.error('[message.send denied]', {
-      userId,
-      conversationType: payload.conversationType,
-      conversationId: payload.conversationId,
-      code: permission.code,
-    });
+    // The client receives an `err` with the permission code; that is the
+    // canonical signal. Do not log per-deny to stderr — a misbehaving or
+    // malicious client can flood stderr by retrying forbidden sends.
     sendErr(ctx, reqId, permission.code, 'not allowed');
     return;
   }

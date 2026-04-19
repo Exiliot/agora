@@ -101,6 +101,10 @@ export const statStoredFile = async (
   }
 };
 
+// Callers must pass a 64-char lowercase hex SHA-256. `hashPath` enforces the
+// length at the build-path step and throws before `rm` is reached, so any
+// non-hex or out-of-length value is rejected rather than allowed to traverse
+// outside the storage root.
 export const deleteStoredFile = async (hexHash: string): Promise<void> => {
   await rm(hashPath(hexHash), { force: true });
 };

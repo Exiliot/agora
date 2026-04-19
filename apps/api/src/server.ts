@@ -25,6 +25,8 @@ const app = Fastify({
 // Security headers. CSP is off here because the api doesn't serve HTML — the
 // frontend handles CSP via its nginx response headers. We still want X-Content-
 // Type-Options, Referrer-Policy, Cross-Origin isolation, and the default set.
+// NOTE: CSP is at nginx for the SPA; enable it here too if the api ever
+// starts serving HTML (status page, admin UI, etc.).
 await app.register(helmet, {
   contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false,
