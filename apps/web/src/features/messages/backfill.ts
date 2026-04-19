@@ -26,8 +26,12 @@ export const backfillAllConversations = async (qc: QueryClient): Promise<void> =
         const incoming = response.messages ?? [];
         if (incoming.length === 0) return;
 
-        // Advance the watermark to the latest incoming id.
-        const latest = incoming[incoming.length - 1];
+        // Advance the watermark to the latest incoming id. The backend
+        // returns `created_at DESC`, so the newest row is at index 0 – not
+        // at the tail. L19: using the tail element pinned the watermark to
+        // the oldest of the batch and caused the next reconnect to re-fetch
+        // messages we already have in cache.
+        const latest = incoming[0];
         if (latest) note(entry.type, entry.id, latest.id);
 
         if (incoming.length >= MAX_BATCH) {

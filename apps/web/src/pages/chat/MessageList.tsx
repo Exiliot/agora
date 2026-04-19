@@ -583,8 +583,8 @@ export const MessageList = ({ conversationType, conversationId, myRoomRole }: Me
           onConfirm={performDelete}
           onCancel={() => setConfirmDelete(null)}
         >
-          Deleting replaces the body with "[deleted]" but the row stays in place. Other
-          participants see it as soon as their client syncs.
+          Deleting replaces the body with an italic "message deleted" marker but keeps the
+          row in place. Other participants see it as soon as their client syncs.
         </ConfirmModal>
       ) : null}
     </div>

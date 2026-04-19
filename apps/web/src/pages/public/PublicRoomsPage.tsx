@@ -65,7 +65,7 @@ const PublicRoomsPage = () => {
         })}
         {!isLoading && (data ?? []).length === 0 ? (
           <div style={{ color: tokens.color.ink2, fontSize: 13 }}>
-            no rooms found — create one from the sidebar.
+            no rooms found – create one from the sidebar.
           </div>
         ) : null}
       </Col>

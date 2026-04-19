@@ -28,9 +28,17 @@ const RegisterPage = () => {
         onSuccess: () => navigate('/chat', { replace: true }),
         onError: (err) => {
           if (err instanceof ApiError) {
-            const body = err.body;
+            const body = err.body as { error?: string; message?: string; issues?: { path?: unknown; message?: string }[] } | null;
             if (body?.error === 'email_taken') setError('that email is already registered');
             else if (body?.error === 'username_taken') setError('that username is taken');
+            else if (body?.error === 'invalid_input' && body.issues && body.issues.length > 0) {
+              // L16: the server returns zod `issues[]` on invalid_input with
+              // no top-level `message`. Surface the first issue's message
+              // (e.g. "must start with a lowercase letter") instead of the
+              // opaque "error 400" fallback.
+              const first = body.issues[0];
+              setError(first?.message ?? 'please check the form');
+            }
             else if (body?.message) setError(body.message);
             else setError(`error ${err.status}`);
           } else if (err instanceof Error) {

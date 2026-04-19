@@ -1,6 +1,6 @@
 import { memo, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import type { RoomDetail, RoomRole } from '@agora/shared';
+import type { PresenceState, RoomDetail, RoomRole } from '@agora/shared';
 import { useMyRooms } from '../../features/rooms/useRooms';
 import { useRoom } from '../../features/rooms/useRoom';
 import { useFocusBroadcast } from '../../features/notifications/focus';
@@ -9,7 +9,7 @@ import { MessageList } from './MessageList';
 import { Composer } from './Composer';
 import { Sidebar } from './Sidebar';
 import { ManageRoomModal } from './ManageRoomModal';
-import { usePresenceOf } from '../../app/WsProvider';
+import { usePresenceOf, usePresenceStore } from '../../app/WsProvider';
 
 // M15: memoised so a `presence.update` for user X re-renders only user X's
 // row. Without React.memo, parent re-render on unrelated presence churn
@@ -23,6 +23,7 @@ const MemberRow = memo(
 MemberRow.displayName = 'MemberRow';
 
 const roleOrder: Record<RoomRole, number> = { owner: 0, admin: 1, member: 2 };
+const presenceOrder: Record<PresenceState, number> = { online: 0, afk: 1, offline: 2 };
 
 interface RoomContextPanelProps {
   detail: RoomDetail & { myRole: RoomRole | null };
@@ -45,10 +46,21 @@ const RoomContextPanel = ({
   canManage,
   onManage,
 }: RoomContextPanelProps) => {
-  const sorted = useMemo(
-    () => detail.members.slice().sort((a, b) => roleOrder[a.role] - roleOrder[b.role]),
-    [detail.members],
-  );
+  // L22: role first, presence second. Re-runs when presence state for any
+  // member flips; that's cheap compared to the message stream and keeps
+  // online faces near the top so the panel reads right in busy rooms.
+  const presenceStates = usePresenceStore((s) => s.states);
+  const sorted = useMemo(() => {
+    const presenceOf = (userId: string): PresenceState =>
+      presenceStates.get(userId) ?? 'offline';
+    return detail.members.slice().sort((a, b) => {
+      const byRole = roleOrder[a.role] - roleOrder[b.role];
+      if (byRole !== 0) return byRole;
+      const byPresence = presenceOrder[presenceOf(a.user.id)] - presenceOrder[presenceOf(b.user.id)];
+      if (byPresence !== 0) return byPresence;
+      return a.user.username.localeCompare(b.user.username);
+    });
+  }, [detail.members, presenceStates]);
   const owners = sorted.filter((m) => m.role === 'owner');
   const admins = sorted.filter((m) => m.role === 'admin');
   const regular = sorted.filter((m) => m.role === 'member');
