@@ -59,4 +59,4 @@ Specifics:
 
 ## Implementation
 
-Landed in commit <SHA> on 2026-04-19. Touches `apps/api/src/config.ts` (new `WS_ALLOWED_ORIGINS` var) and `apps/api/src/ws/plugin.ts` (Origin check at the top of the upgrade handler).
+Landed in commit fcc8a3a on 2026-04-19. Touches `apps/api/src/config.ts` (new `WS_ALLOWED_ORIGINS` var) and `apps/api/src/ws/plugin.ts` (Origin check at the top of the upgrade handler).

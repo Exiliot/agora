@@ -50,4 +50,4 @@ When this is accepted, the code change is six lines in `auth/routes.ts` plus the
 
 ## Implementation
 
-Landed in commit <SHA> on 2026-04-19. Touches `apps/api/src/config.ts` (new `AGORA_DEMO_MODE` var), `apps/api/src/auth/routes.ts` (gate the reset-link log on the flag), `apps/api/src/auth/mailer.ts` (new seam), and `docker-compose.yml` (sets `AGORA_DEMO_MODE=1` for the demo).
+Landed in commit b69550e on 2026-04-19. Touches `apps/api/src/config.ts` (new `AGORA_DEMO_MODE` var), `apps/api/src/auth/routes.ts` (gate the reset-link log on the flag), `apps/api/src/auth/mailer.ts` (new seam), and `docker-compose.yml` (sets `AGORA_DEMO_MODE=1` for the demo).
