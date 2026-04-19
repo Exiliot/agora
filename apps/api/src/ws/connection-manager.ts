@@ -18,9 +18,21 @@ export interface WsConnection {
   /** Send a pre-serialised JSON frame — used by bus fan-out to skip a per-connection stringify. */
   sendRaw(serialised: string, type: string): void;
   closeWith(code: number, reason?: string): void;
+  /**
+   * Returns true when the socket's write buffer is saturated on the latest sample.
+   * The lifecycle's ping tick samples this and terminates connections that stay
+   * saturated across two consecutive ticks.
+   */
+  isBackpressured(): boolean;
+  /** Called from the ping loop: records the current bufferedAmount sample. */
+  sampleBackpressure(): boolean;
 }
 
 const MAX_OUTBOUND_QUEUE = 512;
+// 1 MiB of kernel-side buffer for a single WS is well past normal operation
+// for a 64 KiB max-payload stack; anything above this is a slow consumer we
+// don't want to keep feeding.
+export const WS_BUFFERED_AMOUNT_LIMIT = 1024 * 1024;
 
 export const createConnection = (args: {
   id: string;
@@ -29,10 +41,38 @@ export const createConnection = (args: {
 }): WsConnection => {
   const subscriptions = new Map<string, () => void>();
   let queued = 0;
+  let backpressureLoggedAt = 0;
+
+  const isBackpressured = (): boolean => args.socket.bufferedAmount > WS_BUFFERED_AMOUNT_LIMIT;
 
   const writeFrame = (serialised: string, type: string) => {
-    // Bounded outbound queue — drop presence updates under pressure, never drop
-    // messages (see docs/ws-protocol.md §6).
+    // H4: real TCP-level backpressure. `bufferedAmount` is the kernel's view
+    // of bytes the ws layer queued but the socket hasn't drained. If we're
+    // over the limit, drop this frame for non-critical event types and log
+    // once so repeated drops don't spam stderr. The lifecycle's ping loop
+    // terminates connections that stay saturated for two ticks (~60 s).
+    if (isBackpressured()) {
+      const now = Date.now();
+      if (now - backpressureLoggedAt > 5_000) {
+        // eslint-disable-next-line no-console
+        console.warn('[ws] backpressured, dropping frame', {
+          connId: args.id,
+          bufferedAmount: args.socket.bufferedAmount,
+          type,
+        });
+        backpressureLoggedAt = now;
+      }
+      // Never drop authoritative message events – closing the socket is safer
+      // than silently losing a message. For everything else, drop and let the
+      // lifecycle terminate the socket if the buffer doesn't drain.
+      if (
+        type !== 'message.new' &&
+        type !== 'message.updated' &&
+        type !== 'message.deleted'
+      ) {
+        return;
+      }
+    }
     if (queued >= MAX_OUTBOUND_QUEUE && type === 'presence.update') return;
     queued += 1;
     args.socket.send(serialised, (err) => {
@@ -60,6 +100,8 @@ export const createConnection = (args: {
     }
   };
 
+  const sampleBackpressure = (): boolean => isBackpressured();
+
   return {
     id: args.id,
     userId: args.userId,
@@ -69,6 +111,8 @@ export const createConnection = (args: {
     send,
     sendRaw,
     closeWith,
+    isBackpressured,
+    sampleBackpressure,
   };
 };
 

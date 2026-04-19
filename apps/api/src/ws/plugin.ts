@@ -77,11 +77,35 @@ export const registerWsPlugin = (app: FastifyInstance): void => {
     // timeouts, mobile OS suspension behind nginx's 1h read timeout) get
     // detected within ~60s. The `ws` library handles pong frames natively
     // so we only need to fire pings and terminate on missed pong.
+    //
+    // H4 also samples socket.bufferedAmount every tick: two consecutive
+    // samples above the limit means the consumer is not draining and the
+    // connection-manager has been dropping non-message frames for at least
+    // a ping interval. Close with 1013 (try again later) rather than letting
+    // RSS grow unbounded.
     let alive = true;
+    let backpressuredLastTick = false;
     const ping = setInterval(() => {
       if (!alive) {
         socket.terminate();
         return;
+      }
+      if (conn.sampleBackpressure()) {
+        if (backpressuredLastTick) {
+          app.log.warn(
+            { connId: conn.id, userId: user.id, bufferedAmount: socket.bufferedAmount },
+            'ws saturated across two ticks; closing',
+          );
+          try {
+            socket.close(1013, 'backpressure');
+          } catch {
+            socket.terminate();
+          }
+          return;
+        }
+        backpressuredLastTick = true;
+      } else {
+        backpressuredLastTick = false;
       }
       alive = false;
       try {
