@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Button,
@@ -35,12 +35,15 @@ import {
   useRejectInvitation,
 } from '../../features/rooms/useRoomAdmin';
 
-const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
-  <section style={{ marginTop: 24 }}>
-    <SectionHeader>{title}</SectionHeader>
-    {children}
-  </section>
-);
+const Section = ({ title, children }: { title: string; children: React.ReactNode }) => {
+  const headingId = useId();
+  return (
+    <section aria-labelledby={headingId} style={{ marginTop: 24 }}>
+      <SectionHeader id={headingId}>{title}</SectionHeader>
+      {children}
+    </section>
+  );
+};
 
 const UserSearch = () => {
   const [q, setQ] = useState('');

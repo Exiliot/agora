@@ -61,8 +61,28 @@ const CreateRoomDialog = ({ onClose }: { onClose: () => void }) => {
               onChange={(event: ChangeEvent<HTMLInputElement>) => setDescription(event.target.value)}
               placeholder="what's this room for?"
             />
-            <Col gap={4}>
-              <Meta>Visibility</Meta>
+            <fieldset
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 4,
+                margin: 0,
+                padding: 0,
+                border: 0,
+              }}
+            >
+              <legend
+                style={{
+                  padding: 0,
+                  fontFamily: tokens.type.mono,
+                  fontSize: 11,
+                  letterSpacing: 0.6,
+                  textTransform: 'uppercase',
+                  color: tokens.color.ink2,
+                }}
+              >
+                Visibility
+              </legend>
               <Col gap={6}>
                 <Col gap={2}>
                   <Check
@@ -105,7 +125,7 @@ const CreateRoomDialog = ({ onClose }: { onClose: () => void }) => {
                   </span>
                 </Col>
               </Col>
-            </Col>
+            </fieldset>
             <Row gap={8} style={{ justifyContent: 'flex-end' }}>
               <Button onClick={onClose}>Cancel</Button>
               <Button
@@ -163,6 +183,7 @@ export const Sidebar = () => {
 
   return (
     <aside
+      aria-label="Conversations"
       style={{
         width: 240,
         minWidth: 240,

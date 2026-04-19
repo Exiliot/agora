@@ -49,6 +49,7 @@ const RoomContextPanel = ({
 
   return (
     <aside
+      aria-label={`#${detail.name} members`}
       style={{
         width: 240,
         minWidth: 240,

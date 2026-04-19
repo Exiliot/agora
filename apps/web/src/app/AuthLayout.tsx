@@ -11,7 +11,7 @@ export const AuthLayout = () => (
     }}
   >
     <AuthHeader />
-    <div
+    <main
       style={{
         flex: 1,
         display: 'flex',
@@ -21,6 +21,6 @@ export const AuthLayout = () => (
       }}
     >
       <Outlet />
-    </div>
+    </main>
   </div>
 );
