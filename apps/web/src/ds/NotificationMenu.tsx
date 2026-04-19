@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import type { NotificationView } from '@agora/shared';
@@ -12,6 +12,7 @@ import {
 import { tokens } from './tokens';
 import { Button } from './Button';
 import { NotificationRow } from './NotificationRow';
+import { useOverlay } from './useOverlay';
 
 interface Props {
   anchorRect: DOMRect | null;
@@ -44,35 +45,34 @@ const deepLinkFor = (n: NotificationView): string | null => {
 
 export const NotificationMenu = ({ anchorRect, onClose }: Props) => {
   const ref = useRef<HTMLDivElement | null>(null);
+  const headingId = useId();
   const { data, isLoading } = useNotifications();
   const markAll = useMarkAllRead();
   const markOne = useMarkRead();
   const navigate = useNavigate();
 
+  // Shared overlay behaviour: Escape + click-outside + focus return to the
+  // trigger (the Bell). No focus trap – tabbing out of the popover is
+  // expected for a disclosure menu. See ADR-0008.
+  useOverlay({
+    ref,
+    onClose,
+    trapFocus: false,
+    open: true,
+  });
+
+  // R3-11: the menu's anchor position is captured once at open time, so any
+  // layout shift (viewport resize or ancestor scroll) would leave the
+  // popover stranded. Close on either – cheaper than a reposition loop and
+  // the topbar itself doesn't scroll, so this is safe. These are
+  // NotificationMenu-specific, not part of the overlay contract.
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    const onDocClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
-    };
-    // R3-11: the menu's anchor position is captured once at open time,
-    // so any layout shift (viewport resize or ancestor scroll) would
-    // leave the popover stranded. Close on either — cheaper than a
-    // reposition loop and the topbar itself doesn't scroll, so this is
-    // safe.
     const onResizeOrScroll = () => onClose();
-    document.addEventListener('keydown', onKey);
     window.addEventListener('resize', onResizeOrScroll);
     window.addEventListener('scroll', onResizeOrScroll, { capture: true });
-    // Defer so the click that opened the menu isn't immediately intercepted.
-    const t = setTimeout(() => document.addEventListener('mousedown', onDocClick), 0);
     return () => {
-      document.removeEventListener('keydown', onKey);
-      document.removeEventListener('mousedown', onDocClick);
       window.removeEventListener('resize', onResizeOrScroll);
       window.removeEventListener('scroll', onResizeOrScroll, { capture: true });
-      clearTimeout(t);
     };
   }, [onClose]);
 
@@ -100,7 +100,7 @@ export const NotificationMenu = ({ anchorRect, onClose }: Props) => {
         zIndex: 40,
       }}
       role="dialog"
-      aria-label="Notifications"
+      aria-labelledby={headingId}
     >
       <div
         style={{
@@ -114,7 +114,7 @@ export const NotificationMenu = ({ anchorRect, onClose }: Props) => {
           color: tokens.color.ink1,
         }}
       >
-        <span>Notifications</span>
+        <span id={headingId}>Notifications</span>
         <Button
           variant="ghost"
           size="sm"
@@ -134,18 +134,21 @@ export const NotificationMenu = ({ anchorRect, onClose }: Props) => {
             Nothing here yet.
           </div>
         ) : (
-          notifs.map((n) => (
-            <NotificationRow
-              key={n.id}
-              notification={n}
-              onClick={() => {
-                if (n.readAt === null) markOne.mutate(n.id);
-                const link = deepLinkFor(n);
-                if (link) navigate(link);
-                onClose();
-              }}
-            />
-          ))
+          <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+            {notifs.map((n) => (
+              <li key={n.id}>
+                <NotificationRow
+                  notification={n}
+                  onClick={() => {
+                    if (n.readAt === null) markOne.mutate(n.id);
+                    const link = deepLinkFor(n);
+                    if (link) navigate(link);
+                    onClose();
+                  }}
+                />
+              </li>
+            ))}
+          </ul>
         )}
       </div>
       {permState === 'default' ? (

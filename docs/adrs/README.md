@@ -19,6 +19,6 @@ Rules:
 | 0005 | [XMPP federation as a sidecar, not a retrofit](0005-xmpp-sidecar.md) | Accepted |
 | 0006 | [`message.send` idempotency via client-supplied reqId](0006-message-send-idempotency.md) | Accepted |
 | 0007 | [WebSocket `Origin` validation and cross-origin policy](0007-ws-origin-validation.md) | Accepted |
-| 0008 | [Modal and popover heading + focus contract](0008-modal-popover-contract.md) | Proposed |
+| 0008 | [Modal and popover heading + focus contract](0008-modal-popover-contract.md) | Accepted |
 | 0009 | [Client WS event-handler coverage contract](0009-ws-event-handler-coverage.md) | Proposed |
 | 0010 | [Password-reset link logging in demo mode](0010-demo-mode-reset-link-logging.md) | Accepted |

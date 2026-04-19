@@ -10,7 +10,7 @@ interface ConfirmModalProps {
   title: string;
   /** The explanatory body. Prose is fine; can include the resource name. */
   children: ReactNode;
-  /** Label for the confirm button — typically a verb: "Delete", "Revoke". */
+  /** Label for the confirm button – typically a verb: "Delete", "Revoke". */
   confirmLabel: string;
   /** Tone of the confirm button. Default: `danger`. */
   tone?: 'danger' | 'primary';
@@ -18,6 +18,10 @@ interface ConfirmModalProps {
   cancelLabel?: string;
   /** Disables the confirm button while the underlying mutation is pending. */
   pending?: boolean;
+  /**
+   * Forwarded to the underlying Modal. Default 2. See ADR-0008.
+   */
+  titleLevel?: 1 | 2 | 3;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -34,11 +38,17 @@ export const ConfirmModal = ({
   tone = 'danger',
   cancelLabel = 'Cancel',
   pending = false,
+  titleLevel,
   onConfirm,
   onCancel,
 }: ConfirmModalProps) => (
   <ModalScrim onClose={onCancel} zIndex={20}>
-    <Modal title={title} width={420} onClose={onCancel}>
+    <Modal
+      title={title}
+      width={420}
+      onClose={onCancel}
+      {...(titleLevel !== undefined ? { titleLevel } : {})}
+    >
       <Col gap={14}>
         <div style={{ fontSize: 13, color: tokens.color.ink1, lineHeight: 1.55 }}>{children}</div>
         <Row gap={8} style={{ justifyContent: 'flex-end' }}>

@@ -175,7 +175,7 @@ const ResetPasswordPage = () => {
   const token = searchParams.get('token');
 
   return (
-    <Modal title={token ? 'Set new password' : 'Reset password'} width={380}>
+    <Modal title={token ? 'Set new password' : 'Reset password'} width={380} titleLevel={1}>
       {token ? <ConsumeForm token={token} /> : <RequestForm />}
     </Modal>
   );

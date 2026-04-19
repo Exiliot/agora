@@ -1,5 +1,6 @@
-import { useEffect, useId, useRef, type ReactNode } from 'react';
+import { useId, useRef, type CSSProperties, type ReactNode } from 'react';
 import { tokens } from './tokens';
+import { useOverlay } from './useOverlay';
 
 interface ModalProps {
   title: string;
@@ -8,53 +9,66 @@ interface ModalProps {
   width?: number;
   /** When true, body padding drops from 20 to 12 for compact forms. */
   dense?: boolean;
+  /**
+   * Heading level for the title. Default 2. Auth pages (where the Modal is
+   * the page's only heading-bearing surface) pass 1 so the page has a real
+   * h1. See ADR-0008.
+   */
+  titleLevel?: 1 | 2 | 3;
 }
 
-const focusableSelector =
-  'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+interface HeadingProps {
+  level: 1 | 2 | 3;
+  id: string;
+  style: CSSProperties;
+  children: ReactNode;
+}
 
-export const Modal = ({ title, children, onClose, width = 420, dense = false }: ModalProps) => {
+const Heading = ({ level, id, style, children }: HeadingProps) => {
+  switch (level) {
+    case 1:
+      return (
+        <h1 id={id} style={style}>
+          {children}
+        </h1>
+      );
+    case 3:
+      return (
+        <h3 id={id} style={style}>
+          {children}
+        </h3>
+      );
+    case 2:
+    default:
+      return (
+        <h2 id={id} style={style}>
+          {children}
+        </h2>
+      );
+  }
+};
+
+export const Modal = ({
+  title,
+  children,
+  onClose,
+  width = 420,
+  dense = false,
+  titleLevel = 2,
+}: ModalProps) => {
   const titleId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
 
-  // Escape to close, focus trap, and focus restoration.
-  useEffect(() => {
-    const previouslyFocused = (document.activeElement as HTMLElement) ?? null;
-    // Move focus into the modal on mount.
-    const root = rootRef.current;
-    if (root) {
-      const first = root.querySelector<HTMLElement>(focusableSelector);
-      (first ?? root).focus();
-    }
-
-    const handleKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && onClose) {
-        event.stopPropagation();
-        onClose();
-        return;
-      }
-      if (event.key === 'Tab' && root) {
-        const focusables = Array.from(root.querySelectorAll<HTMLElement>(focusableSelector));
-        if (focusables.length === 0) return;
-        const first = focusables[0];
-        const last = focusables[focusables.length - 1];
-        if (!first || !last) return;
-        if (event.shiftKey && document.activeElement === first) {
-          event.preventDefault();
-          last.focus();
-        } else if (!event.shiftKey && document.activeElement === last) {
-          event.preventDefault();
-          first.focus();
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKey);
-    return () => {
-      window.removeEventListener('keydown', handleKey);
-      previouslyFocused?.focus?.();
-    };
-  }, [onClose]);
+  useOverlay({
+    ref: rootRef,
+    onClose: onClose ?? (() => {}),
+    trapFocus: true,
+    // Click-outside is handled by `ModalScrim`; the Modal itself only owns
+    // Escape + focus trap + focus return.
+    closeOnClickOutside: false,
+    closeOnEscape: Boolean(onClose),
+    open: true,
+  });
 
   return (
     <div
@@ -87,9 +101,13 @@ export const Modal = ({ title, children, onClose, width = 420, dense = false }: 
           letterSpacing: 0.2,
         }}
       >
-        <h2 id={titleId} style={{ margin: 0, fontSize: 11, fontWeight: 600 }}>
+        <Heading
+          level={titleLevel}
+          id={titleId}
+          style={{ margin: 0, fontSize: 11, fontWeight: 600 }}
+        >
           {title}
-        </h2>
+        </Heading>
         <button
           type="button"
           onClick={onClose}

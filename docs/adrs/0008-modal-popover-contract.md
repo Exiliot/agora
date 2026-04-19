@@ -1,6 +1,6 @@
 # ADR-0008 · Modal and popover heading + focus contract
 
-- **Status**: Proposed, 2026-04-19
+- **Status**: Accepted, 2026-04-19
 - **Relates to**: NFR-A11Y-1 (WCAG 2.1 AA), accessibility audit 2026-04-19 (H1 – heading hierarchy, H2 – NotificationMenu focus contract)
 
 ## Context
@@ -52,3 +52,7 @@ Adopt a single **overlay contract** for every DS component that paints above the
 
 - *Fix each overlay in isolation*: rejected. Four copies of focus-trap logic will drift again in three weeks.
 - *Adopt React Aria / Radix UI for overlays*: would solve this comprehensively, but a dependency addition of that weight belongs in a separate "pull in a headless component library" ADR, not here. For the hackathon the hand-rolled hook is cheaper.
+
+## Implementation
+
+Landed in commit <SHA> on 2026-04-19. New internal hook `apps/web/src/ds/useOverlay.ts` centralises Escape + click-outside + focus-trap + focus-return. `Modal` accepts `titleLevel` and renders `aria-modal="true"` with `aria-labelledby`. `ConfirmModal` forwards `titleLevel`. `ImageLightbox` and `NotificationMenu` consume the hook. Auth pages (SignIn, Register, ResetPassword) pass `titleLevel={1}` so the page has a real `<h1>`.

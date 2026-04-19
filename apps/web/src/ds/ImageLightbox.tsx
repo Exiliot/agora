@@ -1,7 +1,8 @@
-import { useEffect } from 'react';
+import { useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { ModalScrim } from './ModalScrim';
 import { tokens } from './tokens';
+import { useOverlay } from './useOverlay';
 
 interface ImageLightboxProps {
   /** URL of the image to show. Usually the attachment download endpoint –
@@ -18,20 +19,22 @@ interface ImageLightboxProps {
 
 /**
  * Full-view image preview. Click the scrim or press Esc to close; the
- * scrim wrapper handles both. A small top-right strip carries close + an
- * optional "Download" link so users can still grab the original bytes
- * instead of only seeing the inline preview.
+ * shared `useOverlay` hook owns both, plus focus trap + focus return. A
+ * small top-right strip carries close + an optional "Download" link so
+ * users can still grab the original bytes instead of only seeing the
+ * inline preview.
  */
 export const ImageLightbox = ({ src, alt, caption, downloadHref, onClose }: ImageLightboxProps) => {
-  // Esc is already handled by Modal, but the lightbox doesn't use Modal
-  // because it has no title chrome – catch it directly here.
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useOverlay({
+    ref: panelRef,
+    onClose,
+    trapFocus: true,
+    // `ModalScrim` owns click-outside; avoid double-handling.
+    closeOnClickOutside: false,
+    open: true,
+  });
 
   // Portal to <body> so the fixed-position scrim escapes any transformed
   // ancestor (e.g. the virtualised message row, which uses translateY and
@@ -39,9 +42,11 @@ export const ImageLightbox = ({ src, alt, caption, downloadHref, onClose }: Imag
   return createPortal(
     <ModalScrim onClose={onClose} zIndex={50}>
       <div
+        ref={panelRef}
         role="dialog"
         aria-modal="true"
-        aria-label={alt}
+        aria-label="Image preview"
+        tabIndex={-1}
         style={{
           display: 'flex',
           flexDirection: 'column',

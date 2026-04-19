@@ -44,7 +44,7 @@ const SignInPage = () => {
   const hasError = Boolean(error);
 
   return (
-    <Modal title="Sign in" width={360}>
+    <Modal title="Sign in" width={360} titleLevel={1}>
       <form onSubmit={handleSubmit}>
         <Col gap={12}>
           <Input

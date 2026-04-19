@@ -42,7 +42,7 @@ const RegisterPage = () => {
   };
 
   return (
-    <Modal title="Register" width={360}>
+    <Modal title="Register" width={360} titleLevel={1}>
       <form onSubmit={handleSubmit}>
         <Col gap={12}>
           <Input
