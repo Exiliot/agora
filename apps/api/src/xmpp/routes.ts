@@ -12,6 +12,14 @@
  *   GET /…/set_password                          -> unsupported (we own passwords)
  * We honour the two read shapes; we also keep the JSON/form POST shape for
  * callers (tests, future modules) that prefer it.
+ *
+ * SECURITY NOTE: these routes have no auth of their own. Reachability is
+ * gated by (a) `ENABLE_XMPP_BRIDGE=1` which defaults to '0' in shipped
+ * compose, and (b) nginx path-gating which only proxies `/api/` and `/ws`.
+ * A compromised sibling container on the docker network can still reach
+ * them directly — the pre-shared-header + internal-port binding is tracked
+ * as deferred finding 3 in `docs/audits/2026-04-19-security-privacy.md`,
+ * scoped to a follow-up ADR once the XMPP sidecar ships.
  */
 
 import type { FastifyInstance } from 'fastify';
