@@ -50,8 +50,6 @@ Listed in the order events happened, not when the entry was written.
 | 30 | Sun 16:45 | Delivery-contract cold-boot smoke — fresh clone, docker compose up, all flows green | [2026-04-19-08-delivery-contract-smoke.md](2026-04-19-08-delivery-contract-smoke.md) |
 | 31 | Sun 19:30 | Retrospective — scoreboard, what worked, what didn't, the experiment verdict | [2026-04-19-09-retrospective.md](2026-04-19-09-retrospective.md) |
 
-> The notifications entry uses a bare-date filename rather than the `NN-topic` scheme the rest of the chronology follows – it was written mid-session before the index was refreshed. Leaving it in place as a deliberate record of how the entries landed rather than renaming after the fact.
-
 ## The philosophy underneath
 
 **Context first, code second.** The hackathon is explicitly an experiment in *agent-herded* development. The quality of the context we set up — specs, requirements, architecture, design language, operating manuals — bounds what the agent can plausibly build. Jumping straight to implementation without that scaffolding is how past participants lost the plot. So the first working day is almost entirely spent on documents, not code. The agent then has something authoritative to consult for every decision that would otherwise become a guess.
