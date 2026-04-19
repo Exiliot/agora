@@ -147,6 +147,7 @@ const FriendList = () => {
   if (data.length === 0) return <Meta>no friends yet – search for a user above</Meta>;
   return (
     <Table
+      caption="Friends"
       cols={['Friend', 'Since', '']}
       rows={data.map((f) => [
         <span key="u" style={{ fontFamily: tokens.type.mono, fontSize: 13 }}>
@@ -185,6 +186,7 @@ const MyBans = () => {
   if (data.length === 0) return <Meta>no user bans in place</Meta>;
   return (
     <Table
+      caption="Users you have blocked"
       cols={['User', 'Since', '']}
       rows={data.map((b) => [
         <span key="u" style={{ fontFamily: tokens.type.mono, fontSize: 13 }}>

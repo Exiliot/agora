@@ -39,6 +39,7 @@ const MembersTab = ({ room }: { room: ManageRoomModalProps['room'] }) => {
   const amAdmin = room.myRole === 'admin' || amOwner;
   return (
     <Table
+      caption="Room members"
       cols={['Username', 'Role', 'Actions']}
       rows={room.members.map((m) => [
         <span key="u" style={{ fontFamily: tokens.type.mono, fontSize: 13 }}>
@@ -93,6 +94,7 @@ const AdminsTab = ({ room }: { room: ManageRoomModalProps['room'] }) => {
 
   return (
     <Table
+      caption="Room owner and admins"
       cols={['Username', 'Role', 'Actions']}
       rows={[
         renderRow(ownerRow, <Badge tone="accent">owner</Badge>, <Meta>locked</Meta>),
@@ -120,6 +122,7 @@ const BannedTab = ({ roomId }: { roomId: string }) => {
   if (data.length === 0) return <Meta>no one is currently banned</Meta>;
   return (
     <Table
+      caption="Users banned from this room"
       cols={['User', 'Banned by', 'When', '']}
       rows={data.map((b) => [
         <span key="u" style={{ fontFamily: tokens.type.mono, fontSize: 13 }}>

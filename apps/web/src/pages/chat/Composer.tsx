@@ -267,17 +267,25 @@ export const Composer = ({
             </span>
           </Row>
           <Row gap={8} style={{ alignItems: 'center' }}>
-            {body.length / MAX_MESSAGE_BODY > 0.8 ? (
-              <span
-                aria-live="polite"
-                style={{
-                  fontFamily: tokens.type.mono,
-                  fontSize: 11,
-                  color:
-                    body.length > MAX_MESSAGE_BODY ? tokens.color.danger : tokens.color.ink2,
-                }}
-              >
-                {body.length}/{MAX_MESSAGE_BODY}
+            <span
+              aria-live="polite"
+              className={body.length / MAX_MESSAGE_BODY > 0.8 ? undefined : 'sr-only'}
+              style={
+                body.length / MAX_MESSAGE_BODY > 0.8
+                  ? {
+                      fontFamily: tokens.type.mono,
+                      fontSize: 11,
+                      color:
+                        body.length > MAX_MESSAGE_BODY ? tokens.color.danger : tokens.color.ink2,
+                    }
+                  : undefined
+              }
+            >
+              {body.length}/{MAX_MESSAGE_BODY}
+            </span>
+            {body.length > MAX_MESSAGE_BODY ? (
+              <span role="alert" className="sr-only">
+                Message exceeds the {MAX_MESSAGE_BODY}-character limit.
               </span>
             ) : null}
             <Button

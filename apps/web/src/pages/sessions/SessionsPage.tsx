@@ -79,6 +79,7 @@ const SessionsPage = () => {
       {isLoading ? <Meta>loading…</Meta> : null}
       {data?.length ? (
         <Table
+          caption="Active sessions on your account"
           cols={['Session', 'When', '']}
           rows={data.map((s) => [
             <Col key="s" gap={3}>
