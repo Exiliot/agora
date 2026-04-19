@@ -15,6 +15,7 @@ import {
   useToast,
 } from '../../ds';
 import { useMessages } from '../../features/messages/useMessages';
+import { useMarkRead } from '../../features/messages/useMarkRead';
 import { useMe } from '../../features/auth/useMe';
 import { useWs } from '../../app/WsProvider';
 import { useLastSeenStore } from '../../features/messages/lastSeen';
@@ -372,6 +373,26 @@ export const MessageList = ({ conversationType, conversationId, myRoomRole }: Me
   useEffect(() => {
     if (latestId) useLastSeenStore.getState().note(conversationType, conversationId, latestId);
   }, [latestId, conversationType, conversationId]);
+
+  // Tab visibility – mirrors the pattern used by useFocusBroadcast. When the
+  // user tabs away we stop counting them as actively reading; re-focus
+  // flips it back and re-runs the mark.read effect if the latest id moved
+  // while they were away.
+  const [documentVisible, setDocumentVisible] = useState(
+    typeof document === 'undefined' ? true : document.visibilityState === 'visible',
+  );
+  useEffect(() => {
+    const onVis = () => setDocumentVisible(document.visibilityState === 'visible');
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, []);
+
+  useMarkRead({
+    conversationType,
+    conversationId,
+    latestMessageId: latestId,
+    active: isAtBottom && documentVisible,
+  });
 
   // isAtBottom toggles the jump-to-latest pill. Wired via React's onScroll
   // (bound on the scroller element below) rather than a useEffect listener –
