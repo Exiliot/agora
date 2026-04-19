@@ -216,9 +216,9 @@ describe('room.deleted cascade', () => {
 
 describe('sweepOrphans', () => {
   it('should return 0 when there are no orphans older than the cutoff', async () => {
-    // select().from().where() resolves directly (no limit in this query).
-    mocked.where.mockImplementation(() => Promise.resolve([]));
-
+    // delete().where().returning() terminates at returning() – the default
+    // chain mock already resolves returning() to [], so no orphan hashes
+    // are collected and no disk deletes run.
     const { sweepOrphans } = await import('../../src/attachments/sweeper.js');
     const count = await sweepOrphans(new Date('2026-04-17T12:00:00Z'));
     expect(count).toBe(0);

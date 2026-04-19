@@ -174,86 +174,105 @@ addRouteModule({
       if (!req.user) return reply.code(401).send({ error: 'unauthenticated' });
       const userId = req.user.id;
 
-      const memberRows = await db
-        .select({
-          id: rooms.id,
-          name: rooms.name,
-          description: rooms.description,
-          visibility: rooms.visibility,
-        })
-        .from(roomMembers)
-        .innerJoin(rooms, eq(roomMembers.roomId, rooms.id))
-        .where(eq(roomMembers.userId, userId));
-
-      const dmRows = await db
-        .select({
-          id: dmConversations.id,
-          userAId: dmConversations.userAId,
-          userBId: dmConversations.userBId,
-        })
-        .from(dmConversations)
-        .where(or(eq(dmConversations.userAId, userId), eq(dmConversations.userBId, userId)));
+      // Step 1: memberships + DMs in parallel – they're independent.
+      const [memberRows, dmRows] = await Promise.all([
+        db
+          .select({
+            id: rooms.id,
+            name: rooms.name,
+            description: rooms.description,
+            visibility: rooms.visibility,
+          })
+          .from(roomMembers)
+          .innerJoin(rooms, eq(roomMembers.roomId, rooms.id))
+          .where(eq(roomMembers.userId, userId)),
+        db
+          .select({
+            id: dmConversations.id,
+            userAId: dmConversations.userAId,
+            userBId: dmConversations.userBId,
+          })
+          .from(dmConversations)
+          .where(or(eq(dmConversations.userAId, userId), eq(dmConversations.userBId, userId))),
+      ]);
 
       const otherUserIds = dmRows.map((r) => (r.userAId === userId ? r.userBId : r.userAId));
-      const usernameRows = otherUserIds.length
-        ? await db
-            .select({ id: users.id, username: users.username })
-            .from(users)
-            .where(inArray(users.id, otherUserIds))
-        : [];
+      const allIds = [...memberRows.map((r) => r.id), ...dmRows.map((r) => r.id)];
+
+      // Step 2: everything else depends only on the memberships/DMs above, so
+      // fire all four remaining queries in parallel instead of serialising
+      // the network round-trips.
+      const [usernameRows, bannedPairs, unreadRows, lastReadRows] = await Promise.all([
+        otherUserIds.length
+          ? db
+              .select({ id: users.id, username: users.username })
+              .from(users)
+              .where(inArray(users.id, otherUserIds))
+          : Promise.resolve([] as { id: string; username: string }[]),
+        otherUserIds.length
+          ? db
+              .select({ a: userBans.bannerId, b: userBans.targetId })
+              .from(userBans)
+              .where(
+                or(
+                  and(eq(userBans.bannerId, userId), inArray(userBans.targetId, otherUserIds)),
+                  and(eq(userBans.targetId, userId), inArray(userBans.bannerId, otherUserIds)),
+                ),
+              )
+          : Promise.resolve([] as { a: string; b: string }[]),
+        allIds.length
+          ? db
+              .select({
+                conversationType: conversationUnreads.conversationType,
+                conversationId: conversationUnreads.conversationId,
+                count: conversationUnreads.count,
+              })
+              .from(conversationUnreads)
+              .where(
+                and(
+                  eq(conversationUnreads.userId, userId),
+                  inArray(conversationUnreads.conversationId, allIds),
+                ),
+              )
+          : Promise.resolve(
+              [] as { conversationType: 'room' | 'dm'; conversationId: string; count: number }[],
+            ),
+        allIds.length
+          ? db
+              .select({
+                conversationType: lastRead.conversationType,
+                conversationId: lastRead.conversationId,
+                lastReadMessageId: lastRead.lastReadMessageId,
+              })
+              .from(lastRead)
+              .where(
+                and(eq(lastRead.userId, userId), inArray(lastRead.conversationId, allIds)),
+              )
+          : Promise.resolve(
+              [] as {
+                conversationType: 'room' | 'dm';
+                conversationId: string;
+                lastReadMessageId: string | null;
+              }[],
+            ),
+      ]);
+
       const usernamesById = new Map(usernameRows.map((u) => [u.id, u.username]));
 
       // Any user-ban between caller and DM counterparty (either direction)
       // means the sidebar preview must hide the last-message body — per-spec
       // history stays accessible but the preview is an unnecessary extra
       // surface. Gathered upfront so the preview-mapping below stays simple.
-      const bannedPairs = otherUserIds.length
-        ? await db
-            .select({ a: userBans.bannerId, b: userBans.targetId })
-            .from(userBans)
-            .where(
-              or(
-                and(eq(userBans.bannerId, userId), inArray(userBans.targetId, otherUserIds)),
-                and(eq(userBans.targetId, userId), inArray(userBans.bannerId, otherUserIds)),
-              ),
-            )
-        : [];
       const bannedOtherIds = new Set<string>();
       for (const p of bannedPairs) {
         bannedOtherIds.add(p.a === userId ? p.b : p.a);
       }
 
-      const allIds = [...memberRows.map((r) => r.id), ...dmRows.map((r) => r.id)];
-      const unreadRows = allIds.length
-        ? await db
-            .select({
-              conversationType: conversationUnreads.conversationType,
-              conversationId: conversationUnreads.conversationId,
-              count: conversationUnreads.count,
-            })
-            .from(conversationUnreads)
-            .where(
-              and(
-                eq(conversationUnreads.userId, userId),
-                inArray(conversationUnreads.conversationId, allIds),
-              ),
-            )
-        : [];
       const unreadByKey = new Map<string, number>();
       for (const u of unreadRows) {
         unreadByKey.set(`${u.conversationType}:${u.conversationId}`, u.count);
       }
 
-      const lastReadRows = allIds.length
-        ? await db
-            .select({
-              conversationType: lastRead.conversationType,
-              conversationId: lastRead.conversationId,
-              lastReadMessageId: lastRead.lastReadMessageId,
-            })
-            .from(lastRead)
-            .where(and(eq(lastRead.userId, userId), inArray(lastRead.conversationId, allIds)))
-        : [];
       const lastReadByKey = new Map<string, string | null>();
       for (const r of lastReadRows) {
         lastReadByKey.set(`${r.conversationType}:${r.conversationId}`, r.lastReadMessageId ?? null);

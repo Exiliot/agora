@@ -9,10 +9,10 @@
  * (dedupe), the file is kept.
  */
 
-import { and, eq, isNull, lt, ne } from 'drizzle-orm';
+import { and, inArray, isNull, lt } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import { attachments } from '../db/schema.js';
-import { deleteStoredFile, hashFromBuffer } from './storage.js';
+import { deleteStoredFile } from './storage.js';
 
 export const ORPHAN_AGE_MS = 60 * 60 * 1000;
 export const ORPHAN_SWEEP_INTERVAL_MS = 15 * 60 * 1000;
@@ -20,36 +20,43 @@ export const ORPHAN_SWEEP_INTERVAL_MS = 15 * 60 * 1000;
 export const sweepOrphans = async (now: Date = new Date()): Promise<number> => {
   const cutoff = new Date(now.getTime() - ORPHAN_AGE_MS);
 
-  const orphans = await db
-    .select({
-      id: attachments.id,
-      contentHash: attachments.contentHash,
-    })
-    .from(attachments)
-    .where(and(isNull(attachments.messageId), lt(attachments.createdAt, cutoff)));
+  // M11: batched sweep. Previously this deleted one row at a time and ran a
+  // per-row "still referenced?" probe, so 1000 orphans meant 2000 RTT. Now:
+  //   (1) one DELETE … RETURNING collects every orphan row in one shot,
+  //   (2) one SELECT checks which of those hashes still survive elsewhere,
+  //   (3) hashes that don't survive get one fs unlink each.
+  const deleted = await db
+    .delete(attachments)
+    .where(and(isNull(attachments.messageId), lt(attachments.createdAt, cutoff)))
+    .returning({ id: attachments.id, contentHash: attachments.contentHash });
 
-  if (orphans.length === 0) return 0;
+  if (deleted.length === 0) return 0;
 
-  for (const orphan of orphans) {
-    await db.delete(attachments).where(eq(attachments.id, orphan.id));
-
-    const stillReferenced = await db
-      .select({ id: attachments.id })
-      .from(attachments)
-      .where(
-        and(eq(attachments.contentHash, orphan.contentHash), ne(attachments.id, orphan.id)),
-      )
-      .limit(1);
-    if (stillReferenced.length > 0) continue;
-
-    const hex = hashFromBuffer(orphan.contentHash);
-    await deleteStoredFile(hex).catch((err) => {
-      // eslint-disable-next-line no-console
-      console.warn('[attachments.sweeper] delete failed', { hash: hex, err });
-    });
+  const uniqueHashes = new Map<string, Buffer>();
+  for (const row of deleted) {
+    const key = row.contentHash.toString('hex');
+    if (!uniqueHashes.has(key)) uniqueHashes.set(key, row.contentHash);
   }
 
-  return orphans.length;
+  const stillRef = uniqueHashes.size
+    ? await db
+        .select({ contentHash: attachments.contentHash })
+        .from(attachments)
+        .where(inArray(attachments.contentHash, Array.from(uniqueHashes.values())))
+    : [];
+  const stillRefHex = new Set(stillRef.map((r) => r.contentHash.toString('hex')));
+
+  await Promise.all(
+    Array.from(uniqueHashes.keys()).map(async (hex) => {
+      if (stillRefHex.has(hex)) return;
+      await deleteStoredFile(hex).catch((err) => {
+        // eslint-disable-next-line no-console
+        console.warn('[attachments.sweeper] delete failed', { hash: hex, err });
+      });
+    }),
+  );
+
+  return deleted.length;
 };
 
 const schedule = (): NodeJS.Timeout => {

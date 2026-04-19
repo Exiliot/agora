@@ -71,7 +71,9 @@ export const registerWsPlugin = (app: FastifyInstance): void => {
     connections.add(conn);
     subscribeConnection(conn, userTopic(user.id));
 
-    app.log.debug({ connId: conn.id, userId: user.id }, 'ws connected');
+    // M16: trace-level. ws open/close happen on every tab switch and every
+    // reconnect; info is noise, debug still floods dev logs.
+    app.log.trace({ connId: conn.id, userId: user.id }, 'ws connected');
 
     // Application-level ping/pong so silent half-open connections (NAT
     // timeouts, mobile OS suspension behind nginx's 1h read timeout) get
@@ -198,7 +200,7 @@ export const registerWsPlugin = (app: FastifyInstance): void => {
       if (connections.forUser(user.id).length === 0) {
         userFocusRegistry.clear(user.id);
       }
-      app.log.debug({ connId: conn.id, userId: user.id }, 'ws disconnected');
+      app.log.trace({ connId: conn.id, userId: user.id }, 'ws disconnected');
     });
   });
 };

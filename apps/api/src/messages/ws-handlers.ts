@@ -367,14 +367,18 @@ registerWsHandler('message.delete', async (ctx, event) => {
     return;
   }
 
+  // L18: single atomic UPDATE guards against two deleters racing. Only the
+  // transition null→deletedAt "wins" the publish; a second racing delete
+  // hits WHERE deleted_at IS NULL = false, returns zero rows, and silently
+  // no-ops instead of publishing a duplicate `message.deleted` event.
   const deletedAt = new Date();
   const [updated] = await db
     .update(messages)
     .set({ body: '', deletedAt })
-    .where(eq(messages.id, payload.id))
+    .where(and(eq(messages.id, payload.id), isNull(messages.deletedAt)))
     .returning();
   if (!updated) {
-    sendErr(ctx, reqId, 'not_found', 'message vanished during delete');
+    sendAck(ctx, reqId, { id: payload.id });
     return;
   }
 
