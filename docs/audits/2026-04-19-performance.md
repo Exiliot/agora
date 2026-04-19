@@ -79,6 +79,81 @@ against the single-node Docker Compose target.
 | 24 | info | Bus | `apps/api/src/bus/bus.ts:74` | `handlers.size > 1` gates pre-serialisation; single-subscriber topics still stringify in `WsConnection.send` | Sub-optimal but cheap | Consider always pre-serialising if the subscriber is a ws connection; topic type isn't known at publish time so leave |
 | 25 | info | WS | `apps/api/src/ws/plugin.ts:64` | 30 s ping, terminate on missed pong (~60 s) | Sensible default | Document the interval so future edits don't silently regress |
 
+## Deferred
+
+These items were consciously left open in this pass. Each one either needs a
+new dependency, a new ADR, or touches an area outside the perf/integrity
+remit. Revisit triggers are concrete.
+
+- **#6 (medium, DB)** – `/api/rooms` public catalogue ordering by correlated
+  `COUNT(*)`. Current catalogue has a handful of rooms; the Seq Scan + per-
+  row subquery is measured at sub-millisecond. A clean fix is either a
+  `member_count` column maintained by a trigger, a materialised view, or a
+  LATERAL rewrite; all three are non-trivial for the hackathon schedule.
+  Revisit trigger: public-room count crosses 100, or the endpoint's p95
+  exceeds 150 ms in local measurement.
+
+- **#9 (medium, DB)** – `/api/rooms/mine` has the same shape at lower
+  cardinality. A user typically belongs to single-digit rooms, so the
+  per-row `COUNT(*)` is cheaper than the planner cost to switch. Same fix,
+  same trigger, same backlog item as #6.
+
+- **#12 (medium, DB)** – notifications publisher does one INSERT…ON CONFLICT
+  then one `hydrateNotification(id)` SELECT. The CTE rewrite to fuse the
+  two is correct but structurally a new Drizzle pattern (`SELECT … FROM
+  new_rows`); the extra SELECT is ≤1 ms on a hot index. Revisit trigger:
+  notification publish rate exceeds 10/s per user or the feed hydration
+  budget gets tightened.
+
+- **#13 (medium, WS)** – the audit itself recommends "keep the parse";
+  two-stage parsing on the heartbeat hot path is premature. Nothing to
+  change now. Revisit trigger: profiling shows `clientToServerEvent`
+  parsing in the top-10 cost of the ws hot path under realistic load.
+
+- **#17 (low, Integrity)** – friendship / dm_conversation pair ordering is
+  already enforced at the DB via CHECK constraints (`friendships_a_lt_b`,
+  `dm_conversations_a_lt_b`). A CI linter is belt-and-braces, not a fix;
+  the DB rejects a malformed write outright. Adding an ESLint rule needs a
+  plugin that understands Drizzle call-sites. Revisit trigger: a write
+  path lands that bypasses `pairKey` in code review – treat it as a
+  regression then.
+
+- **#19 (low, Storage)** – disk-fill policy. Enforcing a per-user quota
+  plus a "near full" global cap is its own small feature (schema column or
+  aggregate SUM, upload-time gate, UX copy on reject). Calls for an ADR
+  covering policy choice and failure mode – explicitly out of scope per
+  this audit's ground rules (no new ADRs).
+
+- **#20 (low, Observability)** – `/ready` split and `/metrics` both need an
+  ADR on whether Prometheus joins the stack; the current `/health`
+  suffices for the docker-compose demo. Revisit trigger: orchestrator
+  that needs the split (k8s readinessProbe, nomad) enters the picture.
+
+- **#21 (low, Startup)** – blocking migrations. Accepted for MVP per the
+  audit row itself; three migrations all run in milliseconds and fit
+  comfortably inside the `depends_on` healthcheck window. Revisit trigger:
+  any single migration exceeds a few seconds on empty data, e.g. an
+  `ALTER TABLE … ADD COLUMN` with a non-null default on a large table.
+
+- **#22 (low, DB)** – cascade delete lock contention on hard-delete. The
+  design already points to soft-delete via `users.deleted_at` (the
+  account-deletion UI that landed in 05ccceb uses it). A batched
+  hard-delete path is only needed if GDPR "erase" ever supersedes soft-
+  delete. Revisit trigger: policy change mandating physical row removal.
+
+- **#23 (low, Client)** – bundle-size CI budget. Needs a `vite build`
+  artifact in CI and a budget file; both are tooling changes, not code
+  fixes. Revisit trigger: perceived bundle bloat (a dependency bump that
+  doubles gzip size) or when the CI moves off the single-node docker-
+  compose contract.
+
+- **#24 (info, Bus)** – single-subscriber topics skipping pre-serialise is
+  sub-optimal but not a measurable cost. The audit row itself says "leave";
+  no change.
+
+- **#25 (info, WS)** – ping interval documented in plugin.ts + audit §3.
+  No action required.
+
 ## Area-by-area notes
 
 ### 1. Database – indexes, query plans, N+1
