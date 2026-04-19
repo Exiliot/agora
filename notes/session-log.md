@@ -7,7 +7,7 @@ Post-event notes for organisers, written from the operator's perspective – the
 - Date: 18–20 April 2026 (Sat evening through Sun afternoon)
 - Track: Saturday (billable-projects track)
 - Start time: Saturday ~12:00 local
-- Submission deadline: Wednesday 22 April 12:00 UTC
+- Submission deadline: Monday 20 April 10:00 UTC (first wave, billable-projects track)
 
 ## Setup
 
