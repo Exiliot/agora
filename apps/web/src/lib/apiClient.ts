@@ -34,6 +34,23 @@ const parseBody = async (response: Response): Promise<unknown> => {
   }
 };
 
+// H6: single place to notify the app when any call returns 401. The App
+// wires a handler that clears the `me` cache so ProtectedRoute can redirect
+// to /sign-in. Kept as a module-level hook rather than reading the query
+// client directly so the client stays free of TanStack imports.
+type UnauthorizedHandler = () => void;
+let unauthorizedHandler: UnauthorizedHandler | null = null;
+
+export const setUnauthorizedHandler = (handler: UnauthorizedHandler | null): void => {
+  unauthorizedHandler = handler;
+};
+
+// The `GET /api/auth/me` probe is allowed to return 401 – that's how a
+// signed-out session is represented – so we must not treat its own 401 as
+// a session revoke. Anything else wants the global fall-through.
+const isAuthProbe = (method: string, path: string): boolean =>
+  method === 'GET' && path === '/auth/me';
+
 const request = async <T>(
   method: string,
   path: string,
@@ -50,6 +67,9 @@ const request = async <T>(
 
   if (!response.ok) {
     const shape = (parsed ?? {}) as ApiErrorShape;
+    if (response.status === 401 && !isAuthProbe(method, path) && unauthorizedHandler) {
+      unauthorizedHandler();
+    }
     throw new ApiError(
       response.status,
       shape,
