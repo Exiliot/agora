@@ -30,7 +30,12 @@ import {
 import { sendResetEmail } from './mailer.js';
 import { hashPassword, verifyPassword } from './password.js';
 import { consumeResetToken, issueResetToken } from './password-reset.js';
-import { authRateLimit, registerRateLimitPlugin } from './rate-limit.js';
+import {
+  authEmailRateLimit,
+  authRateLimit,
+  authSessionRateLimit,
+  registerRateLimitPlugin,
+} from './rate-limit.js';
 
 const toUserSelf = (row: {
   id: string;
@@ -115,7 +120,7 @@ addRouteModule({
       return reply.code(201).send({ user: toUserSelf(inserted) });
     });
 
-    app.post('/api/auth/sign-in', authRateLimit, async (req, reply) => {
+    app.post('/api/auth/sign-in', authEmailRateLimit, async (req, reply) => {
       const parsed = signInRequest.safeParse(req.body);
       if (!parsed.success) {
         return reply.code(400).send({ error: 'invalid_input', issues: parsed.error.issues });
@@ -178,7 +183,7 @@ addRouteModule({
       return reply.code(200).send({ user: toUserSelf(row) });
     });
 
-    app.post('/api/auth/password-reset/request', authRateLimit, async (req, reply) => {
+    app.post('/api/auth/password-reset/request', authEmailRateLimit, async (req, reply) => {
       const parsed = passwordResetRequest.safeParse(req.body);
       if (!parsed.success) {
         return reply.code(400).send({ error: 'invalid_input', issues: parsed.error.issues });
@@ -246,7 +251,7 @@ addRouteModule({
       return reply.code(204).send();
     });
 
-    app.post('/api/auth/password-change', { onRequest: requireAuth, ...authRateLimit }, async (req, reply) => {
+    app.post('/api/auth/password-change', { onRequest: requireAuth, ...authSessionRateLimit }, async (req, reply) => {
       const parsed = passwordChangeRequest.safeParse(req.body);
       if (!parsed.success) {
         return reply.code(400).send({ error: 'invalid_input', issues: parsed.error.issues });

@@ -547,7 +547,18 @@ addRouteModule({
       // 30/min per IP is plenty for a real user typing in a search box.
       scoped.get(
         '/api/users/search',
-        { config: { rateLimit: { max: 30, timeWindow: '1 minute' } } },
+        {
+          config: {
+            rateLimit: {
+              max: 30,
+              timeWindow: '1 minute',
+              // Key per authenticated user in addition to IP so a single
+              // caller cannot bounce between proxies to walk the directory.
+              keyGenerator: (req) =>
+                req.user ? `user:${req.user.id}` : req.ip,
+            },
+          },
+        },
         async (req, reply) => {
         if (!isAuthed(req)) return;
         const query = req.query as { q?: string; limit?: string };
