@@ -1,6 +1,6 @@
 # 2026-04-19 · Retrospective – what the agora experiment actually was
 
-Last entry for the Sat–Sun block. The Mon (20 Apr) session is a fresh run on a separate project, not a continuation of this one. Submission for this track lands Wed 22 Apr 12:00 UTC.
+Last entry for the Sat–Sun block. The Mon (20 Apr) session is a fresh run on a separate project, not a continuation of this one. Submission for this track (first wave, billable-projects) lands Mon 20 Apr 10:00 UTC.
 
 ## The experiment
 
