@@ -48,6 +48,7 @@ Listed in the order events happened, not when the entry was written.
 | 28 | Sun 15:45 | Audit cleanup — mark.read, account-delete UI, notifications N+1, mention contrast (4 parallel) | [2026-04-19-06-audit-cleanup.md](2026-04-19-06-audit-cleanup.md) |
 | 29 | Sun 18:30 | Audit closeout — every remaining item resolved (51 closed, 24 deferred with triggers) | [2026-04-19-07-audit-closeout.md](2026-04-19-07-audit-closeout.md) |
 | 30 | Sun 16:45 | Delivery-contract cold-boot smoke — fresh clone, docker compose up, all flows green | [2026-04-19-08-delivery-contract-smoke.md](2026-04-19-08-delivery-contract-smoke.md) |
+| 31 | Sun 19:30 | Retrospective — scoreboard, what worked, what didn't, the experiment verdict | [2026-04-19-09-retrospective.md](2026-04-19-09-retrospective.md) |
 
 > The notifications entry uses a bare-date filename rather than the `NN-topic` scheme the rest of the chronology follows – it was written mid-session before the index was refreshed. Leaving it in place as a deliberate record of how the entries landed rather than renaming after the fact.
 

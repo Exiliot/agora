@@ -120,7 +120,7 @@ Node 24 · TypeScript (strict) · Fastify 5 · Postgres 16 · Drizzle ORM · Rea
 - **Attachment mime allowlist + nosniff** on downloads; `originalFilename` truncated to 255 bytes.
 - **Accessibility baseline**: `:focus-visible`, sr-only class, Modal focus-trap + Escape, MessageList `role="log" aria-live="polite"`, composer labelled, primary nav carries `aria-current`, sign-out is a real `<button>`, skip-to-content link present, AA-compliant contrast on all token pairings.
 
-Everything is journalled — see `docs/journal/2026-04-18-11-wave-1.md`, `…-13-wave-2.md`, `…-15-wave-3.md` for the audit → fix trail.
+Everything is journalled. The 2026-04-18 wave entries (`…-11-wave-1.md`, `…-13-wave-2.md`, `…-15-wave-3.md`) cover the first audit cycle; the 2026-04-19 parallel-specialists pass (`…-03-parallel-audits.md`) plus the closeout (`…-06-audit-closeout.md`) carry the final state. Capacity estimate after perf-audit closeout: ~400–500 concurrent users on single-node docker-compose. WCAG 2.1 AA: pass with two documented equivalents.
 
 ## Project docs
 
@@ -130,8 +130,9 @@ Everything is journalled — see `docs/journal/2026-04-18-11-wave-1.md`, `…-13
 - [Design system](docs/design/README.md) — Claude Design (Opus 4.7) handoff bundle.
 - [ADRs](docs/adrs/) — immutable decisions that shape everything.
 - [Journal](docs/journal/) — decisions, detours, lessons as they happened. Entries are numbered (`01`, `02`, …) so they sort chronologically.
-- [Audits](docs/audits/) — security, performance, a11y, code quality reports against the afternoon `main`.
+- [Audits](docs/audits/) — four specialist audits (product, security, performance, a11y) dated 2026-04-19, all rows either closed or deferred with named revisit triggers. Older code-quality audit from 2026-04-18 kept for trace.
 - [Demo script](docs/demo-script.md) — five-minute reviewer walkthrough.
+- [Retrospective](docs/journal/2026-04-19-09-retrospective.md) — what the experiment actually was, the final scoreboard, what worked, what didn't.
 
 ## ADLC
 
