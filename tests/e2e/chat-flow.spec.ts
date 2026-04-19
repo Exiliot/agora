@@ -31,7 +31,7 @@ test('register → create room → send message round-trip via UI', async ({ pag
 
   // Should redirect into the room
   await expect(page).toHaveURL(new RegExp(`/chat/${roomName}`), { timeout: 10_000 });
-  await expect(page.getByText(`# ${roomName}`).first()).toBeVisible();
+  await expect(page.getByText(`#${roomName}`).first()).toBeVisible();
 
   // Send a message via the composer
   const composer = page.getByPlaceholder('Type a message…');

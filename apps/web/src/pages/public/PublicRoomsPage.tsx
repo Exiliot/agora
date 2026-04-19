@@ -40,7 +40,7 @@ const PublicRoomsPage = () => {
           return (
             <ListRow
               key={room.id}
-              title={`# ${room.name}`}
+              title={`#${room.name}`}
               meta={room.description ?? undefined}
               actions={
                 <>

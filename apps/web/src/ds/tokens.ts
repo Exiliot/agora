@@ -10,6 +10,7 @@ export const tokens = {
     paper1: 'var(--paper-1)',
     paper2: 'var(--paper-2)',
     paper3: 'var(--paper-3)',
+    paperOnScrim: 'var(--paper-on-scrim)',
     rule: 'var(--rule)',
     ruleStrong: 'var(--rule-strong)',
     ink0: 'var(--ink-0)',

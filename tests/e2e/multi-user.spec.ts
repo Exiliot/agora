@@ -44,9 +44,9 @@ test('two users in the same public room see each other in real-time', async ({ b
   await pageB.goto('/public');
   await pageB.waitForLoadState('networkidle');
   await pageB.getByPlaceholder('Search rooms…').fill(roomName);
-  await expect(pageB.getByText(`# ${roomName}`)).toBeVisible({ timeout: 10_000 });
+  await expect(pageB.getByText(`#${roomName}`)).toBeVisible({ timeout: 10_000 });
   await pageB
-    .locator('div', { hasText: new RegExp(`^# ${roomName}`) })
+    .locator('div', { hasText: new RegExp(`^#${roomName}`) })
     .getByRole('button', { name: 'Join' })
     .first()
     .click();

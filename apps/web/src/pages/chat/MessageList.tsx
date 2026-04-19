@@ -4,11 +4,12 @@ import type { AttachmentSummary, ConversationType, MessageView, RoomRole } from 
 import {
   Button,
   Col,
+  ConfirmModal,
+  DaySeparator,
   FileCard,
   MessageRow,
-  Modal,
-  ModalScrim,
   Row,
+  Textarea,
   colorForName,
   tokens,
   useToast,
@@ -59,52 +60,6 @@ const localDateKey = (iso: string): string => {
     .toString()
     .padStart(2, '0')}`;
 };
-
-const formatDateLabel = (iso: string): string => {
-  const d = new Date(iso);
-  const now = new Date();
-  const sameDay =
-    d.getFullYear() === now.getFullYear() &&
-    d.getMonth() === now.getMonth() &&
-    d.getDate() === now.getDate();
-  const yesterday = new Date(now);
-  yesterday.setDate(now.getDate() - 1);
-  const sameYesterday =
-    d.getFullYear() === yesterday.getFullYear() &&
-    d.getMonth() === yesterday.getMonth() &&
-    d.getDate() === yesterday.getDate();
-
-  if (sameDay) return 'Today';
-  if (sameYesterday) return 'Yesterday';
-  // Mon 14 Apr 2026 · keeps it mono-friendly and unambiguous
-  return d.toLocaleDateString(undefined, {
-    weekday: 'short',
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
-};
-
-const DaySeparator = ({ iso }: { iso: string }) => (
-  <div
-    role="separator"
-    aria-label={formatDateLabel(iso)}
-    style={{
-      display: 'flex',
-      alignItems: 'center',
-      gap: 10,
-      padding: '14px 16px 6px',
-      fontFamily: tokens.type.mono,
-      fontSize: 11,
-      color: tokens.color.ink2,
-      letterSpacing: 0.2,
-    }}
-  >
-    <span style={{ flex: 1, height: 1, background: tokens.color.rule }} aria-hidden="true" />
-    <span style={{ flexShrink: 0 }}>{formatDateLabel(iso)}</span>
-    <span style={{ flex: 1, height: 1, background: tokens.color.rule }} aria-hidden="true" />
-  </div>
-);
 
 const MessageActions = ({
   visible,
@@ -188,25 +143,17 @@ const InlineEditor = ({
 
   return (
     <Col gap={4} style={{ marginTop: 2, marginBottom: 2, flex: 1, minWidth: 0 }}>
-      <textarea
+      <Textarea
         ref={textareaRef}
         value={value}
         onChange={(event) => setValue(event.target.value)}
         onKeyDown={onKeyDown}
         rows={Math.min(6, Math.max(1, value.split('\n').length))}
         style={{
-          width: '100%',
-          resize: 'vertical',
+          // Inline editor sits on the mono message row – keep mono here so
+          // the edited body visually matches the surrounding stream.
           fontFamily: tokens.type.mono,
           fontSize: 13,
-          padding: '6px 8px',
-          background: '#fff',
-          color: tokens.color.ink0,
-          border: `1px solid ${tokens.color.rule}`,
-          borderTop: `1px solid ${tokens.color.ruleStrong}`,
-          borderRadius: tokens.radius.xs,
-          outline: 'none',
-          boxShadow: 'inset 0 1px 0 rgba(0,0,0,.04)',
         }}
       />
       <Row
@@ -307,50 +254,6 @@ const MessageItem = ({
     </div>
   );
 };
-
-const DeleteConfirm = ({
-  msg,
-  onClose,
-  onConfirm,
-}: {
-  msg: MessageView;
-  onClose: () => void;
-  onConfirm: () => void;
-}) => (
-  <ModalScrim onClose={onClose}>
-    <Modal title="Delete message" width={440} onClose={onClose}>
-      <Col gap={12}>
-        <div style={{ fontSize: 13, color: tokens.color.ink1, lineHeight: 1.55 }}>
-          This will remove the message for everyone in this conversation. The author and the
-          timestamp stay in the history, but the content is gone. This can't be undone.
-        </div>
-        <div
-          style={{
-            background: tokens.color.paper1,
-            border: `1px solid ${tokens.color.rule}`,
-            padding: '8px 12px',
-            borderRadius: tokens.radius.xs,
-            fontFamily: tokens.type.mono,
-            fontSize: 12,
-            color: tokens.color.ink1,
-            maxHeight: 120,
-            overflow: 'auto',
-            whiteSpace: 'pre-wrap',
-            wordBreak: 'break-word',
-          }}
-        >
-          {msg.body || '(attachment)'}
-        </div>
-        <Row gap={8} style={{ justifyContent: 'flex-end' }}>
-          <Button onClick={onClose}>Cancel</Button>
-          <Button variant="danger" onClick={onConfirm}>
-            Delete
-          </Button>
-        </Row>
-      </Col>
-    </Modal>
-  </ModalScrim>
-);
 
 export const MessageList = ({ conversationType, conversationId, myRoomRole }: MessageListProps) => {
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useMessages(
@@ -586,42 +489,7 @@ export const MessageList = ({ conversationType, conversationId, myRoomRole }: Me
           )}
         </div>
       ) : messages.length > 0 ? (
-        <div
-          role="status"
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 4,
-            padding: '18px 16px 10px',
-            fontFamily: tokens.type.mono,
-            fontSize: 12,
-            color: tokens.color.ink2,
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              width: '100%',
-              maxWidth: 420,
-            }}
-          >
-            <span
-              style={{ flex: 1, height: 1, background: tokens.color.rule }}
-              aria-hidden="true"
-            />
-            <span>start of conversation</span>
-            <span
-              style={{ flex: 1, height: 1, background: tokens.color.rule }}
-              aria-hidden="true"
-            />
-          </div>
-          <div style={{ fontSize: 11, color: tokens.color.ink3 }}>
-            first message {formatDateLabel(messages[0]?.createdAt ?? new Date().toISOString())}
-          </div>
-        </div>
+        <DaySeparator label="start of conversation" />
       ) : null}
 
       {messages.length === 0 ? (
@@ -667,7 +535,7 @@ export const MessageList = ({ conversationType, conversationId, myRoomRole }: Me
                   transform: `translateY(${vi.start}px)`,
                 }}
               >
-                {showDay ? <DaySeparator iso={msg.createdAt} /> : null}
+                {showDay ? <DaySeparator date={msg.createdAt} /> : null}
                 <MessageItem
                   msg={msg}
                   isMine={isMine}
@@ -687,43 +555,31 @@ export const MessageList = ({ conversationType, conversationId, myRoomRole }: Me
         </div>
       )}
       {confirmDelete ? (
-        <DeleteConfirm
-          msg={confirmDelete}
-          onClose={() => setConfirmDelete(null)}
+        <ConfirmModal
+          title="Delete message"
+          confirmLabel="Delete"
           onConfirm={performDelete}
-        />
+          onCancel={() => setConfirmDelete(null)}
+        >
+          Deleting replaces the body with "[deleted]" but the row stays in place. Other
+          participants see it as soon as their client syncs.
+        </ConfirmModal>
       ) : null}
     </div>
     {!isAtBottom && messages.length > 0 ? (
-      <button
-        type="button"
-        onClick={() => {
-          const scroller = scrollRef.current;
-          if (!scroller) return;
-          scroller.scrollTo({ top: scroller.scrollHeight, behavior: 'smooth' });
-        }}
-        aria-label="Jump to latest message"
-        style={{
-          position: 'absolute',
-          right: 16,
-          bottom: 16,
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: 6,
-          padding: '6px 12px',
-          fontFamily: tokens.type.mono,
-          fontSize: 12,
-          background: tokens.color.accent,
-          color: '#fff',
-          border: `1px solid ${tokens.color.accentInk}`,
-          borderRadius: tokens.radius.xs,
-          boxShadow: '0 2px 6px rgba(0,0,0,0.15), 0 1px 0 rgba(255,255,255,.12) inset',
-          cursor: 'pointer',
-          zIndex: 5,
-        }}
-      >
-        ↓ jump to latest
-      </button>
+      <div style={{ position: 'absolute', right: 24, bottom: 16, zIndex: 5 }}>
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={() => {
+            const scroller = scrollRef.current;
+            if (!scroller) return;
+            scroller.scrollTo({ top: scroller.scrollHeight, behavior: 'smooth' });
+          }}
+        >
+          Jump to latest
+        </Button>
+      </div>
     ) : null}
     </div>
   );

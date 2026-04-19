@@ -213,7 +213,7 @@ const Invitations = () => {
           key={inv.id}
           title={
             <Row gap={6} style={{ alignItems: 'center' }}>
-              <span># {inv.room.name}</span>
+              <span>#{inv.room.name}</span>
               <Badge tone="private">private</Badge>
             </Row>
           }

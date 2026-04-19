@@ -4,7 +4,7 @@ import { ModalScrim } from './ModalScrim';
 import { tokens } from './tokens';
 
 interface ImageLightboxProps {
-  /** URL of the image to show. Usually the attachment download endpoint —
+  /** URL of the image to show. Usually the attachment download endpoint –
    *  the browser carries the session cookie so the server ACL still runs. */
   src: string;
   /** Alt text / accessible description. */
@@ -24,7 +24,7 @@ interface ImageLightboxProps {
  */
 export const ImageLightbox = ({ src, alt, caption, downloadHref, onClose }: ImageLightboxProps) => {
   // Esc is already handled by Modal, but the lightbox doesn't use Modal
-  // because it has no title chrome — catch it directly here.
+  // because it has no title chrome – catch it directly here.
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose();
@@ -60,7 +60,7 @@ export const ImageLightbox = ({ src, alt, caption, downloadHref, onClose }: Imag
             padding: '0 2px',
             fontFamily: tokens.type.mono,
             fontSize: 12,
-            color: '#f5f1e3',
+            color: tokens.color.paper0,
           }}
         >
           {downloadHref ? (
@@ -68,7 +68,7 @@ export const ImageLightbox = ({ src, alt, caption, downloadHref, onClose }: Imag
               href={downloadHref}
               download
               style={{
-                color: '#f5f1e3',
+                color: tokens.color.paper0,
                 textDecoration: 'underline',
                 textUnderlineOffset: 2,
               }}
@@ -83,8 +83,8 @@ export const ImageLightbox = ({ src, alt, caption, downloadHref, onClose }: Imag
             aria-label="Close"
             style={{
               background: 'transparent',
-              border: '1px solid rgba(245,241,227,0.4)',
-              color: '#f5f1e3',
+              border: `1px solid ${tokens.color.paperOnScrim}`,
+              color: tokens.color.paper0,
               fontFamily: tokens.type.mono,
               fontSize: 12,
               padding: '2px 8px',
@@ -114,7 +114,7 @@ export const ImageLightbox = ({ src, alt, caption, downloadHref, onClose }: Imag
             style={{
               fontFamily: tokens.type.mono,
               fontSize: 12,
-              color: '#f5f1e3',
+              color: tokens.color.paper0,
               padding: '0 2px',
             }}
           >

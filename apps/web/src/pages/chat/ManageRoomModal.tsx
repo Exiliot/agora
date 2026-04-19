@@ -219,7 +219,7 @@ const SettingsTab = ({
           }
         >
           Delete{' '}
-          <span style={{ fontFamily: tokens.type.mono }}># {room.name}</span>? The room, its
+          <span style={{ fontFamily: tokens.type.mono }}>#{room.name}</span>? The room, its
           messages and its attachments will be removed for everyone. This can't be undone.
         </ConfirmModal>
       ) : null}
@@ -233,7 +233,7 @@ export const ManageRoomModal = ({ room, onClose }: ManageRoomModalProps) => {
 
   return (
     <ModalScrim onClose={onClose}>
-      <Modal title={`Manage · # ${room.name}`} width={560} onClose={onClose}>
+      <Modal title={`Manage · #${room.name}`} width={560} onClose={onClose}>
           <Col gap={12}>
             <TabBar items={tabs} active={active} onSelect={setActive} />
             {active === 0 ? <MembersTab room={room} /> : null}

@@ -63,7 +63,7 @@ const DmView = () => {
           }}
         >
           <div style={{ fontFamily: tokens.type.mono, fontSize: 14, fontWeight: 600 }}>
-            @ {dm.otherUser.username}
+            @{dm.otherUser.username}
           </div>
           <div style={{ fontFamily: tokens.type.sans, fontSize: 11, color: tokens.color.ink2 }}>
             direct message

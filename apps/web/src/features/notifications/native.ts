@@ -44,9 +44,9 @@ const titleFor = (n: NotificationView): string => {
   const p = n.payload as Record<string, string | number | null | undefined>;
   switch (n.kind) {
     case 'dm.new_message':
-      return `@ ${p.senderUsername ?? 'someone'}`;
+      return `@${p.senderUsername ?? 'someone'}`;
     case 'room.mentioned':
-      return `# ${p.roomName ?? ''} · mention`;
+      return `#${p.roomName ?? ''} · mention`;
     case 'friend.request':
       return `Friend request`;
     case 'room.invitation':
@@ -67,7 +67,7 @@ const bodyFor = (n: NotificationView): string => {
     return `${p.senderUsername} wants to connect`;
   }
   if (n.kind === 'room.invitation' && typeof p.inviterUsername === 'string') {
-    return `${p.inviterUsername} invited you to # ${p.roomName ?? ''}`;
+    return `${p.inviterUsername} invited you to #${p.roomName ?? ''}`;
   }
   if (n.kind === 'user.ban' && typeof p.bannerUsername === 'string') {
     return `${p.bannerUsername} blocked you`;

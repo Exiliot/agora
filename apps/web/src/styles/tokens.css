@@ -57,6 +57,11 @@
   /* Modal scrim (shared between every dialog wrapper) */
   --scrim: rgba(30, 29, 24, 0.35);
 
+  /* Paper tint for ink used directly over a dark scrim (e.g. lightbox
+     borders/hairlines). --paper-0 on its own reads as pure cream; this
+     translucent variant softens into the scrim while keeping the hue. */
+  --paper-on-scrim: rgba(245, 241, 227, 0.4);
+
   /* Type */
   --sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
   --mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;

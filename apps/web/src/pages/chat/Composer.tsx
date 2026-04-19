@@ -7,7 +7,7 @@ import {
   type KeyboardEvent,
 } from 'react';
 import type { AttachmentSummary, ConversationType } from '@agora/shared';
-import { Button, Row, tokens, useToast } from '../../ds';
+import { Button, IconButton, Row, tokens, useToast } from '../../ds';
 import { useWs } from '../../app/WsProvider';
 import { uploadAttachment } from '../../features/attachments/useUpload';
 
@@ -146,22 +146,9 @@ export const Composer = ({
             : {replyTo.body}
           </span>
           {onClearReply ? (
-            <button
-              type="button"
-              onClick={onClearReply}
-              aria-label="Cancel reply"
-              style={{
-                background: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                fontFamily: tokens.type.mono,
-                fontSize: 12,
-                color: tokens.color.ink2,
-                padding: '0 4px',
-              }}
-            >
+            <IconButton size={20} aria-label="Cancel reply" onClick={onClearReply}>
               ×
-            </button>
+            </IconButton>
           ) : null}
         </div>
       ) : null}
@@ -200,22 +187,13 @@ export const Composer = ({
                   {kind}
                 </span>
                 {a.originalFilename}
-                <button
-                  type="button"
+                <IconButton
+                  size={20}
                   aria-label={`Remove ${a.originalFilename}`}
                   onClick={() => setPending((prev) => prev.filter((p) => p.id !== a.id))}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: tokens.color.ink2,
-                    padding: 0,
-                    fontFamily: tokens.type.mono,
-                    fontSize: 12,
-                  }}
                 >
                   ×
-                </button>
+                </IconButton>
               </span>
             );
           })}

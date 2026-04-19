@@ -5,6 +5,25 @@ import { useMyRooms } from '../../features/rooms/useRooms';
 import { useRoom } from '../../features/rooms/useRoom';
 import { useFocusBroadcast } from '../../features/notifications/focus';
 import { Badge, Button, ContactListItem, Meta, Row, tokens } from '../../ds';
+
+// Small padlock glyph used in the (slim) room header and the dossier aside
+// to flag private rooms. Sized to sit next to the name without crowding.
+const LockIcon = ({ size = 12 }: { size?: number }) => (
+  <svg
+    aria-hidden="true"
+    width={size}
+    height={size}
+    viewBox="0 0 12 12"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.25"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <rect x="2.25" y="5.25" width="7.5" height="5.25" rx="1" />
+    <path d="M4 5.25V3.5a2 2 0 0 1 4 0v1.75" />
+  </svg>
+);
 import { MessageList } from './MessageList';
 import { Composer } from './Composer';
 import { Sidebar } from './Sidebar';
@@ -64,6 +83,9 @@ const RoomContextPanel = ({
     >
       <div
         style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
           fontFamily: tokens.type.mono,
           fontSize: 14,
           fontWeight: 600,
@@ -71,8 +93,18 @@ const RoomContextPanel = ({
           wordBreak: 'break-all',
         }}
       >
-        # {detail.name}
+        <span>#{detail.name}</span>
+        {visibility === 'private' ? (
+          <span style={{ color: tokens.color.ink2, display: 'inline-flex' }}>
+            <LockIcon />
+          </span>
+        ) : null}
       </div>
+      {detail.description ? (
+        <div style={{ fontFamily: tokens.type.sans, fontSize: 12, color: tokens.color.ink2 }}>
+          {detail.description}
+        </div>
+      ) : null}
       <Row gap={8} style={{ alignItems: 'center', flexWrap: 'wrap' }}>
         <Badge tone={visibility === 'private' ? 'private' : 'neutral'}>{visibility}</Badge>
         <Meta>
@@ -124,31 +156,36 @@ const RoomContextPanel = ({
   );
 };
 
-const RoomHeader = ({ roomName, description, memberCount, visibility }: {
+const RoomHeader = ({
+  roomName,
+  visibility,
+}: {
   roomName: string;
-  description: string | null;
-  memberCount: number;
   visibility: string;
 }) => (
   <div
     style={{
-      padding: '12px 16px',
+      padding: '10px 16px',
       borderBottom: `1px solid ${tokens.color.rule}`,
       background: tokens.color.paper1,
+      display: 'flex',
+      alignItems: 'center',
+      gap: 6,
+      fontFamily: tokens.type.mono,
+      fontSize: 14,
+      fontWeight: 600,
+      color: tokens.color.ink0,
     }}
   >
-    <div style={{ fontFamily: tokens.type.mono, fontSize: 14, fontWeight: 600 }}># {roomName}</div>
-    {description ? (
-      <div style={{ fontFamily: tokens.type.sans, fontSize: 12, color: tokens.color.ink2 }}>
-        {description}
-      </div>
-    ) : null}
-    <Row gap={12} style={{ marginTop: 6, alignItems: 'center' }}>
-      <Badge tone={visibility === 'private' ? 'private' : 'neutral'}>{visibility}</Badge>
-      <span style={{ fontFamily: tokens.type.mono, fontSize: 12, color: tokens.color.ink2 }}>
-        {memberCount} {memberCount === 1 ? 'member' : 'members'}
+    <span>#{roomName}</span>
+    {visibility === 'private' ? (
+      <span
+        aria-label="private room"
+        style={{ color: tokens.color.ink2, display: 'inline-flex' }}
+      >
+        <LockIcon />
       </span>
-    </Row>
+    ) : null}
   </div>
 );
 
@@ -222,12 +259,7 @@ const ChatView = () => {
     <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
       <Sidebar />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-        <RoomHeader
-          roomName={room.name}
-          description={room.description}
-          memberCount={room.memberCount}
-          visibility={room.visibility}
-        />
+        <RoomHeader roomName={room.name} visibility={room.visibility} />
         <MessageList
           conversationType="room"
           conversationId={room.id}

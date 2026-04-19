@@ -28,27 +28,27 @@ const titleFor = (n: NotificationView): string => {
   const p = n.payload as Record<string, string | number | null | undefined>;
   switch (n.kind) {
     case 'dm.new_message':
-      return `@ ${p.senderUsername ?? actor}`;
+      return `@${p.senderUsername ?? actor}`;
     case 'room.mentioned':
-      return `# ${(p.roomName as string | undefined) ?? ''} - mention`;
+      return `#${(p.roomName as string | undefined) ?? ''} - mention`;
     case 'friend.request':
       return `Friend request from ${p.senderUsername ?? actor}`;
     case 'friend.accepted':
       return `${p.accepterUsername ?? actor} accepted your friend request`;
     case 'room.invitation':
-      return `Invited to # ${(p.roomName as string | undefined) ?? ''}`;
+      return `Invited to #${(p.roomName as string | undefined) ?? ''}`;
     case 'room.role_changed':
-      return `Role changed in # ${p.roomName ?? ''} (${p.change ?? ''})`;
+      return `Role changed in #${p.roomName ?? ''} (${p.change ?? ''})`;
     case 'room.removed':
-      return `Removed from # ${p.roomName ?? ''}`;
+      return `Removed from #${p.roomName ?? ''}`;
     case 'room.deleted':
-      return `Room # ${p.roomName ?? ''} deleted`;
+      return `Room #${p.roomName ?? ''} deleted`;
     case 'room.ban':
-      return `Banned from # ${p.roomName ?? ''}`;
+      return `Banned from #${p.roomName ?? ''}`;
     case 'user.ban':
       return `${p.bannerUsername ?? actor} blocked you`;
     case 'room.joined_private':
-      return `${p.joinerUsername ?? actor} joined # ${p.roomName ?? ''}`;
+      return `${p.joinerUsername ?? actor} joined #${p.roomName ?? ''}`;
     case 'session.revoked_elsewhere':
       return `${p.revokedCount ?? 0} other session(s) signed out`;
     default:
