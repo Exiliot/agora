@@ -16,6 +16,7 @@ import {
   Toast,
   tokens,
 } from '../../ds';
+import { ApiError } from '../../lib/apiClient';
 import {
   useDeleteRoom,
   useDemoteAdmin,
@@ -25,6 +26,35 @@ import {
   useRoomBans,
   useUnbanFromRoom,
 } from '../../features/rooms/useRoomAdmin';
+
+// M13: map server invite-error codes to human-readable prose. Anything we
+// haven't seen before falls through to the raw err.message (still better
+// than a blank toast, and surfaces the unknown code for diagnosis).
+const inviteErrorCopy = (err: unknown): string => {
+  if (err instanceof ApiError) {
+    const code = err.body?.code ?? err.body?.error;
+    switch (code) {
+      case 'not_private':
+        return 'this room is public – anyone can join without an invite';
+      case 'not_member':
+        return 'you need to be a member of this room to invite';
+      case 'user_not_found':
+      case 'not_found':
+        return 'no such user';
+      case 'self_invite':
+        return "you can't invite yourself";
+      case 'already_member':
+        return "they're already in this room";
+      case 'target_banned':
+        return 'that user is banned from this room';
+      case 'already_invited':
+        return 'they already have a pending invitation';
+      default:
+        return err.body?.message ?? 'could not send invite';
+    }
+  }
+  return err instanceof Error ? err.message : 'could not send invite';
+};
 
 interface ManageRoomModalProps {
   room: RoomDetail & { myRole: RoomRole | null };
@@ -37,36 +67,65 @@ const MembersTab = ({ room }: { room: ManageRoomModalProps['room'] }) => {
   const remove = useRemoveMember(room.id);
   const amOwner = room.myRole === 'owner';
   const amAdmin = room.myRole === 'admin' || amOwner;
+  // M12: removing a member is destructive (it also inserts a ban row). Route
+  // through ConfirmModal so a mis-click on the red button doesn't fire.
+  const [confirmBan, setConfirmBan] = useState<{ id: string; username: string } | null>(
+    null,
+  );
   return (
-    <Table
-      caption="Room members"
-      cols={['Username', 'Role', 'Actions']}
-      rows={room.members.map((m) => [
-        <span key="u" style={{ fontFamily: tokens.type.mono, fontSize: 13 }}>
-          {m.user.username}
-        </span>,
-        <Badge key="r" tone={m.role === 'owner' ? 'accent' : 'neutral'}>
-          {m.role}
-        </Badge>,
-        <Row key="a" gap={6}>
-          {amOwner && m.role === 'member' ? (
-            <Button size="sm" onClick={() => promote.mutate(m.user.id)}>
-              Make admin
-            </Button>
-          ) : null}
-          {amOwner && m.role === 'admin' ? (
-            <Button size="sm" onClick={() => demote.mutate(m.user.id)}>
-              Remove admin
-            </Button>
-          ) : null}
-          {amAdmin && m.role !== 'owner' && m.user.id !== room.owner.id ? (
-            <Button size="sm" variant="danger" onClick={() => remove.mutate(m.user.id)}>
-              Ban
-            </Button>
-          ) : null}
-        </Row>,
-      ])}
-    />
+    <>
+      <Table
+        caption="Room members"
+        cols={['Username', 'Role', 'Actions']}
+        rows={room.members.map((m) => [
+          <span key="u" style={{ fontFamily: tokens.type.mono, fontSize: 13 }}>
+            {m.user.username}
+          </span>,
+          <Badge key="r" tone={m.role === 'owner' ? 'accent' : 'neutral'}>
+            {m.role}
+          </Badge>,
+          <Row key="a" gap={6}>
+            {amOwner && m.role === 'member' ? (
+              <Button size="sm" onClick={() => promote.mutate(m.user.id)}>
+                Make admin
+              </Button>
+            ) : null}
+            {amOwner && m.role === 'admin' ? (
+              <Button size="sm" onClick={() => demote.mutate(m.user.id)}>
+                Remove admin
+              </Button>
+            ) : null}
+            {amAdmin && m.role !== 'owner' && m.user.id !== room.owner.id ? (
+              <Button
+                size="sm"
+                variant="danger"
+                onClick={() => setConfirmBan({ id: m.user.id, username: m.user.username })}
+              >
+                Ban
+              </Button>
+            ) : null}
+          </Row>,
+        ])}
+      />
+      {confirmBan ? (
+        <ConfirmModal
+          title="Ban member"
+          confirmLabel="Ban"
+          pending={remove.isPending}
+          onCancel={() => setConfirmBan(null)}
+          onConfirm={() =>
+            remove.mutate(confirmBan.id, {
+              onSettled: () => setConfirmBan(null),
+            })
+          }
+        >
+          Remove{' '}
+          <span style={{ fontFamily: tokens.type.mono }}>{confirmBan.username}</span> from{' '}
+          <span style={{ fontFamily: tokens.type.mono }}>#{room.name}</span> and add them to
+          the room ban list? They won't be able to rejoin until you unban them.
+        </ConfirmModal>
+      ) : null}
+    </>
   );
 };
 
@@ -119,26 +178,53 @@ const AdminsTab = ({ room }: { room: ManageRoomModalProps['room'] }) => {
 const BannedTab = ({ roomId }: { roomId: string }) => {
   const { data = [] } = useRoomBans(roomId);
   const unban = useUnbanFromRoom(roomId);
+  const [confirmUnban, setConfirmUnban] = useState<{ id: string; username: string } | null>(
+    null,
+  );
   if (data.length === 0) return <Meta>no one is currently banned</Meta>;
   return (
-    <Table
-      caption="Users banned from this room"
-      cols={['User', 'Banned by', 'When', '']}
-      rows={data.map((b) => [
-        <span key="u" style={{ fontFamily: tokens.type.mono, fontSize: 13 }}>
-          {b.target.username}
-        </span>,
-        <span key="w" style={{ fontFamily: tokens.type.mono, fontSize: 12 }}>
-          {b.banner?.username ?? '(deleted)'}
-        </span>,
-        <span key="t" style={{ fontSize: 11, color: tokens.color.ink2 }}>
-          {new Date(b.createdAt).toLocaleString()}
-        </span>,
-        <Button key="a" size="sm" onClick={() => unban.mutate(b.target.id)}>
-          Unban
-        </Button>,
-      ])}
-    />
+    <>
+      <Table
+        caption="Users banned from this room"
+        cols={['User', 'Banned by', 'When', '']}
+        rows={data.map((b) => [
+          <span key="u" style={{ fontFamily: tokens.type.mono, fontSize: 13 }}>
+            {b.target.username}
+          </span>,
+          <span key="w" style={{ fontFamily: tokens.type.mono, fontSize: 12 }}>
+            {b.banner?.username ?? '(deleted)'}
+          </span>,
+          <span key="t" style={{ fontSize: 11, color: tokens.color.ink2 }}>
+            {new Date(b.createdAt).toLocaleString()}
+          </span>,
+          <Button
+            key="a"
+            size="sm"
+            onClick={() => setConfirmUnban({ id: b.target.id, username: b.target.username })}
+          >
+            Unban
+          </Button>,
+        ])}
+      />
+      {confirmUnban ? (
+        <ConfirmModal
+          title="Lift ban"
+          confirmLabel="Unban"
+          tone="primary"
+          pending={unban.isPending}
+          onCancel={() => setConfirmUnban(null)}
+          onConfirm={() =>
+            unban.mutate(confirmUnban.id, {
+              onSettled: () => setConfirmUnban(null),
+            })
+          }
+        >
+          Lift the ban on{' '}
+          <span style={{ fontFamily: tokens.type.mono }}>{confirmUnban.username}</span>? They
+          will be able to rejoin this room.
+        </ConfirmModal>
+      ) : null}
+    </>
   );
 };
 
@@ -165,7 +251,7 @@ const InviteTab = ({ roomId }: { roomId: string }) => {
             setOk(null);
             invite.mutate(username, {
               onSuccess: () => setOk(`invited ${username}`),
-              onError: (err) => setError(err instanceof Error ? err.message : 'failed'),
+              onError: (err) => setError(inviteErrorCopy(err)),
             });
             setUsername('');
           }}
@@ -231,8 +317,17 @@ const SettingsTab = ({
 };
 
 export const ManageRoomModal = ({ room, onClose }: ManageRoomModalProps) => {
-  const tabs = ['Members', 'Admins', 'Banned users', 'Invitations', 'Settings'];
+  // M10: Invitations only make sense on private rooms – the API rejects
+  // invites on public rooms with `not_private`. Hide the tab (and shift the
+  // Settings index accordingly) for public rooms so the owner never sees a
+  // control that can only error.
+  const isPrivate = room.visibility === 'private';
+  const tabs = isPrivate
+    ? ['Members', 'Admins', 'Banned users', 'Invitations', 'Settings']
+    : ['Members', 'Admins', 'Banned users', 'Settings'];
   const [active, setActive] = useState(0);
+  const settingsIndex = isPrivate ? 4 : 3;
+  const invitationsIndex = isPrivate ? 3 : -1;
 
   return (
     <ModalScrim onClose={onClose}>
@@ -242,8 +337,8 @@ export const ManageRoomModal = ({ room, onClose }: ManageRoomModalProps) => {
             {active === 0 ? <MembersTab room={room} /> : null}
             {active === 1 ? <AdminsTab room={room} /> : null}
             {active === 2 ? <BannedTab roomId={room.id} /> : null}
-            {active === 3 ? <InviteTab roomId={room.id} /> : null}
-            {active === 4 ? <SettingsTab room={room} onDeleted={onClose} /> : null}
+            {active === invitationsIndex ? <InviteTab roomId={room.id} /> : null}
+            {active === settingsIndex ? <SettingsTab room={room} onDeleted={onClose} /> : null}
           </Col>
       </Modal>
     </ModalScrim>
