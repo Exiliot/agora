@@ -48,6 +48,10 @@ export const sendMessagePayload = z.object({
   body: messageBodySchema,
   replyToId: z.string().uuid().optional(),
   attachmentIds: z.array(z.string().uuid()).max(4).optional(),
+  // Client-supplied idempotency key. If present and the server has seen this
+  // (authorId, clientMessageId) pair inside the dedupe window or in the DB,
+  // the original message is returned without a second insert. See ADR-0006.
+  clientMessageId: z.string().uuid().optional(),
 });
 export type SendMessagePayload = z.infer<typeof sendMessagePayload>;
 

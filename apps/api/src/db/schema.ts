@@ -270,6 +270,7 @@ export const messages = pgTable(
     authorId: uuid('author_id').references(() => users.id, { onDelete: 'set null' }),
     body: text('body').notNull(),
     replyToId: uuid('reply_to_id'),
+    clientMessageId: uuid('client_message_id'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     editedAt: timestamp('edited_at', { withTimezone: true }),
     deletedAt: timestamp('deleted_at', { withTimezone: true }),
@@ -281,6 +282,9 @@ export const messages = pgTable(
       t.createdAt,
     ),
     authorIdx: index('messages_author_idx').on(t.authorId),
+    authorClientMsgKey: uniqueIndex('messages_author_client_msg_key')
+      .on(t.authorId, t.clientMessageId)
+      .where(sql`${t.clientMessageId} IS NOT NULL`),
   }),
 );
 

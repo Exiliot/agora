@@ -15,8 +15,10 @@ import { attachments, lastRead, messages, roomMembers, users } from '../db/schem
 import { registerWsHandler, type WsContext } from '../ws/dispatcher.js';
 import { extractMentions } from '../notifications/mention.js';
 import { publishNotification } from '../notifications/publisher.js';
+import { isUniqueViolation } from '../friends/db-helpers.js';
 import { hydrateMessage } from './history.js';
 import { canAccessRoom, canSendDm, loadDmForUser } from './permissions.js';
+import { lookupDedupe, rememberDedupe } from './send-dedupe.js';
 import { incrementUnreadForMany, listOtherParticipants, resetUnread } from './unread.js';
 
 const sendAck = (ctx: WsContext, reqId: string | undefined, result?: unknown): void => {
@@ -107,11 +109,34 @@ registerWsHandler('message.send', async (ctx, event) => {
     }
   }
 
+  if (payload.clientMessageId) {
+    const existing = lookupDedupe(userId, payload.clientMessageId);
+    if (existing) {
+      const [row] = await db
+        .select()
+        .from(messages)
+        .where(eq(messages.id, existing))
+        .limit(1);
+      if (row && !row.deletedAt) {
+        const view = await hydrateMessage(row);
+        sendAck(ctx, reqId, view);
+        return;
+      }
+      // LRU pointed at a now-deleted or vanished row – fall through to a
+      // fresh insert; the DB unique index will still backstop.
+    }
+  }
+
   const trimmedBody = payload.body.replace(/^[ \t]+|[ \t]+$/g, '');
   const id = uuidv7();
   const now = new Date();
 
-  const insertResult = await db.transaction(async (tx) => {
+  let insertResult: {
+    row: typeof messages.$inferSelect;
+    counts: { userId: string; count: number }[];
+  };
+  try {
+    insertResult = await db.transaction(async (tx) => {
     const [inserted] = await tx
       .insert(messages)
       .values({
@@ -122,6 +147,7 @@ registerWsHandler('message.send', async (ctx, event) => {
         body: trimmedBody,
         replyToId: payload.replyToId ?? null,
         createdAt: now,
+        clientMessageId: payload.clientMessageId ?? null,
       })
       .returning();
     if (!inserted) throw new Error('message insert returned no rows');
@@ -156,10 +182,35 @@ registerWsHandler('message.send', async (ctx, event) => {
     );
     const counts = recipients.map((rid) => ({ userId: rid, count: byUser.get(rid) ?? 0 }));
     return { row: inserted, counts };
-  });
+    });
+  } catch (err) {
+    if (payload.clientMessageId && isUniqueViolation(err)) {
+      const [row] = await db
+        .select()
+        .from(messages)
+        .where(
+          and(
+            eq(messages.authorId, userId),
+            eq(messages.clientMessageId, payload.clientMessageId),
+          ),
+        )
+        .limit(1);
+      if (row) {
+        const view = await hydrateMessage(row);
+        rememberDedupe(userId, payload.clientMessageId, row.id);
+        sendAck(ctx, reqId, view);
+        return;
+      }
+    }
+    throw err;
+  }
 
   const view = await hydrateMessage(insertResult.row);
   publishNewMessage(view);
+
+  if (payload.clientMessageId) {
+    rememberDedupe(userId, payload.clientMessageId, insertResult.row.id);
+  }
 
   for (const { userId: rid, count } of insertResult.counts) {
     bus.publish(userTopic(rid), {

@@ -17,7 +17,7 @@ Rules:
 | 0003 | [Presence state machine aggregated from per-tab heartbeats](0003-presence-state-machine.md) | Accepted |
 | 0004 | [pnpm workspace monorepo](0004-monorepo-layout.md) | Accepted |
 | 0005 | [XMPP federation as a sidecar, not a retrofit](0005-xmpp-sidecar.md) | Accepted |
-| 0006 | [`message.send` idempotency via client-supplied reqId](0006-message-send-idempotency.md) | Proposed |
+| 0006 | [`message.send` idempotency via client-supplied reqId](0006-message-send-idempotency.md) | Accepted |
 | 0007 | [WebSocket `Origin` validation and cross-origin policy](0007-ws-origin-validation.md) | Accepted |
 | 0008 | [Modal and popover heading + focus contract](0008-modal-popover-contract.md) | Proposed |
 | 0009 | [Client WS event-handler coverage contract](0009-ws-event-handler-coverage.md) | Proposed |

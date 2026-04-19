@@ -1,6 +1,6 @@
 # ADR-0006 · `message.send` idempotency via client-supplied reqId
 
-- **Status**: Proposed, 2026-04-19
+- **Status**: Accepted, 2026-04-19
 - **Relates to**: FR-MSG-1, FR-MSG-2, performance audit 2026-04-19 (H1), product-integrity audit 2026-04-19 ("sent twice after reconnect")
 
 ## Context
@@ -45,3 +45,7 @@ Adopt **client-supplied reqId as an idempotency key** for `message.send`. Server
 
 - *Server-dedupe by `(author_id, body_hash, conversation_id)` in a 5 s window*: rejected – collides on the perfectly-legitimate "yes" followed by "yes" from the same user. The author controls what counts as "the same send" via reqId; that's a clearer contract.
 - *Best-effort in-memory only, no DB backstop*: rejected – in an HA world without a shared LRU the race window grows with replica count. The unique index is cheap insurance.
+
+## Implementation
+
+Landed in commit <SHA> on 2026-04-19. Touches `packages/shared/src/messages/index.ts` (optional `clientMessageId` on send payload), `apps/api/src/db/schema.ts` + migration `0003_messages_client_message_id.sql` (new nullable column and partial unique index), `apps/api/src/messages/send-dedupe.ts` (in-memory LRU), `apps/api/src/messages/ws-handlers.ts` (lookup before insert + unique-violation backstop), and `apps/web/src/pages/chat/Composer.tsx` (client generates a fresh UUID per send attempt).

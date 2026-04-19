@@ -86,6 +86,9 @@ export const Composer = ({
     const trimmed = body.trim();
     if ((!trimmed && pending.length === 0) || !ws) return;
     setSending(true);
+    // One UUID per user-intent-to-send. Reused across any retries because
+    // it's captured into the payload before the await. See ADR-0006.
+    const clientMessageId = crypto.randomUUID();
     try {
       await ws.request('message.send', {
         conversationType,
@@ -93,6 +96,7 @@ export const Composer = ({
         body: trimmed || '(attachment)',
         replyToId: replyTo?.id,
         attachmentIds: pending.map((p) => p.id),
+        clientMessageId,
       });
       setBody('');
       setPending([]);
