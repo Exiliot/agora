@@ -6,12 +6,14 @@ interface ModalProps {
   children: ReactNode;
   onClose?: () => void;
   width?: number;
+  /** When true, body padding drops from 20 to 12 for compact forms. */
+  dense?: boolean;
 }
 
 const focusableSelector =
   'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-export const Modal = ({ title, children, onClose, width = 420 }: ModalProps) => {
+export const Modal = ({ title, children, onClose, width = 420, dense = false }: ModalProps) => {
   const titleId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -112,7 +114,7 @@ export const Modal = ({ title, children, onClose, width = 420 }: ModalProps) => 
           ×
         </button>
       </div>
-      <div style={{ padding: 16 }}>{children}</div>
+      <div style={{ padding: dense ? 12 : 20 }}>{children}</div>
     </div>
   );
 };

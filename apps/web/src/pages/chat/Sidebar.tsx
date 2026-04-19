@@ -63,24 +63,48 @@ const CreateRoomDialog = ({ onClose }: { onClose: () => void }) => {
             />
             <Col gap={4}>
               <Meta>Visibility</Meta>
-              <Row gap={12}>
-                <Check
-                  radio
-                  name="visibility"
-                  value="public"
-                  label="public"
-                  checked={visibility === 'public'}
-                  onChange={() => setVisibility('public')}
-                />
-                <Check
-                  radio
-                  name="visibility"
-                  value="private"
-                  label="private"
-                  checked={visibility === 'private'}
-                  onChange={() => setVisibility('private')}
-                />
-              </Row>
+              <Col gap={6}>
+                <Col gap={2}>
+                  <Check
+                    radio
+                    name="visibility"
+                    value="public"
+                    label="public"
+                    checked={visibility === 'public'}
+                    onChange={() => setVisibility('public')}
+                  />
+                  <span
+                    style={{
+                      paddingLeft: 20,
+                      fontFamily: tokens.type.mono,
+                      fontSize: 11,
+                      color: tokens.color.ink2,
+                    }}
+                  >
+                    Public – anyone can find and join this room.
+                  </span>
+                </Col>
+                <Col gap={2}>
+                  <Check
+                    radio
+                    name="visibility"
+                    value="private"
+                    label="private"
+                    checked={visibility === 'private'}
+                    onChange={() => setVisibility('private')}
+                  />
+                  <span
+                    style={{
+                      paddingLeft: 20,
+                      fontFamily: tokens.type.mono,
+                      fontSize: 11,
+                      color: tokens.color.ink2,
+                    }}
+                  >
+                    Private – invite only; hidden from the public list.
+                  </span>
+                </Col>
+              </Col>
             </Col>
             {error ? <Toast tone="error">{error}</Toast> : null}
             <Row gap={8} style={{ justifyContent: 'flex-end' }}>

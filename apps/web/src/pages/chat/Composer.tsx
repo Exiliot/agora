@@ -6,7 +6,7 @@ import {
   type ClipboardEvent,
   type KeyboardEvent,
 } from 'react';
-import type { AttachmentSummary, ConversationType } from '@agora/shared';
+import { MAX_MESSAGE_BODY, type AttachmentSummary, type ConversationType } from '@agora/shared';
 import { Button, IconButton, Row, tokens, useToast } from '../../ds';
 import { useWs } from '../../app/WsProvider';
 import { uploadAttachment } from '../../features/attachments/useUpload';
@@ -262,14 +262,34 @@ export const Composer = ({
               ⏎ send · ⇧⏎ newline · paste images
             </span>
           </Row>
-          <Button
-            variant="primary"
-            size="sm"
-            disabled={(!body.trim() && pending.length === 0) || sending || uploading}
-            onClick={send}
-          >
-            {sending ? '…' : 'Send'}
-          </Button>
+          <Row gap={8} style={{ alignItems: 'center' }}>
+            {body.length / MAX_MESSAGE_BODY > 0.8 ? (
+              <span
+                aria-live="polite"
+                style={{
+                  fontFamily: tokens.type.mono,
+                  fontSize: 11,
+                  color:
+                    body.length > MAX_MESSAGE_BODY ? tokens.color.danger : tokens.color.ink2,
+                }}
+              >
+                {body.length}/{MAX_MESSAGE_BODY}
+              </span>
+            ) : null}
+            <Button
+              variant="primary"
+              size="sm"
+              disabled={
+                (!body.trim() && pending.length === 0) ||
+                sending ||
+                uploading ||
+                body.length > MAX_MESSAGE_BODY
+              }
+              onClick={send}
+            >
+              {sending ? '…' : 'Send'}
+            </Button>
+          </Row>
         </Row>
       </div>
     </div>

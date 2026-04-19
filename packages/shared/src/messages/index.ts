@@ -8,10 +8,12 @@ export type ConversationType = z.infer<typeof conversationType>;
 // catches naive over-length strings fast, but we also enforce the real
 // byte budget because a user can fit far more than 3 KB in 3072 multi-
 // byte emoji. TextEncoder is available in Node and every modern browser.
+export const MAX_MESSAGE_BODY = 3072;
+
 export const messageBodySchema = z
   .string()
   .min(1)
-  .max(3072)
+  .max(MAX_MESSAGE_BODY)
   .refine(
     (s) => new TextEncoder().encode(s).byteLength <= 3 * 1024,
     { message: 'message body exceeds 3 KB UTF-8' },
