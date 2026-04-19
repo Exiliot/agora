@@ -43,7 +43,7 @@ const IMAGE_MIME_ALLOWLIST = new Set([
 // rendering a disguised payload inline on download; with
 // X-Content-Type-Options: nosniff the browser won't override the chosen
 // Content-Type either.
-const normaliseMime = (mime: string): string => {
+export const normaliseMime = (mime: string): string => {
   const lower = mime.toLowerCase();
   if (IMAGE_MIME_ALLOWLIST.has(lower)) return lower;
   return 'application/octet-stream';
