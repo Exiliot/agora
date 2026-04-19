@@ -37,7 +37,7 @@
 
   /* Mentions */
   --mention-bg: #fbecb5;
-  --mention-fg: #8a6a10;
+  --mention-fg: #7a5d0d;  /* darkened from #8a6a10 for WCAG AA (5.23:1 on --mention-bg) */
   /* Translucent variant used for the mention row wash – fades into the page
      background while keeping the mention hue. Derived from --mention-bg. */
   --mention-wash: rgba(251, 236, 181, 0.55);
