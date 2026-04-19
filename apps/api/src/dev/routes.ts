@@ -41,6 +41,20 @@ addRouteModule({
       return;
     }
 
+    // Loud, one-time warning on boot so an operator who sets ALLOW_DEV_SEED=1
+    // by accident (or forgets it in a compose override) sees it at startup
+    // rather than discovering the unauthenticated bulk-register endpoint by
+    // other means. NODE_ENV=production with ALLOW_DEV_SEED=1 is a misconfig.
+    app.log.warn(
+      { nodeEnv: config.NODE_ENV },
+      'dev routes ENABLED (ALLOW_DEV_SEED=1) — bulk-register is unauthenticated; never run with NODE_ENV=production',
+    );
+    if (config.NODE_ENV === 'production') {
+      app.log.error(
+        'ALLOW_DEV_SEED=1 with NODE_ENV=production is a misconfiguration; dev routes remain mounted but this will be refused in a future release',
+      );
+    }
+
     // Bulk-register is NOT behind requireAuth — load tests start with no
     // accounts. It is gated behind the same ALLOW_DEV_SEED flag and is a
     // deliberate dev-only escape hatch for rate-limited registration.
