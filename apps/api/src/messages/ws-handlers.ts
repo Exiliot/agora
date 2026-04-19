@@ -389,6 +389,10 @@ registerWsHandler('mark.read', async (ctx, event) => {
   const { payload } = event;
   const userId = ctx.conn.userId;
 
+  // H5: guard against out-of-order `mark.read` regressing the watermark.
+  // UUIDv7 ids are monotonic per source but not across tabs, so two tabs
+  // acking different messages can arrive in reverse order. String compare
+  // is correct because UUIDv7 is k-sortable lexicographically.
   await db
     .insert(lastRead)
     .values({
@@ -400,6 +404,7 @@ registerWsHandler('mark.read', async (ctx, event) => {
     .onConflictDoUpdate({
       target: [lastRead.userId, lastRead.conversationType, lastRead.conversationId],
       set: { lastReadMessageId: payload.messageId, updatedAt: new Date() },
+      setWhere: sql`${lastRead.lastReadMessageId} IS NULL OR ${lastRead.lastReadMessageId} < ${payload.messageId}`,
     });
 
   await resetUnread(userId, payload.conversationType, payload.conversationId);
