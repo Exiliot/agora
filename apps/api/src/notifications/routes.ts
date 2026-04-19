@@ -14,7 +14,7 @@ import { bus } from '../bus/bus.js';
 import { userTopic } from '../bus/topics.js';
 import { addRouteModule } from '../routes/registry.js';
 import { isAuthed, requireAuth } from '../session/require-auth.js';
-import { hydrateNotification } from './hydrate.js';
+import { actor, hydrateSelection, rowToView } from './hydrate.js';
 
 const feedQuery = z.object({
   before: z.string().uuid().optional(),
@@ -39,13 +39,13 @@ addRouteModule({
           conditions.push(lt(notifications.id, parsed.data.before));
         }
         const rows = await db
-          .select({ id: notifications.id })
+          .select(hydrateSelection)
           .from(notifications)
+          .leftJoin(actor, eq(actor.id, notifications.actorUserId))
           .where(and(...conditions))
           .orderBy(sql`${notifications.id} DESC`)
           .limit(limit);
-        const hydrated = await Promise.all(rows.map((r) => hydrateNotification(r.id)));
-        return reply.send({ notifications: hydrated.filter((n) => n !== null) });
+        return reply.send({ notifications: rows.map(rowToView) });
       });
 
       scoped.get('/api/notifications/unread-count', async (req, reply) => {
