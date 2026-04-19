@@ -79,6 +79,22 @@
     from { transform: rotate(0deg); }
     to   { transform: rotate(360deg); }
   }
+
+  /* Vestibular-safety gate. WCAG 2.3.3 is AAA but the reduced-motion hook
+     is cheap: flatten animation + transition durations and disable smooth
+     scroll so the Spinner stops spinning and scrollTo({behavior:'smooth'})
+     resolves as an instant jump. Use a tiny non-zero duration rather than
+     zero so :animationend / :transitionend still fire. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 }
 
 @layer utilities {

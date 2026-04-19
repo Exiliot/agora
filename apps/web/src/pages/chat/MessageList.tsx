@@ -595,7 +595,14 @@ export const MessageList = ({ conversationType, conversationId, myRoomRole }: Me
           onClick={() => {
             const scroller = scrollRef.current;
             if (!scroller) return;
-            scroller.scrollTo({ top: scroller.scrollHeight, behavior: 'smooth' });
+            const reduce =
+              typeof window !== 'undefined' &&
+              typeof window.matchMedia === 'function' &&
+              window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            scroller.scrollTo({
+              top: scroller.scrollHeight,
+              behavior: reduce ? 'auto' : 'smooth',
+            });
           }}
         >
           Jump to latest
