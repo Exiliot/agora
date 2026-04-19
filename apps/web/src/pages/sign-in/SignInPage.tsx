@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { Button, Check, Col, Input, Modal, Row, Toast, tokens } from '../../ds';
+import { Button, Col, Input, Modal, Row, Toast, tokens } from '../../ds';
 import { useSignIn } from '../../features/auth/useSignIn';
 import { ApiError } from '../../lib/apiClient';
 
@@ -67,7 +67,6 @@ const SignInPage = () => {
             value={password}
             onChange={(event) => setPassword(event.target.value)}
           />
-          <Check label="Keep me signed in" defaultChecked />
           {flash && !error ? <Toast tone="success">{flash}</Toast> : null}
           <Row gap={8} style={{ justifyContent: 'space-between', alignItems: 'center' }}>
             <Link
