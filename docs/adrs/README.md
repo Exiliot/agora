@@ -21,4 +21,4 @@ Rules:
 | 0007 | [WebSocket `Origin` validation and cross-origin policy](0007-ws-origin-validation.md) | Accepted |
 | 0008 | [Modal and popover heading + focus contract](0008-modal-popover-contract.md) | Proposed |
 | 0009 | [Client WS event-handler coverage contract](0009-ws-event-handler-coverage.md) | Proposed |
-| 0010 | [Password-reset link logging in demo mode](0010-demo-mode-reset-link-logging.md) | Proposed |
+| 0010 | [Password-reset link logging in demo mode](0010-demo-mode-reset-link-logging.md) | Accepted |

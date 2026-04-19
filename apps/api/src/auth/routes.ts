@@ -27,6 +27,7 @@ import {
   deleteSession,
   deleteSessionsForUserExcept,
 } from '../session/store.js';
+import { sendResetEmail } from './mailer.js';
 import { hashPassword, verifyPassword } from './password.js';
 import { consumeResetToken, issueResetToken } from './password-reset.js';
 import { authRateLimit, registerRateLimitPlugin } from './rate-limit.js';
@@ -197,11 +198,15 @@ addRouteModule({
         // Reset tokens grant account takeover; in a real deployment with a
         // mailer wired up this should NOT be logged. Agora ships as a demo
         // with no email service, so the operator's only way to find the link
-        // is the server log. Logged to stderr with a stable tag so testers
-        // can `docker compose logs api | grep "AUTH reset link"`.
-        req.log.info({ auth: 'reset_link_issued' }, link);
-        // eslint-disable-next-line no-console
-        console.error('[AUTH reset link]', link);
+        // is the server log. Gated on AGORA_DEMO_MODE so any deployment that
+        // wires a real mailer keeps the link out of stdout. See ADR-0010.
+        if (config.AGORA_DEMO_MODE === '1') {
+          req.log.info({ auth: 'reset_link_issued' }, link);
+          // eslint-disable-next-line no-console
+          console.error('[AUTH reset link]', link);
+        } else {
+          await sendResetEmail({ to: email, link });
+        }
       }
 
       return reply.code(204).send();

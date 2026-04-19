@@ -37,6 +37,11 @@ services:
       # link logged to stdout when a user requests a reset. Change if you're
       # exposing the demo on a host other than localhost.
       APP_BASE_URL: "http://localhost:8080"
+      # Demo mode: the password-reset handler logs the single-use link to
+      # stdout so the operator can grep it (no mailer is wired). Flip to "0"
+      # in any deployment that wires a real mailer via auth/mailer.ts.
+      # See ADR-0010.
+      AGORA_DEMO_MODE: "1"
       # ALLOW_DEV_SEED is OFF in the committed compose file. Enable it with a
       # docker-compose.override.yml when you want the bulk-register endpoint
       # for load testing — it's unauthenticated by design.

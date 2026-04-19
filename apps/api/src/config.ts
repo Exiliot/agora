@@ -24,6 +24,12 @@ const schema = z.object({
   // hot-reload servers running on a different port.
   WS_ALLOWED_ORIGINS: z.string().default(''),
 
+  // When '1', the password-reset endpoint logs the single-use link to stdout
+  // with the [AUTH reset link] tag. Required for the hackathon demo because
+  // there is no mailer wired; a production deployment that sets up a real
+  // mailer keeps this off. See ADR-0010.
+  AGORA_DEMO_MODE: z.enum(['0', '1']).default('0'),
+
   // Postgres pool max. 10 was the default and became a hot-path bottleneck
   // at the 300-concurrent-users target (NFR-CAP-1) because a first-page
   // load fires ~5 parallel queries per user. 30 covers that comfortably in

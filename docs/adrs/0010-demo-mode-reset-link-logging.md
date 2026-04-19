@@ -1,6 +1,6 @@
 # ADR-0010 · Password-reset link logging in demo mode
 
-- **Status**: Proposed, 2026-04-19
+- **Status**: Accepted, 2026-04-19
 - **Relates to**: FR-AUTH-9 (password reset), security audit 2026-04-19 (H1)
 
 ## Context
@@ -47,3 +47,7 @@ Adopt a **`AGORA_DEMO_MODE=1` opt-in** for the reset-link log:
 ## Follow-up
 
 When this is accepted, the code change is six lines in `auth/routes.ts` plus the new stubbed `mailer.ts` plus the Docker Compose env var plus the journal annotation. Trivial.
+
+## Implementation
+
+Landed in commit <SHA> on 2026-04-19. Touches `apps/api/src/config.ts` (new `AGORA_DEMO_MODE` var), `apps/api/src/auth/routes.ts` (gate the reset-link log on the flag), `apps/api/src/auth/mailer.ts` (new seam), and `docker-compose.yml` (sets `AGORA_DEMO_MODE=1` for the demo).
