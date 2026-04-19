@@ -1,4 +1,19 @@
-import { Badge, Button, Col, Meta, PageShell, Row, Table, tokens } from '../../ds';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  Badge,
+  Button,
+  Col,
+  ConfirmModal,
+  Meta,
+  PageShell,
+  Row,
+  SectionHeader,
+  Table,
+  tokens,
+  useToast,
+} from '../../ds';
+import { useDeleteAccount } from '../../features/auth/useDeleteAccount';
 import { useRevokeSession, useSessions } from '../../features/sessions/useSessions';
 
 // Short absolute form ("17 Apr, 09:12") keeps each When line to a single row
@@ -31,6 +46,30 @@ const relative = (iso: string): string => {
 const SessionsPage = () => {
   const { data, isLoading } = useSessions();
   const revoke = useRevokeSession();
+  const navigate = useNavigate();
+  const toast = useToast();
+  const deleteAccount = useDeleteAccount();
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
+  const handleDelete = () => {
+    deleteAccount.mutate(undefined, {
+      onSuccess: () => {
+        setConfirmOpen(false);
+        navigate('/sign-in', {
+          replace: true,
+          state: { flash: 'Your account has been deleted.' },
+        });
+      },
+      onError: (err) => {
+        setConfirmOpen(false);
+        toast.push({
+          tone: 'error',
+          title: 'Delete failed',
+          body: err instanceof Error ? err.message : 'could not delete account',
+        });
+      },
+    });
+  };
 
   return (
     <PageShell
@@ -82,6 +121,47 @@ const SessionsPage = () => {
           highlightRowAt={data.findIndex((s) => s.isCurrent)}
         />
       ) : null}
+
+      <section style={{ marginTop: 32 }}>
+        <SectionHeader>Danger zone</SectionHeader>
+        <div
+          style={{
+            padding: '12px 14px',
+            background: tokens.color.paper1,
+            borderLeft: `2px solid ${tokens.color.danger}`,
+          }}
+        >
+          <div
+            style={{
+              fontSize: 13,
+              color: tokens.color.ink1,
+              lineHeight: 1.5,
+              marginBottom: 8,
+            }}
+          >
+            Deleting your account is permanent. Rooms you own are removed and your friendships end.
+            Your messages in direct conversations are kept readable for the other side with your
+            name replaced.
+          </div>
+          <Button variant="danger" size="sm" onClick={() => setConfirmOpen(true)}>
+            Delete my account
+          </Button>
+        </div>
+        {confirmOpen ? (
+          <ConfirmModal
+            title="Delete account"
+            confirmLabel="Delete account"
+            tone="danger"
+            pending={deleteAccount.isPending}
+            onConfirm={handleDelete}
+            onCancel={() => setConfirmOpen(false)}
+          >
+            This will permanently delete your agora account, every room you own, and every
+            friendship. Direct message history you've authored is kept for the other side but your
+            name is replaced with "(deleted user)". This action cannot be undone.
+          </ConfirmModal>
+        ) : null}
+      </section>
     </PageShell>
   );
 };
