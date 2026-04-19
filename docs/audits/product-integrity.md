@@ -1,6 +1,6 @@
 # Product integrity and user-flow audit – agora
 
-Date: 2026-04-19. Scope: full app. Target: every documented flow behaves correctly, consistently, and without friction. Read-only audit; no code changed.
+Single round so far (2026-04-19). Scope: full app. Target: every documented flow behaves correctly, consistently, and without friction. Read-only audit; no code changed.
 
 ## Executive summary
 
