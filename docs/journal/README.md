@@ -43,6 +43,7 @@ Listed in the order events happened, not when the entry was written.
 | 23 | Sun 01:28 | DM "not allowed" diagnosis + phantom /api/invitations 404s | [2026-04-19-01-dm-diagnosis-and-invitations-404.md](2026-04-19-01-dm-diagnosis-and-invitations-404.md) |
 | 24 | Sun 02:40 | Notifications system — table, publisher, bell, menu, native toasts | [2026-04-19-02-notifications-system.md](2026-04-19-02-notifications-system.md) |
 | 25 | Sun 11:00 | Design audit round 3 — 26 findings closed across four batches | [2026-04-19-03-design-audit-round-3.md](2026-04-19-03-design-audit-round-3.md) |
+| 26 | Sun 12:30 | Four parallel specialist audits (product, security, perf, a11y) + five ADR proposals | [2026-04-19-04-parallel-audits.md](2026-04-19-04-parallel-audits.md) |
 
 > The notifications entry uses a bare-date filename rather than the `NN-topic` scheme the rest of the chronology follows – it was written mid-session before the index was refreshed. Leaving it in place as a deliberate record of how the entries landed rather than renaming after the fact.
 
