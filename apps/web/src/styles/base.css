@@ -29,8 +29,10 @@
   :focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
-    border-radius: var(--r-xs);
   }
+  /* Border-radius override only applies to form controls so the ring corners
+     match their box; keeping it on the universal rule above leaked into labels
+     and spans that happened to be focus targets. */
   button:focus-visible,
   a:focus-visible,
   input:focus-visible,
@@ -39,6 +41,15 @@
   [role="button"]:focus-visible,
   [role="dialog"]:focus-visible,
   [tabindex]:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: var(--r-xs);
+  }
+  /* The native 13×13 checkbox/radio is too small for a readable 2px outline
+     with a 2px offset, so the ring is painted on the wrapping label
+     instead via :focus-within. Matches the APG "focus moves to the
+     labelled group" pattern. */
+  .ds-check-label:focus-within {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
   }
