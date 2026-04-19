@@ -86,6 +86,33 @@ addRouteModule({
     app.register(async (scoped) => {
       scoped.addHook('onRequest', requireAuth);
 
+      // Tolerate an empty JSON body on the friends endpoints.
+      //
+      // `POST /api/friend-requests/:id/{accept,reject}` don't read a body.
+      // Fastify's default JSON parser still throws FST_ERR_CTP_EMPTY_JSON_BODY
+      // the moment a client sends `Content-Type: application/json` with no
+      // payload (a very natural curl shape: `curl -X POST ... -H 'Content-Type:
+      // application/json'`). Override the JSON parser inside this plugin scope
+      // so an empty body parses to `{}`. Routes that require a populated body
+      // still validate via zod and return 400, so this only relaxes the
+      // parse-time strictness.
+      scoped.addContentTypeParser(
+        'application/json',
+        { parseAs: 'string' },
+        (_req, body, done) => {
+          const raw = typeof body === 'string' ? body : '';
+          if (raw.trim().length === 0) {
+            done(null, {});
+            return;
+          }
+          try {
+            done(null, JSON.parse(raw));
+          } catch (err) {
+            done(err as Error, undefined);
+          }
+        },
+      );
+
       // --- send friend request --------------------------------------------
       scoped.post('/api/friend-requests', async (req, reply) => {
         if (!isAuthed(req)) return;
