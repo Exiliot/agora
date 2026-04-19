@@ -55,4 +55,4 @@ Adopt a single **overlay contract** for every DS component that paints above the
 
 ## Implementation
 
-Landed in commit <SHA> on 2026-04-19. New internal hook `apps/web/src/ds/useOverlay.ts` centralises Escape + click-outside + focus-trap + focus-return. `Modal` accepts `titleLevel` and renders `aria-modal="true"` with `aria-labelledby`. `ConfirmModal` forwards `titleLevel`. `ImageLightbox` and `NotificationMenu` consume the hook. Auth pages (SignIn, Register, ResetPassword) pass `titleLevel={1}` so the page has a real `<h1>`.
+Landed in commit 9d70c08 on 2026-04-19. New internal hook `apps/web/src/ds/useOverlay.ts` centralises Escape + click-outside + focus-trap + focus-return. `Modal` accepts `titleLevel` and renders `aria-modal="true"` with `aria-labelledby`. `ConfirmModal` forwards `titleLevel`. `ImageLightbox` and `NotificationMenu` consume the hook. Auth pages (SignIn, Register, ResetPassword) pass `titleLevel={1}` so the page has a real `<h1>`.
