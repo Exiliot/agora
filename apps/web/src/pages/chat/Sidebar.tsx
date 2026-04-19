@@ -130,7 +130,8 @@ const CreateRoomDialog = ({ onClose }: { onClose: () => void }) => {
               <Button onClick={onClose}>Cancel</Button>
               <Button
                 variant="primary"
-                disabled={createRoom.isPending || !name}
+                pending={createRoom.isPending}
+                disabled={!name}
                 onClick={() => {
                   setError(null);
                   createRoom.mutate(
@@ -151,7 +152,7 @@ const CreateRoomDialog = ({ onClose }: { onClose: () => void }) => {
                   );
                 }}
               >
-                {createRoom.isPending ? '…' : 'Create'}
+                Create
               </Button>
             </Row>
           </Col>

@@ -7,6 +7,14 @@ export type ButtonSize = 'sm' | 'md' | 'lg';
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   size?: ButtonSize;
+  /**
+   * Busy state. Renders a trailing mono ellipsis as a visual cue, keeps the
+   * written label intact for screen-reader users, and sets `aria-busy`. The
+   * button is also disabled while pending. Prefer this to manually swapping
+   * children to "…" – the ellipsis character reads as "horizontal ellipsis"
+   * in most voices.
+   */
+  pending?: boolean;
   children: ReactNode;
 }
 
@@ -70,22 +78,35 @@ export const Button = ({
   variant = 'default',
   size = 'md',
   disabled,
+  pending = false,
   style,
   children,
   ...rest
-}: ButtonProps) => (
-  <button
-    disabled={disabled}
-    style={{
-      ...baseStyle,
-      ...sizeStyles[size],
-      ...variantStyles[variant],
-      cursor: disabled ? 'not-allowed' : 'pointer',
-      opacity: disabled ? 0.5 : 1,
-      ...style,
-    }}
-    {...rest}
-  >
-    {children}
-  </button>
-);
+}: ButtonProps) => {
+  const isDisabled = disabled || pending;
+  return (
+    <button
+      disabled={isDisabled}
+      aria-busy={pending || undefined}
+      style={{
+        ...baseStyle,
+        ...sizeStyles[size],
+        ...variantStyles[variant],
+        cursor: isDisabled ? 'not-allowed' : 'pointer',
+        opacity: isDisabled ? 0.5 : 1,
+        ...style,
+      }}
+      {...rest}
+    >
+      {children}
+      {pending ? (
+        <span
+          aria-hidden="true"
+          style={{ marginLeft: 4, fontFamily: tokens.type.mono, letterSpacing: 1 }}
+        >
+          …
+        </span>
+      ) : null}
+    </button>
+  );
+};

@@ -78,8 +78,13 @@ const RequestForm = () => {
           >
             Back to sign in
           </Link>
-          <Button type="submit" variant="primary" disabled={request.isPending || !email}>
-            {request.isPending ? '…' : 'Send reset link'}
+          <Button
+            type="submit"
+            variant="primary"
+            pending={request.isPending}
+            disabled={!email}
+          >
+            Send reset link
           </Button>
         </Row>
       </Col>
@@ -160,9 +165,10 @@ const ConsumeForm = ({ token }: { token: string }) => {
           <Button
             type="submit"
             variant="primary"
-            disabled={consume.isPending || !password || !confirm}
+            pending={consume.isPending}
+            disabled={!password || !confirm}
           >
-            {consume.isPending ? '…' : 'Set new password'}
+            Set new password
           </Button>
         </Row>
       </Col>

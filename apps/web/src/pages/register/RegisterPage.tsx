@@ -89,8 +89,8 @@ const RegisterPage = () => {
             >
               Already have an account?
             </Link>
-            <Button type="submit" variant="primary" disabled={register.isPending}>
-              {register.isPending ? '…' : 'Create account'}
+            <Button type="submit" variant="primary" pending={register.isPending}>
+              Create account
             </Button>
           </Row>
         </Col>

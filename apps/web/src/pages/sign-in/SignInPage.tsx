@@ -76,8 +76,8 @@ const SignInPage = () => {
             >
               Forgot password?
             </Link>
-            <Button type="submit" variant="primary" disabled={signIn.isPending}>
-              {signIn.isPending ? '…' : 'Sign in'}
+            <Button type="submit" variant="primary" pending={signIn.isPending}>
+              Sign in
             </Button>
           </Row>
           <div style={{ fontSize: 12, color: tokens.color.ink2 }}>

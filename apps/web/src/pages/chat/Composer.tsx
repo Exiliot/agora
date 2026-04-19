@@ -283,15 +283,15 @@ export const Composer = ({
             <Button
               variant="primary"
               size="sm"
+              pending={sending}
               disabled={
                 (!body.trim() && pending.length === 0) ||
-                sending ||
                 uploading ||
                 body.length > MAX_MESSAGE_BODY
               }
               onClick={send}
             >
-              {sending ? '…' : 'Send'}
+              Send
             </Button>
           </Row>
         </Row>

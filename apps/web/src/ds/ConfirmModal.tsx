@@ -55,8 +55,8 @@ export const ConfirmModal = ({
           <Button onClick={onCancel} disabled={pending}>
             {cancelLabel}
           </Button>
-          <Button variant={tone} onClick={onConfirm} disabled={pending}>
-            {pending ? '…' : confirmLabel}
+          <Button variant={tone} onClick={onConfirm} pending={pending}>
+            {confirmLabel}
           </Button>
         </Row>
       </Col>
