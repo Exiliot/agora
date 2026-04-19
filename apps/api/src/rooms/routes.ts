@@ -770,9 +770,13 @@ addRouteModule({
           publishRoomMemberRemoved(id, targetId, callerId);
           publishRoomAccessLost(targetId, id, 'removed');
 
+          // H7: this endpoint is "remove (= ban)"; inserting the ban row is
+          // the whole point. The notification kind is `room.ban` – distinct
+          // from `room.removed`, which is reserved for a member losing
+          // access without a ban (e.g. if we ever add a plain-remove flow).
           await publishNotification({
             userId: targetId,
-            kind: 'room.removed',
+            kind: 'room.ban',
             subjectType: 'room',
             subjectId: id,
             actorId: callerId,
