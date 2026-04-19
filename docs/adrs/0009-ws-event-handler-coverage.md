@@ -1,6 +1,6 @@
 # ADR-0009 · Client WS event-handler coverage contract
 
-- **Status**: Proposed, 2026-04-19
+- **Status**: Accepted, 2026-04-19
 - **Relates to**: FR-MSG-*, FR-FRND-*, FR-ROOM-*, NFR-RELIABILITY-1, product-integrity audit 2026-04-19 (critical #3 – nine dropped events)
 
 ## Context
@@ -60,3 +60,7 @@ Adopt a **handler-coverage contract** enforced by the type system:
 
 - *Runtime check on WS `onmessage` – log a warning for unhandled types*: rejected – a warning in a prod log no-one reads is not enforcement. Catch it at compile time.
 - *Generic "invalidate everything on every unknown event" fallback*: rejected – invalidating everything on every event is precisely what round 3's notification handler did not do (it set cache data directly because invalidate was too heavy). Keeping the contract explicit keeps invalidation scoped.
+
+## Implementation
+
+Landed in commit `<SHA>` on 2026-04-19. `@agora/shared` now exports a `serverToClientEvent` discriminated union plus the `ServerToClientEvent` / `ServerToClientEventType` inferred types. `apps/web/src/app/WsProvider.tsx` handles the nine previously-uncovered events (`friendship.removed`, `user_ban.created`/`removed`, `friend.request_cancelled`, `room.admin_added`/`removed`, `room.member_left`/`removed`, `room.deleted`) and a module-scope exhaustive switch over `ServerToClientEvent['type']` fails the build if a new event type lands upstream without a matching case (verified by temporarily adding a fake event to the union – tsc rejected `WsProvider.tsx`). Server side, `apps/api/src/rooms/routes.ts` now calls `unsubscribeConnection` on every live socket of the target user when a member is removed or banned, and on every prior member when a room is deleted – closing the privacy leak where a banned user kept receiving room messages until their WS naturally reconnected.

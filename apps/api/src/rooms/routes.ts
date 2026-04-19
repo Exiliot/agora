@@ -386,6 +386,16 @@ addRouteModule({
           publishRoomAccessLost(m.userId, id, 'room_deleted');
         }
 
+        // ADR-0009: drop every prior member's live subscription to this
+        // room's topic. The room is gone and the topic will never emit
+        // again, but leaving stale subscription entries on live sockets
+        // wastes memory and muddies debugging.
+        for (const m of priorMembers) {
+          for (const conn of connections.forUser(m.userId)) {
+            unsubscribeConnection(conn, roomTopic(id));
+          }
+        }
+
         for (const m of priorMembers) {
           if (m.userId === userId) continue;
           await publishNotification({
@@ -749,6 +759,13 @@ addRouteModule({
               .delete(roomMembers)
               .where(and(eq(roomMembers.roomId, id), eq(roomMembers.userId, targetId)));
           });
+
+          // ADR-0009: drop the banned user's live subscriptions to the room
+          // topic so fan-out of subsequent messages stops immediately, rather
+          // than relying on their socket to eventually reconnect.
+          for (const conn of connections.forUser(targetId)) {
+            unsubscribeConnection(conn, roomTopic(id));
+          }
 
           publishRoomMemberRemoved(id, targetId, callerId);
           publishRoomAccessLost(targetId, id, 'removed');

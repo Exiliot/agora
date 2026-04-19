@@ -10,6 +10,7 @@
  * Reconnect uses exponential backoff capped at 30s.
  */
 
+import type { ServerToClientEvent, ServerToClientEventType } from '@agora/shared';
 import { generateTabId } from './tabId';
 
 interface ServerEvent {
@@ -19,6 +20,14 @@ interface ServerEvent {
 
 type EventHandler = (event: ServerEvent) => void;
 
+// Synthetic client-side events: emitted by the WS client itself on
+// (re)connection so subscribers can backfill, not on the wire.
+type SyntheticEventType = 'ws.open' | 'ws.reopen';
+
+type TypedHandler<T extends ServerToClientEventType> = (
+  event: Extract<ServerToClientEvent, { type: T }>,
+) => void;
+
 interface PendingRequest {
   resolve: (result: unknown) => void;
   reject: (err: Error) => void;
@@ -27,7 +36,8 @@ interface PendingRequest {
 export interface WsClient {
   connect(): void;
   close(): void;
-  on(type: string, handler: EventHandler): () => void;
+  on<T extends ServerToClientEventType>(type: T, handler: TypedHandler<T>): () => void;
+  on(type: SyntheticEventType, handler: (event: ServerEvent) => void): () => void;
   request<T = unknown>(type: string, payload: unknown): Promise<T>;
   send(event: { type: string; payload?: unknown }): void;
   readonly state: 'idle' | 'connecting' | 'open' | 'closed' | 'reconnecting';
@@ -136,6 +146,19 @@ export const createWsClient = (): WsClient => {
     };
   };
 
+  // Implementation of the typed overloads declared on WsClient. We widen
+  // to (string, EventHandler) at the call site and rely on the overloads
+  // to keep external callers honest.
+  const onImpl = (type: string, handler: EventHandler): (() => void) => {
+    const set = handlers.get(type) ?? new Set<EventHandler>();
+    set.add(handler);
+    handlers.set(type, set);
+    return () => {
+      set.delete(handler);
+      if (set.size === 0) handlers.delete(type);
+    };
+  };
+
   return {
     connect() {
       openSocket();
@@ -152,15 +175,7 @@ export const createWsClient = (): WsClient => {
       }
       state = 'closed';
     },
-    on(type, handler) {
-      const set = handlers.get(type) ?? new Set<EventHandler>();
-      set.add(handler);
-      handlers.set(type, set);
-      return () => {
-        set.delete(handler);
-        if (set.size === 0) handlers.delete(type);
-      };
-    },
+    on: onImpl as WsClient['on'],
     send(event) {
       if (event.type === 'heartbeat') {
         const now = Date.now();

@@ -3,7 +3,12 @@ import { reqIdSchema } from './envelope.js';
 import { presenceState, presenceEntry } from '../presence/index.js';
 import { userPublic } from '../users/index.js';
 import { messageView, sendMessagePayload, editMessagePayload, deleteMessagePayload, markReadPayload } from '../messages/index.js';
-import { clientFocusEvent } from '../notifications/index.js';
+import {
+  clientFocusEvent,
+  notificationCreatedEvent,
+  notificationReadEvent,
+  notificationReadAllEvent,
+} from '../notifications/index.js';
 
 // --- client → server events ---------------------------------------------------
 
@@ -183,6 +188,58 @@ export const invitationReceivedEvent = z.object({
     inviter: userPublic.nullable(),
   }),
 });
+
+export const friendRequestCancelledEvent = z.object({
+  type: z.literal('friend.request_cancelled'),
+  payload: z.object({ requestId: z.string().uuid() }),
+});
+
+export const roomAdminAddedEvent = z.object({
+  type: z.literal('room.admin_added'),
+  payload: z.object({
+    roomId: z.string().uuid(),
+    userId: z.string().uuid(),
+  }),
+});
+
+export const roomAdminRemovedEvent = z.object({
+  type: z.literal('room.admin_removed'),
+  payload: z.object({
+    roomId: z.string().uuid(),
+    userId: z.string().uuid(),
+  }),
+});
+
+// Closed set of server-published event types. The web `WsProvider` uses the
+// inferred union to enforce handler coverage at compile time – adding a new
+// event here forces a matching case in the provider's coverage switch.
+export const serverToClientEvent = z.discriminatedUnion('type', [
+  presenceUpdateEvent,
+  presenceSnapshotEvent,
+  messageNewEvent,
+  messageUpdatedEvent,
+  messageDeletedEvent,
+  unreadUpdatedEvent,
+  roomMemberJoinedEvent,
+  roomMemberLeftEvent,
+  roomMemberRemovedEvent,
+  roomAccessLostEvent,
+  roomDeletedEvent,
+  roomAdminAddedEvent,
+  roomAdminRemovedEvent,
+  friendRequestReceivedEvent,
+  friendRequestCancelledEvent,
+  friendshipCreatedEvent,
+  friendshipRemovedEvent,
+  userBanCreatedEvent,
+  userBanRemovedEvent,
+  invitationReceivedEvent,
+  notificationCreatedEvent,
+  notificationReadEvent,
+  notificationReadAllEvent,
+]);
+export type ServerToClientEvent = z.infer<typeof serverToClientEvent>;
+export type ServerToClientEventType = ServerToClientEvent['type'];
 
 export type PresenceUpdateEvent = z.infer<typeof presenceUpdateEvent>;
 export type MessageNewEvent = z.infer<typeof messageNewEvent>;

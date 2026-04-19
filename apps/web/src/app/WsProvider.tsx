@@ -1,7 +1,12 @@
 import { createContext, useContext, useEffect, useMemo, type ReactNode } from 'react';
 import { useQueryClient, type InfiniteData } from '@tanstack/react-query';
 import { create } from 'zustand';
-import type { MessageView, NotificationView, PresenceState } from '@agora/shared';
+import type {
+  MessageView,
+  NotificationView,
+  PresenceState,
+  ServerToClientEvent,
+} from '@agora/shared';
 import { createWsClient, type WsClient } from '../lib/wsClient';
 import { backfillAllConversations } from '../features/messages/backfill';
 import { useLastSeenStore } from '../features/messages/lastSeen';
@@ -11,6 +16,44 @@ import type {
   NotificationsInfiniteData,
   NotificationsPage,
 } from '../features/notifications/useNotifications';
+
+// Compile-time exhaustive check: if a new ServerToClientEvent['type'] is
+// added to @agora/shared without a case below, tsc will flag the default
+// branch as assigning a non-`never` value to a `never`-typed parameter.
+// This is the handler-coverage contract from ADR-0009; the function body
+// is never called, only type-checked.
+const assertNever = (value: never): never => value;
+const assertEventTypeHandled = (event: ServerToClientEvent): void => {
+  switch (event.type) {
+    case 'message.new':
+    case 'message.updated':
+    case 'message.deleted':
+    case 'unread.updated':
+    case 'room.member_joined':
+    case 'room.member_left':
+    case 'room.member_removed':
+    case 'room.access_lost':
+    case 'room.deleted':
+    case 'room.admin_added':
+    case 'room.admin_removed':
+    case 'presence.update':
+    case 'presence.snapshot':
+    case 'friend.request_received':
+    case 'friend.request_cancelled':
+    case 'friendship.created':
+    case 'friendship.removed':
+    case 'user_ban.created':
+    case 'user_ban.removed':
+    case 'invitation.received':
+    case 'notification.created':
+    case 'notification.read':
+    case 'notification.read_all':
+      return;
+    default:
+      assertNever(event);
+  }
+};
+void assertEventTypeHandled;
 
 type MessagesInfiniteData = InfiniteData<MessagesPage, string | null>;
 
@@ -160,8 +203,49 @@ export const WsProvider = ({ enabled, children }: WsProviderProps) => {
       queryClient.invalidateQueries({ queryKey: ['friends'] });
       queryClient.invalidateQueries({ queryKey: ['friend-requests'] });
     });
+    const unsubFriendshipRemoved = client.on('friendship.removed', () => {
+      queryClient.invalidateQueries({ queryKey: ['friends'] });
+      queryClient.invalidateQueries({ queryKey: ['friend-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+    });
     const unsubscribeFriendRequest = client.on('friend.request_received', () => {
       queryClient.invalidateQueries({ queryKey: ['friend-requests'] });
+    });
+    const unsubFriendRequestCancelled = client.on('friend.request_cancelled', () => {
+      queryClient.invalidateQueries({ queryKey: ['friend-requests'] });
+    });
+    const unsubUserBanCreated = client.on('user_ban.created', () => {
+      queryClient.invalidateQueries({ queryKey: ['friends'] });
+      queryClient.invalidateQueries({ queryKey: ['user-bans'] });
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+    });
+    const unsubUserBanRemoved = client.on('user_ban.removed', () => {
+      queryClient.invalidateQueries({ queryKey: ['friends'] });
+      queryClient.invalidateQueries({ queryKey: ['user-bans'] });
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+    });
+    const unsubRoomAdminAdded = client.on('room.admin_added', (event) => {
+      const roomId = event.payload.roomId;
+      queryClient.invalidateQueries({ queryKey: ['rooms', 'detail', roomId] });
+    });
+    const unsubRoomAdminRemoved = client.on('room.admin_removed', (event) => {
+      const roomId = event.payload.roomId;
+      queryClient.invalidateQueries({ queryKey: ['rooms', 'detail', roomId] });
+    });
+    const unsubRoomMemberLeft = client.on('room.member_left', (event) => {
+      const roomId = event.payload.roomId;
+      queryClient.invalidateQueries({ queryKey: ['rooms', 'detail', roomId] });
+    });
+    // room.access_lost already handles the "it was you" case (sidebar +
+    // conversation list), so this handler only needs to refresh the room
+    // detail pane for observers still in the room.
+    const unsubRoomMemberRemoved = client.on('room.member_removed', (event) => {
+      const roomId = event.payload.roomId;
+      queryClient.invalidateQueries({ queryKey: ['rooms', 'detail', roomId] });
+    });
+    const unsubRoomDeleted = client.on('room.deleted', () => {
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
     });
     const unsubscribeInvitation = client.on('invitation.received', () => {
       queryClient.invalidateQueries({ queryKey: ['invitations'] });
@@ -247,7 +331,16 @@ export const WsProvider = ({ enabled, children }: WsProviderProps) => {
       unsubscribePresence();
       unsubscribeSnapshot();
       unsubscribeFriendship();
+      unsubFriendshipRemoved();
       unsubscribeFriendRequest();
+      unsubFriendRequestCancelled();
+      unsubUserBanCreated();
+      unsubUserBanRemoved();
+      unsubRoomAdminAdded();
+      unsubRoomAdminRemoved();
+      unsubRoomMemberLeft();
+      unsubRoomMemberRemoved();
+      unsubRoomDeleted();
       unsubscribeInvitation();
       unsubNotificationCreated();
       unsubNotificationRead();
