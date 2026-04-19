@@ -17,7 +17,7 @@ import { extractMentions } from '../notifications/mention.js';
 import { publishNotification } from '../notifications/publisher.js';
 import { isUniqueViolation } from '../friends/db-helpers.js';
 import { hydrateMessage } from './history.js';
-import { canAccessRoom, canSendDm, loadDmForUser } from './permissions.js';
+import { canAccessDm, canAccessRoom, canSendDm, loadDmForUser } from './permissions.js';
 import { lookupDedupe, rememberDedupe } from './send-dedupe.js';
 import { incrementUnreadForMany, listOtherParticipants, resetUnread } from './unread.js';
 
@@ -295,6 +295,18 @@ registerWsHandler('message.edit', async (ctx, event) => {
     return;
   }
 
+  // Re-check conversation access: a user banned or removed after authoring
+  // must not be able to edit prior messages. Mirrors message.send's posture
+  // so moderation (FR-ROOM-14 / FR-FRND-6) flows end-to-end.
+  const access =
+    existing.conversationType === 'room'
+      ? await canAccessRoom(userId, existing.conversationId)
+      : await canAccessDm(userId, existing.conversationId);
+  if (!access.ok) {
+    sendErr(ctx, reqId, access.code, 'not allowed');
+    return;
+  }
+
   const trimmedBody = payload.body.replace(/^[ \t]+|[ \t]+$/g, '');
   const editedAt = new Date();
   const [updated] = await db
@@ -325,6 +337,18 @@ registerWsHandler('message.delete', async (ctx, event) => {
     .limit(1);
   if (!existing || existing.deletedAt) {
     sendErr(ctx, reqId, 'not_found', 'message not found');
+    return;
+  }
+
+  // Re-check conversation access before any author/admin branch. A banned
+  // author cannot delete their own prior messages; admins who lost access
+  // (e.g. left the room) cannot delete either.
+  const access =
+    existing.conversationType === 'room'
+      ? await canAccessRoom(userId, existing.conversationId)
+      : await canAccessDm(userId, existing.conversationId);
+  if (!access.ok) {
+    sendErr(ctx, reqId, access.code, 'not allowed');
     return;
   }
 
