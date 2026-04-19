@@ -128,7 +128,10 @@ export const WsProvider = ({ enabled, children }: WsProviderProps) => {
           },
         );
       }
-      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      // M14: scope the sidebar refresh to the active query only. Inactive
+      // conversation-list queries (stale gcTime not yet expired) don't need
+      // to refetch on every new message – the next mount will fetch fresh.
+      queryClient.invalidateQueries({ queryKey: ['conversations'], refetchType: 'active' });
     });
     const unsubscribeReopen = client.on('ws.reopen', () => {
       void backfillAllConversations(queryClient);
@@ -179,7 +182,7 @@ export const WsProvider = ({ enabled, children }: WsProviderProps) => {
       );
     });
     const unsubscribeUnread = client.on('unread.updated', () => {
-      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      queryClient.invalidateQueries({ queryKey: ['conversations'], refetchType: 'active' });
     });
     const unsubscribeRoomChanges = client.on('room.member_joined', () => {
       queryClient.invalidateQueries({ queryKey: ['rooms'] });

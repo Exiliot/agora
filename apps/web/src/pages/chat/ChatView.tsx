@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { memo, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import type { RoomDetail, RoomRole } from '@agora/shared';
 import { useMyRooms } from '../../features/rooms/useRooms';
@@ -11,10 +11,16 @@ import { Sidebar } from './Sidebar';
 import { ManageRoomModal } from './ManageRoomModal';
 import { usePresenceOf } from '../../app/WsProvider';
 
-const MemberRow = ({ userId, username }: { userId: string; username: string }) => {
-  const state = usePresenceOf(userId);
-  return <ContactListItem name={username} status={state} />;
-};
+// M15: memoised so a `presence.update` for user X re-renders only user X's
+// row. Without React.memo, parent re-render on unrelated presence churn
+// walks every row and re-runs its `usePresenceOf` selector.
+const MemberRow = memo(
+  ({ userId, username }: { userId: string; username: string }) => {
+    const state = usePresenceOf(userId);
+    return <ContactListItem name={username} status={state} />;
+  },
+);
+MemberRow.displayName = 'MemberRow';
 
 const roleOrder: Record<RoomRole, number> = { owner: 0, admin: 1, member: 2 };
 
