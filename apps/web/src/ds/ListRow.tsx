@@ -34,6 +34,7 @@ export const ListRow = ({ lead, title, meta, actions, onClick }: ListRowProps) =
           }
         : undefined
     }
+    className={onClick ? 'ds-row-hoverable' : undefined}
     style={{
       display: 'flex',
       alignItems: 'center',

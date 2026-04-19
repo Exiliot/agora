@@ -57,6 +57,10 @@
   /* Modal scrim (shared between every dialog wrapper) */
   --scrim: rgba(30, 29, 24, 0.35);
 
+  /* Hover wash for list-row primitives (ContactListItem, RoomListItem,
+     ListRow). Kept to a whisper so selection cues still read dominant. */
+  --row-hover: rgba(0, 0, 0, 0.03);
+
   /* Paper tint for ink used directly over a dark scrim (e.g. lightbox
      borders/hairlines). --paper-0 on its own reads as pure cream; this
      translucent variant softens into the scrim while keeping the hue. */

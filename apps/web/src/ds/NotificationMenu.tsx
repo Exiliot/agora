@@ -56,12 +56,22 @@ export const NotificationMenu = ({ anchorRect, onClose }: Props) => {
     const onDocClick = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) onClose();
     };
+    // R3-11: the menu's anchor position is captured once at open time,
+    // so any layout shift (viewport resize or ancestor scroll) would
+    // leave the popover stranded. Close on either — cheaper than a
+    // reposition loop and the topbar itself doesn't scroll, so this is
+    // safe.
+    const onResizeOrScroll = () => onClose();
     document.addEventListener('keydown', onKey);
+    window.addEventListener('resize', onResizeOrScroll);
+    window.addEventListener('scroll', onResizeOrScroll, { capture: true });
     // Defer so the click that opened the menu isn't immediately intercepted.
     const t = setTimeout(() => document.addEventListener('mousedown', onDocClick), 0);
     return () => {
       document.removeEventListener('keydown', onKey);
       document.removeEventListener('mousedown', onDocClick);
+      window.removeEventListener('resize', onResizeOrScroll);
+      window.removeEventListener('scroll', onResizeOrScroll, { capture: true });
       clearTimeout(t);
     };
   }, [onClose]);
@@ -147,22 +157,13 @@ export const NotificationMenu = ({ anchorRect, onClose }: Props) => {
             fontSize: 11,
           }}
         >
-          <button
-            type="button"
+          <Button
+            variant="link"
+            size="sm"
             onClick={() => void requestNativePermission()}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: tokens.color.accent,
-              textDecoration: 'underline',
-              padding: 0,
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-              fontSize: 'inherit',
-            }}
           >
-            Turn on desktop notifications
-          </button>
+            Enable desktop notifications
+          </Button>
         </div>
       ) : null}
     </div>,

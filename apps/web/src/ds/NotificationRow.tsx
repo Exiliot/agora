@@ -72,15 +72,16 @@ const bodyFor = (n: NotificationView): string => {
   return '';
 };
 
+// Cached across calls; the formatter is pure and construction is non-trivial.
+const rtf = new Intl.RelativeTimeFormat('en', { style: 'narrow', numeric: 'always' });
+
 const relativeTime = (iso: string): string => {
-  const ms = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(ms / 60000);
-  if (mins < 1) return 'now';
-  if (mins < 60) return `${mins}m`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h`;
-  const days = Math.floor(hrs / 24);
-  return `${days}d`;
+  const diffSec = (new Date(iso).getTime() - Date.now()) / 1000;
+  const abs = Math.abs(diffSec);
+  if (abs < 60) return 'now';
+  if (abs < 3600) return rtf.format(Math.round(diffSec / 60), 'minute');
+  if (abs < 86400) return rtf.format(Math.round(diffSec / 3600), 'hour');
+  return rtf.format(Math.round(diffSec / 86400), 'day');
 };
 
 interface NotificationRowProps {

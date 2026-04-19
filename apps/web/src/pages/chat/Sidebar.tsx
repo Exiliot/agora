@@ -152,7 +152,7 @@ export const Sidebar = () => {
     >
       <div style={{ padding: '12px 12px 6px' }}>
         <Input
-          placeholder="Filter rooms & contacts…"
+          placeholder="Filter…"
           value={filter}
           onChange={(event) => setFilter(event.target.value)}
           aria-label="Filter rooms and direct messages"

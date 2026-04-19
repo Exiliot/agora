@@ -22,9 +22,10 @@ export const Bell = forwardRef<HTMLButtonElement, BellProps>(
         aria-label={hasUnread ? `Notifications, ${unreadCount} unread` : 'Notifications'}
         style={{
           position: 'relative',
-          // Wider than the icon so the unread badge can sit cleanly to the
-          // right of the glyph without obscuring it.
-          width: 44,
+          // Square target sized to match the topbar controls around it.
+          // The unread badge is absolutely positioned so it overlaps the
+          // top-right corner – the canonical nav-badge pattern.
+          width: 28,
           height: 28,
           padding: 0,
           border: 'none',
@@ -33,8 +34,7 @@ export const Bell = forwardRef<HTMLButtonElement, BellProps>(
           color: hasUnread ? tokens.color.accent : tokens.color.ink1,
           display: 'inline-flex',
           alignItems: 'center',
-          justifyContent: 'flex-start',
-          paddingLeft: 6,
+          justifyContent: 'center',
           ...style,
         }}
         {...rest}
@@ -58,8 +58,8 @@ export const Bell = forwardRef<HTMLButtonElement, BellProps>(
           <span
             style={{
               position: 'absolute',
-              top: 3,
-              right: 2,
+              top: -2,
+              right: -2,
               pointerEvents: 'none',
             }}
           >

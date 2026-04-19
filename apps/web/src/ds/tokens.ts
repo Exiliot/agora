@@ -31,6 +31,7 @@ export const tokens = {
     chromeUp: 'var(--chrome-up)',
     chromeDown: 'var(--chrome-down)',
     scrim: 'var(--scrim)',
+    rowHover: 'var(--row-hover)',
   },
   radius: { xs: 'var(--r-xs)', sm: 'var(--r-sm)', md: 'var(--r-md)' },
   gradient: { chrome: 'var(--grad-chrome)' },

@@ -126,7 +126,11 @@ export const RootLayout = () => {
         />
       ) : null}
 
-      <main id="main" style={{ flex: 1, display: 'flex', minHeight: 0 }}>
+      <main
+        id="main"
+        tabIndex={-1}
+        style={{ flex: 1, display: 'flex', minHeight: 0 }}
+      >
         <Outlet />
       </main>
     </div>

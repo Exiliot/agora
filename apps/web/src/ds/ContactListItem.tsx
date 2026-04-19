@@ -21,6 +21,7 @@ export const ContactListItem = ({
     type="button"
     onClick={onClick}
     aria-label={`${name}, ${status}${unread > 0 ? `, ${unread} unread` : ''}`}
+    className="ds-row-hoverable"
     style={{
       display: 'flex',
       alignItems: 'center',

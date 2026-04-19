@@ -45,11 +45,31 @@
 }
 
 @layer components {
-  /* Modal close-button hover wash — rendered in JSX with a 24×24 hit area
+  /* Modal close-button hover wash – rendered in JSX with a 24x24 hit area
      so keyboard focus lands on a real button, and hover darkens to paper-2. */
   .modal-close-btn:hover {
     background: var(--paper-2);
     color: var(--ink-0);
+  }
+
+  /* Shared list-row hover affordance. Applied via className by the three
+     row primitives (ContactListItem, RoomListItem, ListRow) so all tabular
+     lists get the same whisper-soft wash on hover. `is-active` opts out so
+     the selection cue (accent border/fill) stays dominant. */
+  .ds-row-hoverable:hover {
+    background: var(--row-hover);
+  }
+  .ds-row-hoverable.is-active:hover {
+    background: inherit;
+  }
+
+  /* Skip-link target — when the user activates "Skip to content", focus
+     lands on <main id="main"> (which carries tabIndex={-1}). Show a visible
+     focus ring so the jump is discoverable. */
+  main#main:focus,
+  main#main:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
   }
 
   /* Shared spin keyframe used by the message-list top loader and any

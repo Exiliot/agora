@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Badge,
   Button,
   Col,
   Input,
@@ -9,6 +8,7 @@ import {
   Meta,
   PageShell,
   Row,
+  RoomName,
   SectionHeader,
   TabBar,
   Table,
@@ -211,12 +211,7 @@ const Invitations = () => {
       {data.map((inv) => (
         <ListRow
           key={inv.id}
-          title={
-            <Row gap={6} style={{ alignItems: 'center' }}>
-              <span>#{inv.room.name}</span>
-              <Badge tone="private">private</Badge>
-            </Row>
-          }
+          title={<RoomName name={inv.room.name} visibility={inv.room.visibility} size="sm" />}
           meta={`invited by ${inv.inviter?.username ?? '(deleted)'}`}
           actions={
             <>

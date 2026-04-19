@@ -19,7 +19,6 @@ export const Logo = ({ size = 22 }: LogoProps) => (
         fontWeight: 600,
         fontSize: Math.round(size * 0.75),
         borderRadius: tokens.radius.xs,
-        fontStyle: 'italic',
       }}
     >
       a

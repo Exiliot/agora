@@ -4,26 +4,7 @@ import type { RoomDetail, RoomRole } from '@agora/shared';
 import { useMyRooms } from '../../features/rooms/useRooms';
 import { useRoom } from '../../features/rooms/useRoom';
 import { useFocusBroadcast } from '../../features/notifications/focus';
-import { Badge, Button, ContactListItem, Meta, Row, tokens } from '../../ds';
-
-// Small padlock glyph used in the (slim) room header and the dossier aside
-// to flag private rooms. Sized to sit next to the name without crowding.
-const LockIcon = ({ size = 12 }: { size?: number }) => (
-  <svg
-    aria-hidden="true"
-    width={size}
-    height={size}
-    viewBox="0 0 12 12"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.25"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <rect x="2.25" y="5.25" width="7.5" height="5.25" rx="1" />
-    <path d="M4 5.25V3.5a2 2 0 0 1 4 0v1.75" />
-  </svg>
-);
+import { Badge, Button, ContactListItem, Meta, RoomName, Row, tokens } from '../../ds';
 import { MessageList } from './MessageList';
 import { Composer } from './Composer';
 import { Sidebar } from './Sidebar';
@@ -81,25 +62,11 @@ const RoomContextPanel = ({
         gap: 10,
       }}
     >
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-          fontFamily: tokens.type.mono,
-          fontSize: 14,
-          fontWeight: 600,
-          color: tokens.color.ink0,
-          wordBreak: 'break-all',
-        }}
-      >
-        <span>#{detail.name}</span>
-        {visibility === 'private' ? (
-          <span style={{ color: tokens.color.ink2, display: 'inline-flex' }}>
-            <LockIcon />
-          </span>
-        ) : null}
-      </div>
+      <RoomName
+        name={detail.name}
+        visibility={visibility}
+        style={{ fontWeight: 600, wordBreak: 'break-all' }}
+      />
       {detail.description ? (
         <div style={{ fontFamily: tokens.type.sans, fontSize: 12, color: tokens.color.ink2 }}>
           {detail.description}
@@ -161,7 +128,7 @@ const RoomHeader = ({
   visibility,
 }: {
   roomName: string;
-  visibility: string;
+  visibility: 'public' | 'private';
 }) => (
   <div
     style={{
@@ -170,22 +137,9 @@ const RoomHeader = ({
       background: tokens.color.paper1,
       display: 'flex',
       alignItems: 'center',
-      gap: 6,
-      fontFamily: tokens.type.mono,
-      fontSize: 14,
-      fontWeight: 600,
-      color: tokens.color.ink0,
     }}
   >
-    <span>#{roomName}</span>
-    {visibility === 'private' ? (
-      <span
-        aria-label="private room"
-        style={{ color: tokens.color.ink2, display: 'inline-flex' }}
-      >
-        <LockIcon />
-      </span>
-    ) : null}
+    <RoomName name={roomName} visibility={visibility} style={{ fontWeight: 600 }} />
   </div>
 );
 

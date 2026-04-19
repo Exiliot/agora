@@ -1,6 +1,7 @@
 import type { MouseEventHandler } from 'react';
 import { tokens } from './tokens';
 import { Badge } from './Badge';
+import { LockIcon } from './LockIcon';
 
 interface RoomListItemProps {
   name: string;
@@ -24,6 +25,7 @@ export const RoomListItem = ({
     onClick={onClick}
     aria-current={active ? 'true' : undefined}
     aria-label={`${isPrivate ? 'Private room' : 'Room'} ${name}${unread > 0 ? `, ${unread} unread` : ''}`}
+    className={`ds-row-hoverable${active ? ' is-active' : ''}`}
     style={{
       display: 'flex',
       alignItems: 'center',
@@ -44,9 +46,16 @@ export const RoomListItem = ({
   >
     <span
       aria-hidden="true"
-      style={{ color: tokens.color.ink2, width: 12, textAlign: 'center', fontSize: 11 }}
+      style={{
+        color: tokens.color.ink2,
+        width: 12,
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: 11,
+      }}
     >
-      {isPrivate ? '•' : '#'}
+      {isPrivate ? <LockIcon size={10} /> : '#'}
     </span>
     <span
       style={{
