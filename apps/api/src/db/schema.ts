@@ -49,6 +49,12 @@ export const users = pgTable(
   (t) => ({
     emailKey: uniqueIndex('users_email_lower_key').on(sql`lower(${t.email})`),
     usernameKey: uniqueIndex('users_username_lower_key').on(sql`lower(${t.username})`),
+    // Supports `lower(username) LIKE 'prefix%'` in user-search. The unique
+    // index above covers equality but cannot serve LIKE prefix probes in the
+    // default collation.
+    usernameLowerPrefixIdx: index('users_username_lower_prefix_idx').on(
+      sql`lower(${t.username}) text_pattern_ops`,
+    ),
   }),
 );
 
@@ -281,7 +287,18 @@ export const messages = pgTable(
       t.conversationId,
       t.createdAt,
     ),
+    // H3: cursor pagination + LATERAL preview sort by message.id, not
+    // created_at. UUIDv7 keeps the two in the same order but the planner
+    // still does a residual filter without this composite.
+    conversationIdIdx: index('messages_conversation_id_idx').on(
+      t.conversationType,
+      t.conversationId,
+      t.id,
+    ),
     authorIdx: index('messages_author_idx').on(t.authorId),
+    replyToIdx: index('messages_reply_to_idx')
+      .on(t.replyToId)
+      .where(sql`${t.replyToId} IS NOT NULL`),
     authorClientMsgKey: uniqueIndex('messages_author_client_msg_key')
       .on(t.authorId, t.clientMessageId)
       .where(sql`${t.clientMessageId} IS NOT NULL`),
