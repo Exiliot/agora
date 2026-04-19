@@ -45,6 +45,7 @@ Listed in the order events happened, not when the entry was written.
 | 25 | Sun 11:00 | Design audit round 3 — 26 findings closed across four batches | [2026-04-19-03-design-audit-round-3.md](2026-04-19-03-design-audit-round-3.md) |
 | 26 | Sun 12:30 | Four parallel specialist audits (product, security, perf, a11y) + five ADR proposals | [2026-04-19-04-parallel-audits.md](2026-04-19-04-parallel-audits.md) |
 | 27 | Sun 14:45 | ADRs 0006–0010 all accepted and landed (sequential subagent-per-ADR) | [2026-04-19-05-adrs-0006-0010-landed.md](2026-04-19-05-adrs-0006-0010-landed.md) |
+| 28 | Sun 15:45 | Audit cleanup — mark.read, account-delete UI, notifications N+1, mention contrast (4 parallel) | [2026-04-19-06-audit-cleanup.md](2026-04-19-06-audit-cleanup.md) |
 
 > The notifications entry uses a bare-date filename rather than the `NN-topic` scheme the rest of the chronology follows – it was written mid-session before the index was refreshed. Leaving it in place as a deliberate record of how the entries landed rather than renaming after the fact.
 
