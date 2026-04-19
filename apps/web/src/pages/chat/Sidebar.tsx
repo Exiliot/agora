@@ -5,6 +5,7 @@ import {
   Check,
   Col,
   ContactListItem,
+  EmptyState,
   Input,
   Meta,
   Modal,
@@ -142,7 +143,7 @@ const CreateRoomDialog = ({ onClose }: { onClose: () => void }) => {
                         navigate(`/chat/${room.name}`);
                       },
                       onError: (err) => {
-                        if (err instanceof ApiError && err.body?.error === 'name_taken') {
+                        if (err instanceof ApiError && err.body?.code === 'room_name_taken') {
                           setError('name already in use');
                         } else if (err instanceof Error) {
                           setError(err.message);
@@ -179,8 +180,13 @@ export const Sidebar = () => {
     .filter((room) => matches(room.name));
   const dms = (data?.dms ?? []).filter((dm) => matches(dm.otherUser.username));
   const hasFilter = q.length > 0;
+  const totalConversations =
+    (data?.rooms.length ?? 0) + (data?.dms.length ?? 0);
   const noResults =
     hasFilter && publicRooms.length === 0 && privateRooms.length === 0 && dms.length === 0;
+  // L18: first-run users with no rooms and no DMs get a helpful caption
+  // rather than a blank column beneath the filter.
+  const isFirstRun = !isLoading && !hasFilter && totalConversations === 0;
 
   return (
     <aside
@@ -268,6 +274,12 @@ export const Sidebar = () => {
           >
             no matches for “{filter}”
           </div>
+        ) : null}
+        {isFirstRun ? (
+          <EmptyState
+            caption="no rooms yet"
+            hint="Join one from Public rooms or create a new room below."
+          />
         ) : null}
       </div>
       <div style={{ padding: 10, borderTop: `1px solid ${tokens.color.rule}` }}>

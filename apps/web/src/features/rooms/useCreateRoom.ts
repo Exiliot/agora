@@ -8,6 +8,10 @@ export const useCreateRoom = () => {
     mutationFn: (body: CreateRoomRequest) => api.post<RoomDetail>('/rooms', body),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['rooms'] });
+      // M11: the sidebar reads from useConversations, not useRooms. Without
+      // this invalidation the new room stays absent from the sidebar until
+      // another signal (first message, presence tick) happens to refresh it.
+      qc.invalidateQueries({ queryKey: ['conversations'] });
     },
   });
 };
