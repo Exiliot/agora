@@ -30,6 +30,10 @@ logs/
 .env.*
 !.env.example
 
+# Local compose overrides (developer port remaps etc.)
+docker-compose.override.yml
+docker-compose.override.yaml
+
 # Runtime data (chat uploads)
 storage/*
 !storage/.gitkeep

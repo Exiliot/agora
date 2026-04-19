@@ -14,10 +14,41 @@ docker compose up --build
 
 Then:
 
-- `http://localhost:8080` — the web app
-- `http://localhost:3000/health` — api health check
+- `http://localhost:8080` – the web app
+- `http://localhost:3000/health` – api health check
 
 That's the whole delivery contract. No cloud provider, no DNS, no certificates to wire up. If it builds on the reviewer's machine, it runs.
+
+First `docker compose up --build` on a machine with a cold Docker image cache pays an extra 20–40 s pulling `node:24-alpine`, `postgres:16-alpine` and `nginx:alpine` before the application layers build.
+
+### Port conflicts
+
+The stack binds host ports `3000` (api) and `8080` (web). Both are common defaults (other Node APIs on 3000; Jenkins/Tomcat/assorted HTTP servers on 8080). If either port is already in use the affected container lands in a restart loop – `docker compose ps` will show it.
+
+Override locally without editing the committed compose file by dropping a `docker-compose.override.yml` next to it (the override path is already in `.gitignore`):
+
+```yaml
+# docker-compose.override.yml
+services:
+  api:
+    ports:
+      - "3100:3000"
+    environment:
+      # Password-reset links are logged to stdout; this must match the host
+      # port the web container is reachable on, or the link will 404.
+      APP_BASE_URL: "http://localhost:8090"
+  web:
+    ports:
+      - "8090:8080"
+```
+
+### API gotchas
+
+A couple of shapes the curl-level tripwires flagged during the delivery-contract smoke:
+
+- `POST /api/friend-requests` takes `{ "targetUsername": "..." }`, not `receiverId` / `userId`.
+- `POST /api/friend-requests/:id/accept` and `/reject` take no body. They tolerate `-H 'Content-Type: application/json'` with no `-d`, and also a literal `{}`.
+- Attachment uploads with `Content-Type: text/plain` are normalised to `application/octet-stream` by the MIME allow-list – expected, not a bug.
 
 ### CI / e2e overlay
 
