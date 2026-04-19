@@ -152,6 +152,7 @@ const InviteTab = ({ roomId }: { roomId: string }) => {
           value={username}
           onChange={(event) => setUsername(event.target.value.toLowerCase())}
           placeholder="bob"
+          {...(error ? { errorMessage: error } : {})}
         />
         <Button
           variant="primary"
@@ -170,7 +171,6 @@ const InviteTab = ({ roomId }: { roomId: string }) => {
         </Button>
       </Row>
       {ok ? <Toast tone="success">{ok}</Toast> : null}
-      {error ? <Toast tone="error">{error}</Toast> : null}
     </Col>
   );
 };

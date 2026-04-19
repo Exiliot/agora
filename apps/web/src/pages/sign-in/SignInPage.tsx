@@ -63,12 +63,12 @@ const SignInPage = () => {
             required
             reveal
             error={hasError}
+            {...(error ? { errorMessage: error } : {})}
             value={password}
             onChange={(event) => setPassword(event.target.value)}
           />
           <Check label="Keep me signed in" defaultChecked />
           {flash && !error ? <Toast tone="success">{flash}</Toast> : null}
-          {error ? <Toast tone="error">{error}</Toast> : null}
           <Row gap={8} style={{ justifyContent: 'space-between', alignItems: 'center' }}>
             <Link
               to="/reset"

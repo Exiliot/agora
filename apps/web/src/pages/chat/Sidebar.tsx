@@ -11,7 +11,6 @@ import {
   ModalScrim,
   Row,
   RoomListItem,
-  Toast,
   tokens,
 } from '../../ds';
 import { useConversations } from '../../features/conversations/useConversations';
@@ -54,6 +53,7 @@ const CreateRoomDialog = ({ onClose }: { onClose: () => void }) => {
                 setName(event.target.value.toLowerCase())
               }
               placeholder="general"
+              {...(error ? { errorMessage: error } : {})}
             />
             <Input
               label="Description"
@@ -106,7 +106,6 @@ const CreateRoomDialog = ({ onClose }: { onClose: () => void }) => {
                 </Col>
               </Col>
             </Col>
-            {error ? <Toast tone="error">{error}</Toast> : null}
             <Row gap={8} style={{ justifyContent: 'flex-end' }}>
               <Button onClick={onClose}>Cancel</Button>
               <Button

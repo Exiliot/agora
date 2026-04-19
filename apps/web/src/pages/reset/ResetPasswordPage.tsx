@@ -146,10 +146,10 @@ const ConsumeForm = ({ token }: { token: string }) => {
           required
           reveal
           minLength={8}
+          {...(error ? { errorMessage: error } : {})}
           value={confirm}
           onChange={(event) => setConfirm(event.target.value)}
         />
-        {error ? <Toast tone="error">{error}</Toast> : null}
         <Row gap={8} style={{ justifyContent: 'space-between', alignItems: 'center' }}>
           <Link
             to="/reset"
