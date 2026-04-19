@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Badge,
   Button,
   Col,
   ConfirmModal,
+  EmptyState,
+  Input,
   Meta,
   PageShell,
   Row,
@@ -13,6 +15,8 @@ import {
   tokens,
   useToast,
 } from '../../ds';
+import { ApiError } from '../../lib/apiClient';
+import { useChangePassword } from '../../features/auth/useChangePassword';
 import { useDeleteAccount } from '../../features/auth/useDeleteAccount';
 import { useRevokeSession, useSessions } from '../../features/sessions/useSessions';
 
@@ -43,6 +47,106 @@ const relative = (iso: string): string => {
   return value(Math.round(abs / DAY), 'd');
 };
 
+interface SessionRow {
+  id: string;
+  isCurrent: boolean;
+  userAgent: string | null;
+}
+
+const ChangePasswordForm = () => {
+  const toast = useToast();
+  const change = useChangePassword();
+  const [current, setCurrent] = useState('');
+  const [next, setNext] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [error, setError] = useState<string | null>(null);
+
+  const onSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+    if (next !== confirm) {
+      setError('new passwords do not match');
+      return;
+    }
+    change.mutate(
+      { currentPassword: current, newPassword: next },
+      {
+        onSuccess: () => {
+          setCurrent('');
+          setNext('');
+          setConfirm('');
+          toast.push({
+            tone: 'success',
+            title: 'Password changed',
+            body: 'Other browsers signed in on your account have been signed out.',
+          });
+        },
+        onError: (err) => {
+          if (err instanceof ApiError) {
+            if (err.body?.error === 'invalid_credentials') {
+              setError('current password is incorrect');
+              return;
+            }
+            if (err.body?.error === 'invalid_input') {
+              setError('new password must be at least 8 characters');
+              return;
+            }
+          }
+          setError(err instanceof Error ? err.message : 'could not change password');
+        },
+      },
+    );
+  };
+
+  return (
+    <form onSubmit={onSubmit}>
+      <Col gap={10} style={{ maxWidth: 320 }}>
+        <Input
+          label="Current password"
+          type="password"
+          autoComplete="current-password"
+          required
+          reveal
+          value={current}
+          onChange={(event) => setCurrent(event.target.value)}
+        />
+        <Input
+          label="New password"
+          type="password"
+          autoComplete="new-password"
+          required
+          reveal
+          minLength={8}
+          value={next}
+          onChange={(event) => setNext(event.target.value)}
+        />
+        <Input
+          label="Confirm new password"
+          type="password"
+          autoComplete="new-password"
+          required
+          reveal
+          minLength={8}
+          {...(error ? { errorMessage: error } : {})}
+          value={confirm}
+          onChange={(event) => setConfirm(event.target.value)}
+        />
+        <Row gap={8}>
+          <Button
+            type="submit"
+            variant="primary"
+            size="sm"
+            pending={change.isPending}
+            disabled={!current || !next || !confirm}
+          >
+            Change password
+          </Button>
+        </Row>
+      </Col>
+    </form>
+  );
+};
+
 const SessionsPage = () => {
   const { data, isLoading } = useSessions();
   const revoke = useRevokeSession();
@@ -50,6 +154,7 @@ const SessionsPage = () => {
   const toast = useToast();
   const deleteAccount = useDeleteAccount();
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmRevoke, setConfirmRevoke] = useState<SessionRow | null>(null);
 
   const handleDelete = () => {
     deleteAccount.mutate(undefined, {
@@ -77,6 +182,9 @@ const SessionsPage = () => {
       subtitle="Signing out here ends that browser's session only. The current session is highlighted."
     >
       {isLoading ? <Meta>loading…</Meta> : null}
+      {!isLoading && data && data.length === 0 ? (
+        <EmptyState caption="no active sessions" />
+      ) : null}
       {data?.length ? (
         <Table
           caption="Active sessions on your account"
@@ -114,7 +222,13 @@ const SessionsPage = () => {
               key="r"
               size="sm"
               variant={s.isCurrent ? 'danger' : 'default'}
-              onClick={() => revoke.mutate(s.id)}
+              onClick={() =>
+                setConfirmRevoke({
+                  id: s.id,
+                  isCurrent: s.isCurrent,
+                  userAgent: s.userAgent ?? null,
+                })
+              }
             >
               {s.isCurrent ? 'Sign out here' : 'Revoke'}
             </Button>,
@@ -122,6 +236,13 @@ const SessionsPage = () => {
           highlightRowAt={data.findIndex((s) => s.isCurrent)}
         />
       ) : null}
+
+      <section style={{ marginTop: 32 }}>
+        <SectionHeader>Change password</SectionHeader>
+        <div style={{ marginTop: 10 }}>
+          <ChangePasswordForm />
+        </div>
+      </section>
 
       <section style={{ marginTop: 32 }}>
         <SectionHeader>Danger zone</SectionHeader>
@@ -163,6 +284,31 @@ const SessionsPage = () => {
           </ConfirmModal>
         ) : null}
       </section>
+      {confirmRevoke ? (
+        <ConfirmModal
+          title={confirmRevoke.isCurrent ? 'Sign out here' : 'Revoke session'}
+          confirmLabel={confirmRevoke.isCurrent ? 'Sign out' : 'Revoke'}
+          pending={revoke.isPending}
+          onCancel={() => setConfirmRevoke(null)}
+          onConfirm={() =>
+            revoke.mutate(confirmRevoke.id, {
+              onSettled: () => setConfirmRevoke(null),
+            })
+          }
+        >
+          {confirmRevoke.isCurrent
+            ? 'Sign out of this browser session? You will need to sign in again to return.'
+            : (
+                <>
+                  End the session on{' '}
+                  <span style={{ fontFamily: tokens.type.mono }}>
+                    {confirmRevoke.userAgent ?? 'that browser'}
+                  </span>
+                  ? It will be signed out immediately.
+                </>
+              )}
+        </ConfirmModal>
+      ) : null}
     </PageShell>
   );
 };
