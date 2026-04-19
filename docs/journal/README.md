@@ -37,6 +37,14 @@ Listed in the order events happened, not when the entry was written.
 | 17 | Sat 19:50 | Spec + production-posture sweep | [2026-04-18-17-spec-prod-sweep.md](2026-04-18-17-spec-prod-sweep.md) |
 | 18 | Sat 21:20 | UAT fixes — inline edit, modal delete, image previews, flex chain | [2026-04-18-18-uat-fixes.md](2026-04-18-18-uat-fixes.md) |
 | 19 | Sat 22:10 | Scroll-history UX — day separators, start marker, jump-to-latest | [2026-04-18-19-scroll-ux.md](2026-04-18-19-scroll-ux.md) |
+| 20 | Sat 23:10 | Real-time message bug + design audit round 2 | [2026-04-18-20-realtime-and-audit-round-2.md](2026-04-18-20-realtime-and-audit-round-2.md) |
+| 21 | Sat 23:50 | Forgot-password flow wired end-to-end | [2026-04-18-21-forgot-password.md](2026-04-18-21-forgot-password.md) |
+| 22 | Sun 00:20 | Oracle Cloud free-tier terraform spike (rolled back on ARM capacity) | [2026-04-18-22-oci-free-tier-spike.md](2026-04-18-22-oci-free-tier-spike.md) |
+| 23 | Sun 01:28 | DM "not allowed" diagnosis + phantom /api/invitations 404s | [2026-04-19-01-dm-diagnosis-and-invitations-404.md](2026-04-19-01-dm-diagnosis-and-invitations-404.md) |
+| 24 | Sun 02:40 | Notifications system — table, publisher, bell, menu, native toasts | [2026-04-19-02-notifications-system.md](2026-04-19-02-notifications-system.md) |
+| 25 | Sun 11:00 | Design audit round 3 — 26 findings closed across four batches | [2026-04-19-03-design-audit-round-3.md](2026-04-19-03-design-audit-round-3.md) |
+
+> The notifications entry uses a bare-date filename rather than the `NN-topic` scheme the rest of the chronology follows – it was written mid-session before the index was refreshed. Leaving it in place as a deliberate record of how the entries landed rather than renaming after the fact.
 
 ## The philosophy underneath
 
