@@ -1,6 +1,6 @@
 # ADR-0007 · WebSocket `Origin` validation and cross-origin policy
 
-- **Status**: Proposed, 2026-04-19
+- **Status**: Accepted, 2026-04-19
 - **Relates to**: NFR-SEC-1, security audit 2026-04-19 (H2 – cross-site WebSocket hijacking)
 
 ## Context
@@ -56,3 +56,7 @@ Specifics:
 
 - *Rely on `SameSite=Lax` cookie only*: insufficient. `Lax` blocks cross-site cookie on top-level-navigation POST, but a WS upgrade is GET with the cookie attached. Some browsers do not treat WS upgrades like fetch. Defence in depth is cheaper than betting on browser UA consistency.
 - *Require a CSRF-style `Sec-WebSocket-Protocol` header from the client carrying a token*: more invasive; `Origin` alone buys the same protection for far less code.
+
+## Implementation
+
+Landed in commit <SHA> on 2026-04-19. Touches `apps/api/src/config.ts` (new `WS_ALLOWED_ORIGINS` var) and `apps/api/src/ws/plugin.ts` (Origin check at the top of the upgrade handler).

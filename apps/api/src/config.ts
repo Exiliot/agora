@@ -19,6 +19,11 @@ const schema = z.object({
   // docker-compose web port; override when running behind a real hostname.
   APP_BASE_URL: z.string().url().default('http://localhost:8080'),
 
+  // Additional allowed Origins for the WS upgrade handshake, comma-separated.
+  // APP_BASE_URL is always allowed implicitly. Extra origins land here for dev
+  // hot-reload servers running on a different port.
+  WS_ALLOWED_ORIGINS: z.string().default(''),
+
   // Postgres pool max. 10 was the default and became a hot-path bottleneck
   // at the 300-concurrent-users target (NFR-CAP-1) because a first-page
   // load fires ~5 parallel queries per user. 30 covers that comfortably in

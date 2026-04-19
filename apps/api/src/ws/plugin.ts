@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { clientToServerEvent } from '@agora/shared';
+import { config } from '../config.js';
 import {
   connections,
   createConnection,
@@ -25,8 +26,35 @@ const extractUser = (req: FastifyRequest): AuthedUser | null => {
   return { id: req.user.id, username: req.user.username };
 };
 
+const parseAllowedOrigins = (): Set<string> => {
+  const base = new URL(config.APP_BASE_URL).origin;
+  const extras = config.WS_ALLOWED_ORIGINS
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+  return new Set([base, ...extras]);
+};
+
+const allowedOrigins = parseAllowedOrigins();
+
+const isAllowedOrigin = (origin: string | undefined): boolean => {
+  if (!origin) return false;
+  if (origin === 'null') return false;
+  return allowedOrigins.has(origin);
+};
+
 export const registerWsPlugin = (app: FastifyInstance): void => {
   app.get('/ws', { websocket: true }, (socket, req) => {
+    const origin = typeof req.headers.origin === 'string' ? req.headers.origin : undefined;
+    if (!isAllowedOrigin(origin)) {
+      app.log.warn(
+        { origin, ip: req.ip },
+        'ws upgrade rejected: forbidden origin',
+      );
+      socket.close(4403, 'forbidden_origin');
+      return;
+    }
+
     const user = extractUser(req);
     if (!user) {
       // Unauthenticated WS connection — close immediately with application code 4401.
