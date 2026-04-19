@@ -74,6 +74,7 @@ const bodyFor = (n: NotificationView): string => {
 
 // Cached across calls; the formatter is pure and construction is non-trivial.
 const rtf = new Intl.RelativeTimeFormat('en', { style: 'narrow', numeric: 'always' });
+const longRtf = new Intl.RelativeTimeFormat('en', { style: 'long', numeric: 'auto' });
 
 const relativeTime = (iso: string): string => {
   const diffSec = (new Date(iso).getTime() - Date.now()) / 1000;
@@ -84,6 +85,20 @@ const relativeTime = (iso: string): string => {
   return rtf.format(Math.round(diffSec / 86400), 'day');
 };
 
+/**
+ * Long-form relative time for the accessible name – "2 minutes ago" rather
+ * than the narrow "2m" badge. Falls back to the absolute timestamp via the
+ * `<time title>` on hover.
+ */
+const longRelativeTime = (iso: string): string => {
+  const diffSec = (new Date(iso).getTime() - Date.now()) / 1000;
+  const abs = Math.abs(diffSec);
+  if (abs < 60) return 'just now';
+  if (abs < 3600) return longRtf.format(Math.round(diffSec / 60), 'minute');
+  if (abs < 86400) return longRtf.format(Math.round(diffSec / 3600), 'hour');
+  return longRtf.format(Math.round(diffSec / 86400), 'day');
+};
+
 interface NotificationRowProps {
   notification: NotificationView;
   onClick?: () => void;
@@ -92,6 +107,13 @@ interface NotificationRowProps {
 export const NotificationRow = ({ notification, onClick }: NotificationRowProps) => {
   const tint = kindTint(notification.kind);
   const isUnread = notification.readAt === null;
+  const title = titleFor(notification);
+  const body = bodyFor(notification);
+  const when = relativeTime(notification.createdAt);
+  const whenLong = longRelativeTime(notification.createdAt);
+  const absolute = new Date(notification.createdAt).toLocaleString();
+  const readState = isUnread ? 'unread' : 'read';
+  const accessibleName = [readState, title, body, whenLong].filter(Boolean).join(', ');
   const style: CSSProperties = {
     display: 'grid',
     gridTemplateColumns: 'auto 1fr auto',
@@ -106,8 +128,9 @@ export const NotificationRow = ({ notification, onClick }: NotificationRowProps)
     borderLeft: `2px solid ${tint}`,
   };
   return (
-    <button type="button" onClick={onClick} style={style}>
+    <button type="button" onClick={onClick} style={style} aria-label={accessibleName}>
       <span
+        aria-hidden="true"
         style={{
           fontFamily: tokens.type.mono,
           fontSize: 11,
@@ -115,9 +138,10 @@ export const NotificationRow = ({ notification, onClick }: NotificationRowProps)
           color: isUnread ? tokens.color.ink0 : tokens.color.ink2,
         }}
       >
-        {titleFor(notification)}
+        {title}
       </span>
       <span
+        aria-hidden="true"
         style={{
           fontFamily: tokens.type.sans,
           fontSize: 12,
@@ -128,9 +152,12 @@ export const NotificationRow = ({ notification, onClick }: NotificationRowProps)
           whiteSpace: 'nowrap',
         }}
       >
-        {bodyFor(notification)}
+        {body}
       </span>
-      <span
+      <time
+        aria-hidden="true"
+        dateTime={notification.createdAt}
+        title={absolute}
         style={{
           fontFamily: tokens.type.mono,
           fontSize: 11,
@@ -138,8 +165,8 @@ export const NotificationRow = ({ notification, onClick }: NotificationRowProps)
           alignSelf: 'center',
         }}
       >
-        {relativeTime(notification.createdAt)}
-      </span>
+        {when}
+      </time>
     </button>
   );
 };

@@ -215,6 +215,7 @@ const MessageItem = ({
     <div onMouseEnter={onEnter} onMouseLeave={onLeave}>
       <MessageRow
         time={formatTime(msg.createdAt)}
+        timeIso={msg.createdAt}
         user={msg.author?.username ?? 'deleted-user'}
         color={colorForName(msg.author?.username ?? '?')}
         deleted={deleted}

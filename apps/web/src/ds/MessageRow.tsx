@@ -9,6 +9,13 @@ interface ReplyRef {
 
 interface MessageRowProps {
   time: string;
+  /**
+   * ISO timestamp for the message. When provided, the `[HH:MM]` cell is
+   * wrapped in `<time dateTime={iso} title={locale}>` so screen-reader
+   * users hear the full absolute time rather than "bracket 14 bracket 32
+   * bracket" character-by-character.
+   */
+  timeIso?: string;
   user?: string;
   color?: string;
   self?: boolean;
@@ -25,6 +32,7 @@ interface MessageRowProps {
  */
 export const MessageRow = ({
   time,
+  timeIso,
   user,
   color,
   self = false,
@@ -34,6 +42,19 @@ export const MessageRow = ({
   reply,
   children,
 }: MessageRowProps) => {
+  const absolute = timeIso ? new Date(timeIso).toLocaleString() : undefined;
+  const timeCell = timeIso ? (
+    <time
+      dateTime={timeIso}
+      title={absolute}
+      style={{ color: tokens.color.ink3, flexShrink: 0, userSelect: 'none' }}
+    >
+      [{time}]
+    </time>
+  ) : (
+    <span style={{ color: tokens.color.ink3, flexShrink: 0, userSelect: 'none' }}>[{time}]</span>
+  );
+
   if (system) {
     return (
       <div
@@ -45,7 +66,14 @@ export const MessageRow = ({
           fontStyle: 'italic',
         }}
       >
-        <span style={{ color: tokens.color.ink3 }}>[{time}]</span> {children}
+        {timeIso ? (
+          <time dateTime={timeIso} title={absolute} style={{ color: tokens.color.ink3 }}>
+            [{time}]
+          </time>
+        ) : (
+          <span style={{ color: tokens.color.ink3 }}>[{time}]</span>
+        )}{' '}
+        {children}
       </div>
     );
   }
@@ -76,7 +104,7 @@ export const MessageRow = ({
         opacity: deleted ? 0.4 : 1,
       }}
     >
-      <span style={{ color: tokens.color.ink3, flexShrink: 0, userSelect: 'none' }}>[{time}]</span>
+      {timeCell}
       <div style={{ minWidth: 0, flex: 1 }}>
         {reply ? (
           <div
@@ -105,7 +133,7 @@ export const MessageRow = ({
         </span>
         <span style={{ color: tokens.color.ink2 }}>: </span>
         <span style={{ color: deleted ? tokens.color.ink3 : tokens.color.ink0 }}>
-          {deleted ? <i>message deleted</i> : children}
+          {deleted ? <em>message deleted</em> : children}
         </span>
       </div>
     </div>
