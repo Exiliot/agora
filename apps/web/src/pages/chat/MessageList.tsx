@@ -594,14 +594,22 @@ export const MessageList = ({ conversationType, conversationId, myRoomRole }: Me
           variant="primary"
           size="sm"
           onClick={() => {
-            const scroller = scrollRef.current;
-            if (!scroller) return;
+            if (!scrollRef.current || messages.length === 0) return;
+            // Target the last row by index, not scrollHeight. With a virtualised
+            // list most rows below the fold haven't been measured yet, so
+            // scrollHeight is based on the 40px estimate and grows as rows
+            // render into the viewport – a native smooth scrollTo anchored to
+            // scrollHeight at click time arrives "too short" and has to re-
+            // catch-up, producing the visible batch-scroll effect. The
+            // virtualiser's scrollToIndex keeps re-aligning to the target row
+            // across measurement updates (see scheduleScrollReconcile in
+            // virtual-core).
             const reduce =
               typeof window !== 'undefined' &&
               typeof window.matchMedia === 'function' &&
               window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-            scroller.scrollTo({
-              top: scroller.scrollHeight,
+            virtualizer.scrollToIndex(messages.length - 1, {
+              align: 'end',
               behavior: reduce ? 'auto' : 'smooth',
             });
           }}
